@@ -62,4 +62,13 @@ async function connectToWhatsApp() {
     });
 }
 
+import { execSync } from 'child_process';
+try {
+    console.log('Mencoba melakukan git pull...');
+    execSync('git pull https://github.com/razaeldotexe/waf.git main', { stdio: 'inherit' });
+    console.log('Git pull berhasil.');
+} catch (err) {
+    console.error('Gagal melakukan git pull, melanjutkan startup...', err.message);
+}
+
 connectToWhatsApp();
