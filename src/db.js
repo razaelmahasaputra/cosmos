@@ -36,3 +36,26 @@ export async function getHistory(jid, limit = 10) {
         return [];
     }
 }
+
+export async function addGroup(jid) {
+    if (!supabase) return false;
+    try {
+        const { error } = await supabase.from('whitelisted_groups').upsert([{ jid }]);
+        if (error) throw error;
+        return true;
+    } catch (err) {
+        console.error('Error adding group:', err);
+        return false;
+    }
+}
+
+export async function isGroupWhitelisted(jid) {
+    if (!supabase) return true; // If no DB configured, allow all for testing
+    try {
+        const { data, error } = await supabase.from('whitelisted_groups').select('jid').eq('jid', jid).single();
+        if (error) return false;
+        return !!data;
+    } catch (err) {
+        return false;
+    }
+}

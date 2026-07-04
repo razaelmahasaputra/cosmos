@@ -1,4 +1,5 @@
 import { processAI } from '../ai.js';
+import { addGroup, isGroupWhitelisted } from '../db.js';
 
 export async function handleMessage(sock, msg) {
     if (!msg.message) return;
@@ -6,6 +7,7 @@ export async function handleMessage(sock, msg) {
     // Only process messages from ourselves (self-bot) or specific logic according to phase 4
     // Phase 4: Bot dikonfigurasi sebagai self-bot. Wajib mendengarkan pesan dari dirinya sendiri
     const isFromMe = msg.key.fromMe;
+    const jid = msg.key.remoteJid;
 
     // Extact text
     const text =
@@ -16,10 +18,29 @@ export async function handleMessage(sock, msg) {
         '';
     if (!text) return;
 
+    if (isFromMe && text.trim() === '.addgroup') {
+        if (!jid.endsWith('@g.us')) {
+            await sock.sendMessage(jid, { text: 'Perintah ini hanya bisa digunakan di dalam grup.' });
+            return;
+        }
+        const success = await addGroup(jid);
+        if (success) {
+            await sock.sendMessage(jid, { text: 'Grup berhasil ditambahkan ke whitelist!' });
+        } else {
+            await sock.sendMessage(jid, { text: 'Gagal menambahkan grup ke database.' });
+        }
+        return;
+    }
+
     // Example logic to trigger AI
     if (isFromMe && text.startsWith('.ai ')) {
+        // Jika di grup, pastikan grup sudah di-whitelist
+        if (jid.endsWith('@g.us')) {
+            const whitelisted = await isGroupWhitelisted(jid);
+            if (!whitelisted) return;
+        }
+
         const query = text.replace('.ai ', '').trim();
-        const jid = msg.key.remoteJid;
 
         // Mark as typing
         await sock.sendPresenceUpdate('composing', jid);
