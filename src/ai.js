@@ -28,8 +28,17 @@ if (fs.existsSync(toolsPath)) {
 }
 
 export async function processAI(query, jid, ctx) {
+    let systemPrompt = 'You are a helpful AI assistant connected to WhatsApp.';
+    try {
+        const coreMd = fs.readFileSync(path.resolve(process.cwd(), 'src', 'prompt', 'core.md'), 'utf-8');
+        const skillsIndexMd = fs.readFileSync(path.resolve(process.cwd(), 'src', 'prompt', 'skills', 'index.md'), 'utf-8');
+        systemPrompt = `${coreMd}\n\n${skillsIndexMd}`;
+    } catch (err) {
+        console.error('Failed to load system prompts:', err);
+    }
+
     const messages = [
-        { role: 'system', content: 'You are a helpful AI assistant connected to WhatsApp.' },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: query }
     ];
 
