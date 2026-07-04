@@ -17,7 +17,13 @@ async function connectToWhatsApp() {
         logger,
         browser: ['Ubuntu', 'Chrome', '20.0.04'],
         syncFullHistory: false,
-        generateHighQualityLinkPreview: true
+        generateHighQualityLinkPreview: true,
+        keepAliveIntervalMs: 30000,
+        connectTimeoutMs: 60000,
+        defaultQueryTimeoutMs: 60000,
+        retryRequestDelayMs: 2000,
+        maxMsgRetryCount: 15,
+        markOnlineOnConnect: true
     });
 
     if (!sock.authState.creds.registered) {
