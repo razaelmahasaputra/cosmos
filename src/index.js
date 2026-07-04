@@ -14,7 +14,7 @@ async function connectToWhatsApp() {
         auth: state,
         printQRInTerminal: false,
         logger,
-        browser: Browsers.macOS('Desktop'),
+        browser: ['Ubuntu', 'Chrome', '20.0.04'],
         syncFullHistory: false,
         generateHighQualityLinkPreview: true
     });
