@@ -2,6 +2,7 @@ import { Groq } from 'groq-sdk';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+import { writeLog } from './logger.js';
 
 dotenv.config();
 
@@ -61,6 +62,8 @@ export async function processAI(query, jid, ctx) {
             const functionName = toolCall.function.name;
             const functionToCall = availableTools[functionName];
             const functionArgs = JSON.parse(toolCall.function.arguments);
+
+            writeLog('INFO', 'AI Tool Call', { jid, tool: functionName, args: functionArgs });
 
             let functionResponse;
             try {

@@ -1,6 +1,7 @@
 import { processAI } from '../ai.js';
 import { addGroup, isGroupWhitelisted } from '../db.js';
 import { execute as makeSticker } from '../tools/sticker_maker.js';
+import { writeLog } from '../logger.js';
 
 export async function handleMessage(sock, msg) {
     if (!msg.message) return;
@@ -20,6 +21,7 @@ export async function handleMessage(sock, msg) {
     if (!text) return;
 
     if (isFromMe && text.trim() === '.addgroup') {
+        writeLog('INFO', 'Command executed', { command: '.addgroup', jid });
         if (!jid.endsWith('@g.us')) {
             await sock.sendMessage(jid, { text: 'Perintah ini hanya bisa digunakan di dalam grup.' });
             return;
@@ -34,6 +36,7 @@ export async function handleMessage(sock, msg) {
     }
 
     if (isFromMe && text.trim() === '.sticker') {
+        writeLog('INFO', 'Command executed', { command: '.sticker', jid });
         if (jid.endsWith('@g.us')) {
             const whitelisted = await isGroupWhitelisted(jid);
             if (!whitelisted) return;
@@ -49,6 +52,7 @@ export async function handleMessage(sock, msg) {
 
     // Example logic to trigger AI
     if (isFromMe && text.startsWith('.ai ')) {
+        writeLog('INFO', 'Command executed', { command: '.ai', jid, query: text });
         // Jika di grup, pastikan grup sudah di-whitelist
         if (jid.endsWith('@g.us')) {
             const whitelisted = await isGroupWhitelisted(jid);

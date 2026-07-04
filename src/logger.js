@@ -11,7 +11,7 @@ function getLogFileName() {
     return path.join(logsDir, `logs-${date}.json`);
 }
 
-function writeLog(level, message, ...optionalParams) {
+export function writeLog(level, message, ...optionalParams) {
     const logFile = getLogFileName();
     
     // Convert errors to string for better JSON serialization
