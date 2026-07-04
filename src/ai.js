@@ -12,11 +12,14 @@ const toolsPath = path.resolve(process.cwd(), 'src', 'tools');
 let availableTools = {};
 let groqTools = [];
 
+import { pathToFileURL } from 'url';
+
 // Dynamic loading of tools
 if (fs.existsSync(toolsPath)) {
     const files = fs.readdirSync(toolsPath).filter((f) => f.endsWith('.js'));
     for (const file of files) {
-        const toolModule = await import(path.join('file://', toolsPath, file));
+        const fileUrl = pathToFileURL(path.join(toolsPath, file)).href;
+        const toolModule = await import(fileUrl);
         if (toolModule.definition && toolModule.execute) {
             availableTools[toolModule.definition.name] = toolModule.execute;
             groqTools.push({
