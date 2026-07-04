@@ -34,7 +34,7 @@ export async function processAI(query, jid, ctx) {
     ];
 
     let response = await groq.chat.completions.create({
-        model: 'llama3-70b-8192',
+        model: 'llama-3.3-70b-versatile',
         messages: messages,
         tools: groqTools.length > 0 ? groqTools : undefined,
         tool_choice: 'auto'
@@ -67,7 +67,7 @@ export async function processAI(query, jid, ctx) {
 
         // Get final response from model
         const secondResponse = await groq.chat.completions.create({
-            model: 'llama3-70b-8192',
+            model: 'llama-3.3-70b-versatile',
             messages: messages
         });
 
