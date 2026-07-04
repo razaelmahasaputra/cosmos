@@ -30,6 +30,12 @@ export function writeLog(level, message, ...optionalParams) {
     };
     
     fs.appendFileSync(logFile, JSON.stringify(logEntry) + '\n');
+
+    // Also print INFO logs to console so it's visible in Pterodactyl terminal
+    if (level === 'INFO') {
+        const originalConsoleLog = console.log;
+        originalConsoleLog(`[INFO] ${message}`, ...(optionalParams.length > 0 ? optionalParams : []));
+    }
 }
 
 const originalConsoleError = console.error;
