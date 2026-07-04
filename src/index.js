@@ -64,11 +64,21 @@ async function connectToWhatsApp() {
 
 import { execSync } from 'child_process';
 try {
-    console.log('Mencoba melakukan git pull...');
-    execSync('git pull https://github.com/razaeldotexe/waf.git main', { stdio: 'inherit' });
-    console.log('Git pull berhasil.');
+    console.log('Mencoba update dari Github...');
+    // Mengatasi error 'dubious ownership' di Pterodactyl docker
+    execSync('git config --global --add safe.directory "*"', { stdio: 'inherit' });
+    
+    // Mendukung private repo jika GITHUB_TOKEN diset di .env
+    const token = process.env.GITHUB_TOKEN;
+    const repoUrl = token 
+        ? `https://${token}@github.com/razaeldotexe/waf.git`
+        : 'https://github.com/razaeldotexe/waf.git';
+
+    execSync(`git fetch ${repoUrl} main`, { stdio: 'inherit' });
+    execSync('git reset --hard FETCH_HEAD', { stdio: 'inherit' });
+    console.log('Update dari Github berhasil.');
 } catch (err) {
-    console.error('Gagal melakukan git pull, melanjutkan startup...', err.message);
+    console.error('Gagal melakukan update dari Github, melanjutkan startup...', err.message);
 }
 
 connectToWhatsApp();
