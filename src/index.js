@@ -78,7 +78,8 @@ try {
     execSync('git reset --hard FETCH_HEAD', { stdio: 'inherit' });
     console.log('Update dari Github berhasil.');
 } catch (err) {
-    console.error('Gagal melakukan update dari Github, melanjutkan startup...', err.message);
+    const safeErrorMsg = err.message.replace(/https:\/\/(.*?)@github\.com/g, 'https://***@github.com');
+    console.error('Gagal melakukan update dari Github, melanjutkan startup...', safeErrorMsg);
 }
 
 connectToWhatsApp();
