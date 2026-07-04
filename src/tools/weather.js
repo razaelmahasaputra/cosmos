@@ -8,14 +8,14 @@ export const definition = {
         properties: {
             city: {
                 type: 'string',
-                description: 'Nama kota yang ingin dicari cuacanya, contoh: "Jakarta", "Bandung".'
+                description: 'Nama kota yang ingin dicari cuacanya (Gunakan "Jakarta" sebagai default jika pengguna tidak menyebutkan kota).'
             }
         },
         required: ['city']
     }
 };
 
-export async function execute({ city }, ctx) {
+export async function execute({ city = 'Jakarta' }, ctx) {
     const apiKey = process.env.OPENWEATHER_API_KEY;
     if (!apiKey) return "Gagal: OPENWEATHER_API_KEY tidak dikonfigurasi di server.";
 
