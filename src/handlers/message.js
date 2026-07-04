@@ -1,5 +1,6 @@
 import { processAI } from '../ai.js';
 import { addGroup, isGroupWhitelisted } from '../db.js';
+import { execute as makeSticker } from '../tools/sticker_maker.js';
 
 export async function handleMessage(sock, msg) {
     if (!msg.message) return;
@@ -28,6 +29,20 @@ export async function handleMessage(sock, msg) {
             await sock.sendMessage(jid, { text: 'Grup berhasil ditambahkan ke whitelist!' });
         } else {
             await sock.sendMessage(jid, { text: 'Gagal menambahkan grup ke database.' });
+        }
+        return;
+    }
+
+    if (isFromMe && text.trim() === '.sticker') {
+        if (jid.endsWith('@g.us')) {
+            const whitelisted = await isGroupWhitelisted(jid);
+            if (!whitelisted) return;
+        }
+        
+        await sock.sendPresenceUpdate('composing', jid);
+        const result = await makeSticker({}, { sock, msg, jid });
+        if (result && result.startsWith('Gagal')) {
+            await sock.sendMessage(jid, { text: result }, { quoted: msg });
         }
         return;
     }
