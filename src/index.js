@@ -1,3 +1,4 @@
+import './logger.js';
 import { makeWASocket, useMultiFileAuthState, Browsers, DisconnectReason } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import dotenv from 'dotenv';
