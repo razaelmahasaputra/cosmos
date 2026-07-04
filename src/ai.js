@@ -50,6 +50,7 @@ export async function processAI(query, jid, ctx) {
         model: 'openai/gpt-oss-20b',
         messages: messages,
         tools: groqTools.length > 0 ? groqTools : undefined,
+        temperature: 0.1,
         tool_choice: 'auto'
     });
 
