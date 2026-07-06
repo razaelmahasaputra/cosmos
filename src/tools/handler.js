@@ -14,16 +14,20 @@ class ToolsHandler {
 
         const files = fs.readdirSync(toolsPath).filter((f) => f.endsWith('.js') && f !== 'handler.js');
         for (const file of files) {
-            const fileUrl = pathToFileURL(path.join(toolsPath, file)).href;
-            const toolModule = await import(fileUrl);
-            if (toolModule.definition && toolModule.execute) {
-                const { name, aliases } = toolModule.definition;
-                this.tools.set(name, toolModule);
-                if (aliases && Array.isArray(aliases)) {
-                    for (const alias of aliases) {
-                        this.aliases.set(alias, name);
+            try {
+                const fileUrl = pathToFileURL(path.join(toolsPath, file)).href;
+                const toolModule = await import(fileUrl);
+                if (toolModule.definition && toolModule.execute) {
+                    const { name, aliases } = toolModule.definition;
+                    this.tools.set(name, toolModule);
+                    if (aliases && Array.isArray(aliases)) {
+                        for (const alias of aliases) {
+                            this.aliases.set(alias, name);
+                        }
                     }
                 }
+            } catch (err) {
+                console.error(`Gagal memuat tool ${file}:`, err);
             }
         }
     }

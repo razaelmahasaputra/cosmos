@@ -36,10 +36,17 @@ export async function execute(_, ctx) {
 
     let latencyStr = 'Tidak diketahui';
     if (ctx && ctx.msg && ctx.msg.messageTimestamp) {
-        const timestampVal =
-            typeof ctx.msg.messageTimestamp === 'object' && ctx.msg.messageTimestamp !== null
-                ? (ctx.msg.messageTimestamp.low ?? ctx.msg.messageTimestamp.unsigned ?? 0)
-                : ctx.msg.messageTimestamp;
+        let timestampVal = 0;
+        if (typeof ctx.msg.messageTimestamp === 'object' && ctx.msg.messageTimestamp !== null) {
+            if (typeof ctx.msg.messageTimestamp.toNumber === 'function') {
+                timestampVal = ctx.msg.messageTimestamp.toNumber();
+            } else {
+                timestampVal = Number(ctx.msg.messageTimestamp.low ?? ctx.msg.messageTimestamp.unsigned ?? 0);
+            }
+        } else if (typeof ctx.msg.messageTimestamp === 'number' || typeof ctx.msg.messageTimestamp === 'string') {
+            timestampVal = Number(ctx.msg.messageTimestamp);
+        }
+
         if (timestampVal > 0) {
             const msgTimeMs = timestampVal * 1000;
             const diff = Date.now() - msgTimeMs;
