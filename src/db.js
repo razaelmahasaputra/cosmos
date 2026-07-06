@@ -55,7 +55,7 @@ export async function isGroupWhitelisted(jid) {
         const { data, error } = await supabase.from('whitelisted_groups').select('jid').eq('jid', jid).single();
         if (error) return false;
         return !!data;
-    } catch (err) {
+    } catch {
         return false;
     }
 }

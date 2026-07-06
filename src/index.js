@@ -1,5 +1,5 @@
 import './logger.js';
-import { makeWASocket, useMultiFileAuthState, Browsers, DisconnectReason } from '@whiskeysockets/baileys';
+import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import dotenv from 'dotenv';
 import { handleMessage } from './handlers/message.js';
@@ -73,10 +73,10 @@ try {
     console.log('Mencoba update dari Github...');
     // Mengatasi error 'dubious ownership' di Pterodactyl docker
     execSync('git config --global --add safe.directory "*"', { stdio: 'inherit' });
-    
+
     // Mendukung private repo jika GITHUB_TOKEN diset di .env
     const token = process.env.GITHUB_TOKEN;
-    const repoUrl = token 
+    const repoUrl = token
         ? `https://${token}@github.com/razaeldotexe/waf.git`
         : 'https://github.com/razaeldotexe/waf.git';
 

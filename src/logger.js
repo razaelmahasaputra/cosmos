@@ -13,7 +13,7 @@ function getLogFileName() {
 
 export function writeLog(level, message, ...optionalParams) {
     const logFile = getLogFileName();
-    
+
     // Convert errors to string for better JSON serialization
     const parseParam = (param) => {
         if (param instanceof Error) {
@@ -28,7 +28,7 @@ export function writeLog(level, message, ...optionalParams) {
         message: parseParam(message),
         details: optionalParams.length > 0 ? optionalParams.map(parseParam) : undefined
     };
-    
+
     fs.appendFileSync(logFile, JSON.stringify(logEntry) + '\n');
 
     // Also print INFO logs to console so it's visible in Pterodactyl terminal
@@ -49,7 +49,7 @@ process.on('uncaughtException', (err) => {
     originalConsoleError('Uncaught Exception:', err);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
     writeLog('ERROR', 'Unhandled Rejection', reason);
     originalConsoleError('Unhandled Rejection:', reason);
 });

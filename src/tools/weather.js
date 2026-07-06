@@ -8,16 +8,17 @@ export const definition = {
         properties: {
             city: {
                 type: 'string',
-                description: 'Nama kota yang ingin dicari cuacanya (Gunakan "Jakarta" sebagai default jika pengguna tidak menyebutkan kota).'
+                description:
+                    'Nama kota yang ingin dicari cuacanya (Gunakan "Jakarta" sebagai default jika pengguna tidak menyebutkan kota).'
             }
         },
         required: ['city']
     }
 };
 
-export async function execute({ city = 'Jakarta' }, ctx) {
+export async function execute({ city = 'Jakarta' }) {
     const apiKey = process.env.OPENWEATHER_API_KEY;
-    if (!apiKey) return "Gagal: OPENWEATHER_API_KEY tidak dikonfigurasi di server.";
+    if (!apiKey) return 'Gagal: OPENWEATHER_API_KEY tidak dikonfigurasi di server.';
 
     try {
         const response = await axios.get(`https://api.openweathermap.org/data/2.5/weather`, {
@@ -25,7 +26,7 @@ export async function execute({ city = 'Jakarta' }, ctx) {
                 q: city,
                 appid: apiKey,
                 units: 'metric', // Menggunakan celcius
-                lang: 'id'       // Bahasa Indonesia
+                lang: 'id' // Bahasa Indonesia
             }
         });
 
@@ -35,10 +36,10 @@ export async function execute({ city = 'Jakarta' }, ctx) {
         const humidity = data.main?.humidity;
         const windSpeed = data.wind?.speed;
         const cityName = data.name;
-        
+
         return `Cuaca di ${cityName} saat ini: ${weatherDesc}. Suhu: ${temp}°C, Kelembapan: ${humidity}%, Kecepatan Angin: ${windSpeed} m/s.`;
     } catch (error) {
-        console.error("[Weather Tool Error]", error.response?.data || error.message);
+        console.error('[Weather Tool Error]', error.response?.data || error.message);
         return `Gagal mengambil cuaca untuk kota "${city}". Pastikan penulisan nama kota benar.`;
     }
 }

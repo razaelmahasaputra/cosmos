@@ -3,39 +3,20 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { writeLog } from './logger.js';
+import toolsHandler from './tools/handler.js';
 
 dotenv.config();
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// Load tools
-const toolsPath = path.resolve(process.cwd(), 'src', 'tools');
-let availableTools = {};
-let groqTools = [];
-
-import { pathToFileURL } from 'url';
-
-// Dynamic loading of tools
-if (fs.existsSync(toolsPath)) {
-    const files = fs.readdirSync(toolsPath).filter((f) => f.endsWith('.js'));
-    for (const file of files) {
-        const fileUrl = pathToFileURL(path.join(toolsPath, file)).href;
-        const toolModule = await import(fileUrl);
-        if (toolModule.definition && toolModule.execute) {
-            availableTools[toolModule.definition.name] = toolModule.execute;
-            groqTools.push({
-                type: 'function',
-                function: toolModule.definition
-            });
-        }
-    }
-}
-
 export async function processAI(query, jid, ctx) {
     let systemPrompt = 'You are a helpful AI assistant connected to WhatsApp.';
     try {
         const coreMd = fs.readFileSync(path.resolve(process.cwd(), 'src', 'prompt', 'core.md'), 'utf-8');
-        const skillsIndexMd = fs.readFileSync(path.resolve(process.cwd(), 'src', 'prompt', 'skills', 'index.md'), 'utf-8');
+        const skillsIndexMd = fs.readFileSync(
+            path.resolve(process.cwd(), 'src', 'prompt', 'skills', 'index.md'),
+            'utf-8'
+        );
         systemPrompt = `${coreMd}\n\n${skillsIndexMd}`;
     } catch (err) {
         console.error('Failed to load system prompts:', err);
@@ -45,6 +26,8 @@ export async function processAI(query, jid, ctx) {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: query }
     ];
+
+    const groqTools = toolsHandler.getGroqTools();
 
     let response = await groq.chat.completions.create({
         model: 'openai/gpt-oss-20b',
@@ -61,14 +44,13 @@ export async function processAI(query, jid, ctx) {
 
         for (const toolCall of responseMessage.tool_calls) {
             const functionName = toolCall.function.name;
-            const functionToCall = availableTools[functionName];
             const functionArgs = JSON.parse(toolCall.function.arguments);
 
             writeLog('INFO', 'AI Tool Call', { jid, tool: functionName, args: functionArgs });
 
             let functionResponse;
             try {
-                functionResponse = await functionToCall(functionArgs, ctx);
+                functionResponse = await toolsHandler.execute(functionName, functionArgs, ctx);
             } catch (err) {
                 functionResponse = `Error executing tool: ${err.message}`;
             }

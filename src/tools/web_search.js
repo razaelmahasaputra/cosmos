@@ -2,7 +2,8 @@ import axios from 'axios';
 import { writeLog } from '../logger.js';
 export const definition = {
     name: 'web_search',
-    description: 'Mencari informasi terbaru atau real-time dari internet (seperti berita, cuaca terkini yang kompleks, harga, atau fakta spesifik).',
+    description:
+        'Mencari informasi terbaru atau real-time dari internet (seperti berita, cuaca terkini yang kompleks, harga, atau fakta spesifik).',
     parameters: {
         type: 'object',
         properties: {
@@ -15,9 +16,9 @@ export const definition = {
     }
 };
 
-export async function execute({ query }, ctx) {
+export async function execute({ query }) {
     const apiKey = process.env.TAVILY_API_KEY;
-    if (!apiKey) return "Gagal: TAVILY_API_KEY tidak dikonfigurasi di server.";
+    if (!apiKey) return 'Gagal: TAVILY_API_KEY tidak dikonfigurasi di server.';
 
     try {
         const response = await axios.post('https://api.tavily.com/search', {
@@ -28,18 +29,21 @@ export async function execute({ query }, ctx) {
             max_results: 3
         });
 
-        writeLog('INFO', `[web_search] Success getting results from Tavily`, { query, resultsCount: response.data.results?.length });
+        writeLog('INFO', `[web_search] Success getting results from Tavily`, {
+            query,
+            resultsCount: response.data.results?.length
+        });
 
         if (response.data && response.data.answer) {
             return `Hasil Pencarian untuk "${query}":\n\n${response.data.answer}`;
         } else if (response.data && response.data.results) {
-            const results = response.data.results.map(r => `- ${r.title}: ${r.content}`).join('\n');
+            const results = response.data.results.map((r) => `- ${r.title}: ${r.content}`).join('\n');
             return `Hasil Pencarian untuk "${query}":\n\n${results}`;
         }
-        
-        return "Tidak ada hasil pencarian yang relevan ditemukan.";
+
+        return 'Tidak ada hasil pencarian yang relevan ditemukan.';
     } catch (error) {
-        console.error("[Web Search Tool Error]", error.response?.data || error.message);
-        return "Terjadi kesalahan saat mencari informasi di internet.";
+        console.error('[Web Search Tool Error]', error.response?.data || error.message);
+        return 'Terjadi kesalahan saat mencari informasi di internet.';
     }
 }

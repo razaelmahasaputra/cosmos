@@ -1,7 +1,7 @@
 import { processAI } from '../ai.js';
 import { addGroup, isGroupWhitelisted } from '../db.js';
-import { execute as makeSticker } from '../tools/sticker_maker.js';
 import { writeLog } from '../logger.js';
+import toolsHandler from '../tools/handler.js';
 
 export async function handleMessage(sock, msg) {
     if (!msg.message) return;
@@ -35,19 +35,25 @@ export async function handleMessage(sock, msg) {
         return;
     }
 
-    if (isFromMe && text.trim() === '.sticker') {
-        writeLog('INFO', 'Command executed', { command: '.sticker', jid });
-        if (jid.endsWith('@g.us')) {
-            const whitelisted = await isGroupWhitelisted(jid);
-            if (!whitelisted) return;
+    const trimmedText = text.trim();
+    if (isFromMe && trimmedText.startsWith('.')) {
+        const tool = toolsHandler.getTool(trimmedText);
+        if (tool) {
+            writeLog('INFO', 'Command executed', { command: trimmedText, jid });
+            if (jid.endsWith('@g.us')) {
+                const whitelisted = await isGroupWhitelisted(jid);
+                if (!whitelisted) return;
+            }
+
+            await sock.sendPresenceUpdate('composing', jid);
+            const result = await toolsHandler.execute(trimmedText, {}, { sock, msg, jid });
+            if (result) {
+                if (result.startsWith('Gagal') || !result.includes('berhasil dibuat')) {
+                    await sock.sendMessage(jid, { text: result }, { quoted: msg });
+                }
+            }
+            return;
         }
-        
-        await sock.sendPresenceUpdate('composing', jid);
-        const result = await makeSticker({}, { sock, msg, jid });
-        if (result && result.startsWith('Gagal')) {
-            await sock.sendMessage(jid, { text: result }, { quoted: msg });
-        }
-        return;
     }
 
     // Example logic to trigger AI
