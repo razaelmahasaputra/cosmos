@@ -56,9 +56,16 @@ export async function execute(_, ctx) {
 
         writeLog('INFO', 'STT transcription success', { jid: ctx.jid, length: text.length });
 
-        // Deteksi secara akurat apakah voice note berasal dari nomor bot itu sendiri
-        const botJid = ctx.sock.user?.id ? ctx.sock.user.id.split(':')[0] + '@s.whatsapp.net' : null;
-        const isQuotedFromMe = !contextInfo.participant || contextInfo.participant === botJid;
+        // Deteksi secara akurat apakah voice note berasal dari nomor bot itu sendiri (mendukung JID & LID)
+        const cleanId = (idStr) => (idStr ? idStr.split(':')[0].split('@')[0] : null);
+        const botRawJid = cleanId(ctx.sock.user?.id);
+        const botRawLid = cleanId(ctx.sock.user?.lid);
+        const participantRaw = cleanId(contextInfo.participant);
+
+        const isQuotedFromMe =
+            !contextInfo.participant ||
+            (botRawJid && participantRaw === botRawJid) ||
+            (botRawLid && participantRaw === botRawLid);
 
         // Reconstruct quoted message object agar balasan menunjuk ke voice note asli
         const quotedVoiceNote = {
