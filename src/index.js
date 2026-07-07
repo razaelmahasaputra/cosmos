@@ -1,8 +1,11 @@
-import './logger.js';
+import { writeLog } from './logger.js';
+import dns from 'dns';
 import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import dotenv from 'dotenv';
 import { handleMessage } from './handlers/message.js';
+
+dns.setDefaultResultOrder('ipv4first');
 
 dotenv.config();
 
@@ -18,7 +21,7 @@ async function connectToWhatsApp() {
         browser: ['Ubuntu', 'Chrome', '20.0.04'],
         syncFullHistory: false,
         generateHighQualityLinkPreview: true,
-        keepAliveIntervalMs: 30000,
+        keepAliveIntervalMs: 15000, // Reduced keep-alive ping interval to keep connection active
         connectTimeoutMs: 60000,
         defaultQueryTimeoutMs: 60000,
         retryRequestDelayMs: 2000,
@@ -46,8 +49,19 @@ async function connectToWhatsApp() {
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
-            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log('Connection closed due to', lastDisconnect.error, ', reconnecting', shouldReconnect);
+            const errorCode = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.code;
+            const errorMessage = lastDisconnect?.error?.message || 'Unknown Reason';
+            const shouldReconnect = errorCode !== DisconnectReason.loggedOut;
+
+            console.log(
+                `[Connection] Closed (Reason: ${errorMessage}, Code: ${errorCode}). Reconnecting: ${shouldReconnect}`
+            );
+
+            // Log details safely to file for debugging without cluttering console log
+            if (lastDisconnect?.error) {
+                writeLog('ERROR', `Connection close details: ${errorMessage}`, lastDisconnect.error);
+            }
+
             if (shouldReconnect) connectToWhatsApp();
         } else if (connection === 'open') {
             console.log('Opened connection');
