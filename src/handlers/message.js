@@ -36,7 +36,7 @@ export async function handleMessage(sock, msg) {
     }
 
     const trimmedText = text.trim();
-    if (isFromMe && trimmedText.startsWith('.')) {
+    if (isFromMe) {
         const tool = toolsHandler.getTool(trimmedText);
         if (tool) {
             writeLog('INFO', 'Command executed', { command: trimmedText, jid });
