@@ -1,5 +1,5 @@
 import { downloadContentFromMessage } from '@whiskeysockets/baileys';
-import { Groq } from 'groq-sdk';
+import { Groq, toFile } from 'groq-sdk';
 import dotenv from 'dotenv';
 import { writeLog } from '../logger.js';
 
@@ -40,8 +40,8 @@ export async function execute(_, ctx) {
         }
         const buffer = Buffer.concat(chunks);
 
-        // Kirim ke Groq Whisper — OGG/Opus didukung langsung tanpa FFMPEG
-        const file = new File([buffer], 'audio.ogg', { type: 'audio/ogg' });
+        // Kirim ke Groq Whisper menggunakan toFile helper dari SDK
+        const file = await toFile(buffer, 'audio.ogg', { type: 'audio/ogg' });
         const transcription = await groq.audio.transcriptions.create({
             file,
             model: 'whisper-large-v3-turbo',
@@ -56,12 +56,16 @@ export async function execute(_, ctx) {
 
         writeLog('INFO', 'STT transcription success', { jid: ctx.jid, length: text.length });
 
+        // Deteksi secara akurat apakah voice note berasal dari nomor bot itu sendiri
+        const botJid = ctx.sock.user?.id ? ctx.sock.user.id.split(':')[0] + '@s.whatsapp.net' : null;
+        const isQuotedFromMe = !contextInfo.participant || contextInfo.participant === botJid;
+
         // Reconstruct quoted message object agar balasan menunjuk ke voice note asli
         const quotedVoiceNote = {
             key: {
                 remoteJid: ctx.jid,
                 id: contextInfo.stanzaId,
-                fromMe: !contextInfo.participant,
+                fromMe: isQuotedFromMe,
                 ...(contextInfo.participant && { participant: contextInfo.participant })
             },
             message: quotedMessage
