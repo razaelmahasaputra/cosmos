@@ -4,6 +4,8 @@ import { addGroup, isGroupWhitelisted } from '../db.js';
 import { writeLog } from '../logger.js';
 import toolsHandler from '../tools/handler.js';
 
+const mediaGroupCache = new Map();
+
 export async function handleMessage(sock, msg) {
     if (!msg.message || !msg.key.remoteJid) return;
 
@@ -19,6 +21,60 @@ export async function handleMessage(sock, msg) {
         msg.message.imageMessage?.caption ||
         msg.message.videoMessage?.caption ||
         '';
+
+    const imageMsg =
+        msg.message.imageMessage ||
+        msg.message.viewOnceMessage?.message?.imageMessage ||
+        msg.message.viewOnceMessageV2?.message?.imageMessage ||
+        msg.message.viewOnceMessageV2Extension?.message?.imageMessage;
+    const videoMsg =
+        msg.message.videoMessage ||
+        msg.message.viewOnceMessage?.message?.videoMessage ||
+        msg.message.viewOnceMessageV2?.message?.videoMessage ||
+        msg.message.viewOnceMessageV2Extension?.message?.videoMessage;
+    const mediaGroupId = imageMsg?.mediaGroupId || videoMsg?.mediaGroupId;
+
+    if (mediaGroupId) {
+        if (!mediaGroupCache.has(mediaGroupId)) {
+            mediaGroupCache.set(mediaGroupId, {
+                messages: [],
+                shouldExecute: false,
+                timeoutId: null
+            });
+        }
+        const group = mediaGroupCache.get(mediaGroupId);
+        group.messages.push(msg);
+
+        const tempText = text || imageMsg?.caption || videoMsg?.caption || '';
+        const triggerRegex = /^\.(stiker|s|sticker)\b/i;
+        if (isFromMe && triggerRegex.test(tempText.trim())) {
+            group.shouldExecute = true;
+        }
+
+        if (group.timeoutId) {
+            clearTimeout(group.timeoutId);
+        }
+
+        group.timeoutId = setTimeout(async () => {
+            const currentGroup = mediaGroupCache.get(mediaGroupId);
+            mediaGroupCache.delete(mediaGroupId);
+
+            if (currentGroup && currentGroup.shouldExecute) {
+                for (const groupMsg of currentGroup.messages) {
+                    try {
+                        await sock.sendPresenceUpdate('composing', jid);
+                        await toolsHandler.execute('sticker_maker', {}, { sock, msg: groupMsg, jid });
+                    } catch (error) {
+                        console.error('Error processing bulk sticker:', error);
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, 3000));
+                }
+            }
+        }, 1500);
+
+        return;
+    }
+
     if (!text) return;
 
     if (isFromMe && text.trim() === '.addgroup') {
@@ -77,15 +133,26 @@ export async function handleMessage(sock, msg) {
     }
 
     // Example logic to trigger AI
-    if (isFromMe && text.startsWith('.ai ')) {
-        writeLog('INFO', 'Command executed', { command: '.ai', jid, query: text });
+    const aiMatch = text.match(/^\.ai(?:\s+(.*))?$/s);
+    if (aiMatch) {
         // Jika di grup, pastikan grup sudah di-whitelist
         if (jid.endsWith('@g.us')) {
             const whitelisted = await isGroupWhitelisted(jid);
             if (!whitelisted) return;
         }
 
-        const query = text.replace('.ai ', '').trim();
+        const query = (aiMatch[1] || '').trim();
+
+        if (!query) {
+            await sock.sendMessage(
+                jid,
+                { text: 'Format salah atau query kosong. Gunakan: .ai <pertanyaan>\nContoh: .ai Siapa namamu?' },
+                { quoted: msg }
+            );
+            return;
+        }
+
+        writeLog('INFO', 'Command executed', { command: '.ai', jid, query });
 
         // Mark as typing
         await sock.sendPresenceUpdate('composing', jid);
