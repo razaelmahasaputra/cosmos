@@ -4,8 +4,6 @@ import { addGroup, isGroupWhitelisted } from '../db.js';
 import { writeLog } from '../logger.js';
 import toolsHandler from '../tools/handler.js';
 
-const userMediaQueue = new Map();
-
 export async function handleMessage(sock, msg) {
     if (!msg.message || !msg.key.remoteJid) return;
 
@@ -13,69 +11,6 @@ export async function handleMessage(sock, msg) {
     // Phase 4: Bot dikonfigurasi sebagai self-bot. Wajib mendengarkan pesan dari dirinya sendiri
     const isFromMe = msg.key.fromMe;
     const jid = jidNormalizedUser(msg.key.remoteJid);
-
-    const imageMsg =
-        msg.message.imageMessage ||
-        msg.message.viewOnceMessage?.message?.imageMessage ||
-        msg.message.viewOnceMessageV2?.message?.imageMessage ||
-        msg.message.viewOnceMessageV2Extension?.message?.imageMessage;
-    const videoMsg =
-        msg.message.videoMessage ||
-        msg.message.viewOnceMessage?.message?.videoMessage ||
-        msg.message.viewOnceMessageV2?.message?.videoMessage ||
-        msg.message.viewOnceMessageV2Extension?.message?.videoMessage;
-    const documentMsg =
-        msg.message.documentMessage ||
-        msg.message.viewOnceMessage?.message?.documentMessage ||
-        msg.message.viewOnceMessageV2?.message?.documentMessage ||
-        msg.message.viewOnceMessageV2Extension?.message?.documentMessage;
-
-    const isGifDoc = documentMsg && (documentMsg.mimetype === 'image/gif' || documentMsg.fileName?.endsWith('.gif'));
-    const isMedia = !!(imageMsg || videoMsg || isGifDoc);
-
-    if (isMedia) {
-        const sender = msg.key.participant || msg.key.remoteJid;
-        const queueKey = `${jid}_${sender}`;
-
-        if (!userMediaQueue.has(queueKey)) {
-            userMediaQueue.set(queueKey, {
-                messages: [],
-                shouldExecute: false,
-                timeoutId: null
-            });
-        }
-        const queue = userMediaQueue.get(queueKey);
-        queue.messages.push(msg);
-
-        const captionText = imageMsg?.caption || videoMsg?.caption || documentMsg?.caption || '';
-        const triggerRegex = /^\.(stiker|s|sticker)\b/i;
-        if (isFromMe && triggerRegex.test(captionText.trim())) {
-            queue.shouldExecute = true;
-        }
-
-        if (queue.timeoutId) {
-            clearTimeout(queue.timeoutId);
-        }
-
-        queue.timeoutId = setTimeout(async () => {
-            const currentQueue = userMediaQueue.get(queueKey);
-            userMediaQueue.delete(queueKey);
-
-            if (currentQueue && currentQueue.shouldExecute) {
-                for (const queueMsg of currentQueue.messages) {
-                    try {
-                        await sock.sendPresenceUpdate('composing', jid);
-                        await toolsHandler.execute('sticker_maker', {}, { sock, msg: queueMsg, jid });
-                    } catch (error) {
-                        console.error('Error processing bulk sticker:', error);
-                    }
-                    await new Promise((resolve) => setTimeout(resolve, 3000));
-                }
-            }
-        }, 2000);
-
-        return;
-    }
 
     // Extract text
     const text =
