@@ -3,7 +3,11 @@ import { downloadContentFromMessage } from '@whiskeysockets/baileys';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { execSync } from 'child_process';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import crypto from 'crypto';
+
+const execPromise = promisify(exec);
 
 // Try to dynamically load ffmpeg-static if available
 let ffmpegStaticPath = null;
@@ -14,31 +18,38 @@ try {
     // Not available on this platform (e.g., Termux/Android)
 }
 
-function getFFmpegPath() {
+async function getFFmpegPath() {
     if (ffmpegStaticPath) return ffmpegStaticPath;
     try {
-        execSync('ffmpeg -version', { stdio: 'ignore' });
+        await execPromise('ffmpeg -version');
         return 'ffmpeg';
     } catch {
         return null;
     }
 }
 
+const ALLOWED_FORMATS = ['mp4', 'gif', 'mov', 'webm', 'avi', 'mkv', '3gp'];
+const FORMAT_REGEX = /^[a-zA-Z0-9]+$/;
+
 async function convertVideoToSticker(buffer, format) {
+    if (!FORMAT_REGEX.test(format) || !ALLOWED_FORMATS.includes(format.toLowerCase())) {
+        throw new Error('Format media tidak didukung atau tidak valid.');
+    }
+
     const tempDir = os.tmpdir();
-    const inputPath = path.join(tempDir, `temp_sticker_in_${Date.now()}.${format}`);
-    const outputPath = path.join(tempDir, `temp_sticker_out_${Date.now()}.webp`);
+    const inputPath = path.join(tempDir, `temp_sticker_in_${crypto.randomUUID()}.${format}`);
+    const outputPath = path.join(tempDir, `temp_sticker_out_${crypto.randomUUID()}.webp`);
 
     try {
         await fs.promises.writeFile(inputPath, buffer);
-        const ffmpegCmd = getFFmpegPath();
+        const ffmpegCmd = await getFFmpegPath();
         if (!ffmpegCmd) {
             throw new Error('FFmpeg tidak ditemukan di sistem.');
         }
 
         // Convert to animated webp: 512x512 crop/scale, max 5s, 12fps, loop infinitely
         const command = `"${ffmpegCmd}" -y -i "${inputPath}" -t 5 -vcodec libwebp -filter_complex "scale=512:512:force_original_aspect_ratio=increase,crop=512:512,fps=12" -loop 0 -preset default -an -vsync 0 "${outputPath}"`;
-        execSync(command, { stdio: 'ignore' });
+        await execPromise(command);
 
         return await fs.promises.readFile(outputPath);
     } finally {
@@ -70,13 +81,37 @@ export const definition = {
 };
 
 export async function execute(_, ctx) {
-    const imageMessage =
-        ctx.msg.message?.imageMessage || ctx.msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
-    const videoMessage =
-        ctx.msg.message?.videoMessage || ctx.msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.videoMessage;
-    const documentMessage =
-        ctx.msg.message?.documentMessage ||
-        ctx.msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.documentMessage;
+    const getMessage = (m) => {
+        if (!m) return { msg: null, isViewOnce: false };
+        if (m.viewOnceMessage?.message) {
+            const res = getMessage(m.viewOnceMessage.message);
+            return { msg: res.msg, isViewOnce: true };
+        }
+        if (m.viewOnceMessageV2?.message) {
+            const res = getMessage(m.viewOnceMessageV2.message);
+            return { msg: res.msg, isViewOnce: true };
+        }
+        if (m.viewOnceMessageV2Extension?.message) {
+            const res = getMessage(m.viewOnceMessageV2Extension.message);
+            return { msg: res.msg, isViewOnce: true };
+        }
+        return { msg: m, isViewOnce: false };
+    };
+
+    const direct = getMessage(ctx.msg.message);
+    const quoted = getMessage(ctx.msg.message?.extendedTextMessage?.contextInfo?.quotedMessage);
+
+    const directMsg = direct.msg;
+    const quotedMsg = quoted.msg;
+    const isViewOnce = direct.isViewOnce || quoted.isViewOnce;
+
+    if (isViewOnce) {
+        console.log('[Sticker Maker] Mendeteksi media View Once.');
+    }
+
+    const imageMessage = directMsg?.imageMessage || quotedMsg?.imageMessage;
+    const videoMessage = directMsg?.videoMessage || quotedMsg?.videoMessage;
+    const documentMessage = directMsg?.documentMessage || quotedMsg?.documentMessage;
 
     const isGifDocument =
         documentMessage && (documentMessage.mimetype === 'image/gif' || documentMessage.fileName?.endsWith('.gif'));
@@ -124,7 +159,11 @@ export async function execute(_, ctx) {
             ext = 'gif';
         }
 
-        const ffmpegCmd = getFFmpegPath();
+        if (ext) {
+            ext = ext.split(';')[0].trim();
+        }
+
+        const ffmpegCmd = await getFFmpegPath();
         if (ffmpegCmd) {
             const webpBuffer = await convertVideoToSticker(buffer, ext);
             await ctx.sock.sendMessage(ctx.jid, { sticker: webpBuffer }, { quoted: ctx.msg });

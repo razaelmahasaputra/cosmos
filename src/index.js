@@ -1,4 +1,5 @@
 import { writeLog } from './logger.js';
+import { execSync } from 'child_process';
 import dns from 'dns';
 import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
 import pino from 'pino';
@@ -82,24 +83,25 @@ async function connectToWhatsApp() {
     });
 }
 
-import { execSync } from 'child_process';
-try {
-    console.log('Mencoba update dari Github...');
-    // Mengatasi error 'dubious ownership' di Pterodactyl docker
-    execSync('git config --global --add safe.directory "*"', { stdio: 'inherit' });
+if (process.env.AUTO_UPDATE === 'true') {
+    try {
+        console.log('Mencoba update dari Github...');
+        // Mengatasi error 'dubious ownership' di Pterodactyl docker
+        execSync('git config --global --add safe.directory "*"', { stdio: 'inherit' });
 
-    // Mendukung private repo jika GITHUB_TOKEN diset di .env
-    const token = process.env.GITHUB_TOKEN;
-    const repoUrl = token
-        ? `https://${token}@github.com/razaeldotexe/waf.git`
-        : 'https://github.com/razaeldotexe/waf.git';
+        // Mendukung private repo jika GITHUB_TOKEN diset di .env
+        const token = process.env.GITHUB_TOKEN;
+        const repoUrl = token
+            ? `https://${token}@github.com/razaeldotexe/waf.git`
+            : 'https://github.com/razaeldotexe/waf.git';
 
-    execSync(`git fetch ${repoUrl} main`, { stdio: 'inherit' });
-    execSync('git reset --hard FETCH_HEAD', { stdio: 'inherit' });
-    console.log('Update dari Github berhasil.');
-} catch (err) {
-    const safeErrorMsg = err.message.replace(/https:\/\/(.*?)@github\.com/g, 'https://***@github.com');
-    console.error('Gagal melakukan update dari Github, melanjutkan startup...', safeErrorMsg);
+        execSync(`git fetch ${repoUrl} main`, { stdio: 'inherit' });
+        execSync('git reset --hard FETCH_HEAD', { stdio: 'inherit' });
+        console.log('Update dari Github berhasil.');
+    } catch (err) {
+        const safeErrorMsg = err.message.replace(/https:\/\/(.*?)@github\.com/g, 'https://***@github.com');
+        console.error('Gagal melakukan update dari Github, melanjutkan startup...', safeErrorMsg);
+    }
 }
 
 connectToWhatsApp();
