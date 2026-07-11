@@ -4,7 +4,7 @@ import { addGroup, isGroupWhitelisted } from '../db.js';
 import { writeLog } from '../logger.js';
 import toolsHandler from '../tools/handler.js';
 
-const mediaGroupCache = new Map();
+const userMediaQueue = new Map();
 
 export async function handleMessage(sock, msg) {
     if (!msg.message || !msg.key.remoteJid) return;
@@ -13,14 +13,6 @@ export async function handleMessage(sock, msg) {
     // Phase 4: Bot dikonfigurasi sebagai self-bot. Wajib mendengarkan pesan dari dirinya sendiri
     const isFromMe = msg.key.fromMe;
     const jid = jidNormalizedUser(msg.key.remoteJid);
-
-    // Extact text
-    const text =
-        msg.message.conversation ||
-        msg.message.extendedTextMessage?.text ||
-        msg.message.imageMessage?.caption ||
-        msg.message.videoMessage?.caption ||
-        '';
 
     const imageMsg =
         msg.message.imageMessage ||
@@ -32,48 +24,66 @@ export async function handleMessage(sock, msg) {
         msg.message.viewOnceMessage?.message?.videoMessage ||
         msg.message.viewOnceMessageV2?.message?.videoMessage ||
         msg.message.viewOnceMessageV2Extension?.message?.videoMessage;
-    const mediaGroupId = imageMsg?.mediaGroupId || videoMsg?.mediaGroupId;
+    const documentMsg =
+        msg.message.documentMessage ||
+        msg.message.viewOnceMessage?.message?.documentMessage ||
+        msg.message.viewOnceMessageV2?.message?.documentMessage ||
+        msg.message.viewOnceMessageV2Extension?.message?.documentMessage;
 
-    if (mediaGroupId) {
-        if (!mediaGroupCache.has(mediaGroupId)) {
-            mediaGroupCache.set(mediaGroupId, {
+    const isGifDoc = documentMsg && (documentMsg.mimetype === 'image/gif' || documentMsg.fileName?.endsWith('.gif'));
+    const isMedia = !!(imageMsg || videoMsg || isGifDoc);
+
+    if (isMedia) {
+        const sender = msg.key.participant || msg.key.remoteJid;
+        const queueKey = `${jid}_${sender}`;
+
+        if (!userMediaQueue.has(queueKey)) {
+            userMediaQueue.set(queueKey, {
                 messages: [],
                 shouldExecute: false,
                 timeoutId: null
             });
         }
-        const group = mediaGroupCache.get(mediaGroupId);
-        group.messages.push(msg);
+        const queue = userMediaQueue.get(queueKey);
+        queue.messages.push(msg);
 
-        const tempText = text || imageMsg?.caption || videoMsg?.caption || '';
+        const captionText = imageMsg?.caption || videoMsg?.caption || documentMsg?.caption || '';
         const triggerRegex = /^\.(stiker|s|sticker)\b/i;
-        if (isFromMe && triggerRegex.test(tempText.trim())) {
-            group.shouldExecute = true;
+        if (isFromMe && triggerRegex.test(captionText.trim())) {
+            queue.shouldExecute = true;
         }
 
-        if (group.timeoutId) {
-            clearTimeout(group.timeoutId);
+        if (queue.timeoutId) {
+            clearTimeout(queue.timeoutId);
         }
 
-        group.timeoutId = setTimeout(async () => {
-            const currentGroup = mediaGroupCache.get(mediaGroupId);
-            mediaGroupCache.delete(mediaGroupId);
+        queue.timeoutId = setTimeout(async () => {
+            const currentQueue = userMediaQueue.get(queueKey);
+            userMediaQueue.delete(queueKey);
 
-            if (currentGroup && currentGroup.shouldExecute) {
-                for (const groupMsg of currentGroup.messages) {
+            if (currentQueue && currentQueue.shouldExecute) {
+                for (const queueMsg of currentQueue.messages) {
                     try {
                         await sock.sendPresenceUpdate('composing', jid);
-                        await toolsHandler.execute('sticker_maker', {}, { sock, msg: groupMsg, jid });
+                        await toolsHandler.execute('sticker_maker', {}, { sock, msg: queueMsg, jid });
                     } catch (error) {
                         console.error('Error processing bulk sticker:', error);
                     }
                     await new Promise((resolve) => setTimeout(resolve, 3000));
                 }
             }
-        }, 1500);
+        }, 2000);
 
         return;
     }
+
+    // Extract text
+    const text =
+        msg.message.conversation ||
+        msg.message.extendedTextMessage?.text ||
+        msg.message.imageMessage?.caption ||
+        msg.message.videoMessage?.caption ||
+        '';
 
     if (!text) return;
 
