@@ -100,17 +100,36 @@ export const definition = {
 async function getStatusJidList(sock, ctx) {
     const jids = new Set();
 
-    // 1. Selalu tambahkan JID diri sendiri
+    // Log detail user untuk debugging identifikasi JID/LID
+    console.log('[Bulk Story] Debug sock.user:', JSON.stringify(sock.user));
+    console.log('[Bulk Story] Debug ctx.msg.key:', JSON.stringify(ctx.msg?.key));
+
+    // 1. Tambahkan JID reguler diri sendiri
     if (sock.user?.id) {
         jids.add(jidNormalizedUser(sock.user.id));
     }
 
-    // 2. Tambahkan JID dari pengirim perintah jika personal chat
-    if (ctx.jid && ctx.jid.endsWith('@s.whatsapp.net')) {
-        jids.add(ctx.jid);
+    // 2. Tambahkan LID diri sendiri (sangat krusial untuk sinkronisasi status di akun ber-LID)
+    if (sock.user?.lid) {
+        jids.add(jidNormalizedUser(sock.user.lid));
     }
 
-    // 3. Ambil participant dari grup aktif untuk distribusi status ke kontak
+    // 3. Tambahkan JID/LID pengirim perintah
+    if (ctx.jid) {
+        jids.add(jidNormalizedUser(ctx.jid));
+    }
+
+    // 4. Tambahkan remoteJid asli dari pesan (bisa berupa LID)
+    if (ctx.msg?.key?.remoteJid) {
+        jids.add(jidNormalizedUser(ctx.msg.key.remoteJid));
+    }
+
+    // 5. Tambahkan remoteJidAlt dari pesan jika tersedia
+    if (ctx.msg?.key?.remoteJidAlt) {
+        jids.add(jidNormalizedUser(ctx.msg.key.remoteJidAlt));
+    }
+
+    // 6. Ambil participant dari grup aktif untuk distribusi status ke kontak
     try {
         const groups = await sock.groupFetchAllParticipating();
         const groupJids = Object.keys(groups);
@@ -120,8 +139,11 @@ async function getStatusJidList(sock, ctx) {
         for (const gJid of selectedGroupJids) {
             const participants = groups[gJid].participants || [];
             for (const p of participants) {
-                if (p.id && p.id.endsWith('@s.whatsapp.net')) {
+                if (p.id) {
                     jids.add(jidNormalizedUser(p.id));
+                }
+                if (p.lid) {
+                    jids.add(jidNormalizedUser(p.lid));
                 }
                 // Batasi total agar tidak terlalu banyak (maksimal 200)
                 if (jids.size >= 200) break;
@@ -132,7 +154,9 @@ async function getStatusJidList(sock, ctx) {
         console.error('[Bulk Story] Gagal mengambil participant grup untuk statusJidList:', err);
     }
 
-    return Array.from(jids);
+    const finalJids = Array.from(jids);
+    console.log('[Bulk Story] Target statusJidList:', JSON.stringify(finalJids));
+    return finalJids;
 }
 
 export async function execute(args, ctx) {
