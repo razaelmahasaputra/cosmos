@@ -1,6 +1,85 @@
 import fs from 'fs';
 import path from 'path';
+import sharp from 'sharp';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import crypto from 'crypto';
+import os from 'os';
 import { jidNormalizedUser } from '@whiskeysockets/baileys';
+
+const execPromise = promisify(exec);
+
+// Deteksi path FFmpeg secara dinamis
+let ffmpegStaticPath = null;
+try {
+    const ffmpegStatic = await import('ffmpeg-static');
+    ffmpegStaticPath = ffmpegStatic.default || ffmpegStatic;
+} catch {
+    // Platform Android / Termux
+}
+
+async function getFFmpegPath() {
+    if (ffmpegStaticPath) {
+        try {
+            await execPromise(`"${ffmpegStaticPath}" -version`);
+            return ffmpegStaticPath;
+        } catch {
+            ffmpegStaticPath = null;
+        }
+    }
+    try {
+        await execPromise('ffmpeg -version');
+        return 'ffmpeg';
+    } catch {
+        const termuxPath = '/data/data/com.termux/files/usr/bin/ffmpeg';
+        try {
+            await execPromise(`"${termuxPath}" -version`);
+            return termuxPath;
+        } catch {
+            return null;
+        }
+    }
+}
+
+async function generateImageThumbnail(imagePath) {
+    try {
+        const buffer = fs.readFileSync(imagePath);
+        return await sharp(buffer).resize(96, 96, { fit: 'cover' }).jpeg({ quality: 50 }).toBuffer();
+    } catch (err) {
+        console.error('[Bulk Story] Gagal membuat thumbnail gambar:', err);
+        return undefined;
+    }
+}
+
+async function generateVideoThumbnail(videoPath, ffmpegCmd) {
+    if (!ffmpegCmd) return undefined;
+    const tempDir = os.tmpdir();
+    const outputPath = path.join(tempDir, `temp_thumb_${crypto.randomUUID()}.jpg`);
+
+    try {
+        const command = `"${ffmpegCmd}" -y -ss 00:00:01 -i "${videoPath}" -vframes 1 -q:v 5 "${outputPath}"`;
+        await execPromise(command);
+
+        if (fs.existsSync(outputPath)) {
+            const buffer = fs.readFileSync(outputPath);
+            try {
+                fs.unlinkSync(outputPath);
+            } catch (e) {
+                console.warn('[Bulk Story] Gagal menghapus file temp:', e.message);
+            }
+
+            return await sharp(buffer).resize(96, 96, { fit: 'cover' }).jpeg({ quality: 50 }).toBuffer();
+        }
+    } catch (err) {
+        console.error('[Bulk Story] Gagal membuat thumbnail video:', err);
+        try {
+            if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+        } catch (e) {
+            console.warn('[Bulk Story] Gagal menghapus file temp:', e.message);
+        }
+    }
+    return undefined;
+}
 
 export const definition = {
     name: 'bulk_story',
@@ -166,6 +245,9 @@ export async function execute(args, ctx) {
     let failCount = 0;
     const errors = [];
 
+    // Deteksi path FFmpeg sebelum loop dimulai
+    const ffmpegCmd = await getFFmpegPath();
+
     // Tampilkan log inisiasi di console
     console.log(`\n[Bulk Story] Memulai proses upload massal (${totalMedia} file)`);
 
@@ -216,12 +298,23 @@ export async function execute(args, ctx) {
                 }
             }
 
+            // Membuat thumbnail untuk gambar atau video
+            let thumbnail = undefined;
+            if (ext === '.mp4') {
+                thumbnail = await generateVideoThumbnail(filePath, ffmpegCmd);
+            } else if (['.jpg', '.jpeg', '.png'].includes(ext)) {
+                thumbnail = await generateImageThumbnail(filePath);
+            }
+
             const mediaType = ext === '.mp4' ? 'video' : 'image';
             const messageContent = {};
 
             messageContent[mediaType] = { url: filePath };
             if (caption) {
                 messageContent.caption = caption;
+            }
+            if (thumbnail) {
+                messageContent.jpegThumbnail = thumbnail;
             }
 
             // Kirim status
