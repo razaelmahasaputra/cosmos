@@ -1,0 +1,231 @@
+import fs from 'fs';
+import path from 'path';
+import { jidNormalizedUser } from '@whiskeysockets/baileys';
+
+export const definition = {
+    name: 'bulk_story',
+    aliases: ['.bulkstory', '.bsy', '.bstory', '.bulkstatus'],
+    description: 'Mengunggah gambar atau video secara massal ke Status/Story WhatsApp.',
+    parameters: {
+        type: 'object',
+        properties: {
+            argsStr: {
+                type: 'string',
+                description: 'Format: [targetFolder]'
+            }
+        },
+        required: []
+    }
+};
+
+async function getStatusJidList(sock, ctx) {
+    const jids = new Set();
+
+    // 1. Selalu tambahkan JID diri sendiri
+    if (sock.user?.id) {
+        jids.add(jidNormalizedUser(sock.user.id));
+    }
+
+    // 2. Tambahkan JID dari pengirim perintah jika personal chat
+    if (ctx.jid && ctx.jid.endsWith('@s.whatsapp.net')) {
+        jids.add(ctx.jid);
+    }
+
+    // 3. Ambil participant dari grup aktif untuk distribusi status ke kontak
+    try {
+        const groups = await sock.groupFetchAllParticipating();
+        const groupJids = Object.keys(groups);
+
+        // Batasi maksimal 5 grup saja untuk efisiensi
+        const selectedGroupJids = groupJids.slice(0, 5);
+        for (const gJid of selectedGroupJids) {
+            const participants = groups[gJid].participants || [];
+            for (const p of participants) {
+                if (p.id && p.id.endsWith('@s.whatsapp.net')) {
+                    jids.add(jidNormalizedUser(p.id));
+                }
+                // Batasi total agar tidak terlalu banyak (maksimal 200)
+                if (jids.size >= 200) break;
+            }
+            if (jids.size >= 200) break;
+        }
+    } catch (err) {
+        console.error('[Bulk Story] Gagal mengambil participant grup untuk statusJidList:', err);
+    }
+
+    return Array.from(jids);
+}
+
+export async function execute(args, ctx) {
+    const argsStr = args.argsStr || '';
+    const folderName = argsStr.trim() || 'story';
+
+    // Mendukung folder absolut (local storage) maupun folder relatif di dalam direktori bot
+    let resolvedPath;
+    if (path.isAbsolute(folderName)) {
+        resolvedPath = folderName;
+    } else {
+        resolvedPath = path.resolve(process.cwd(), folderName);
+    }
+
+    if (!fs.existsSync(resolvedPath)) {
+        // Jika folder relatif tidak ada, kita buatkan
+        if (!path.isAbsolute(folderName)) {
+            try {
+                fs.mkdirSync(resolvedPath, { recursive: true });
+                return `Folder "${folderName}" tidak ditemukan. Folder baru telah dibuat di direktori bot. Silakan letakkan 3 hingga 5 file gambar/video di dalamnya dan jalankan kembali perintah ini.`;
+            } catch {
+                return `Gagal: Folder "${folderName}" tidak ditemukan dan tidak dapat dibuat.`;
+            }
+        }
+        return `Gagal: Folder absolut "${folderName}" tidak ditemukan di local storage.`;
+    }
+
+    // Membaca file di folder
+    let files;
+    try {
+        files = fs.readdirSync(resolvedPath);
+    } catch (err) {
+        return `Gagal membaca folder: ${err.message}`;
+    }
+
+    const supportedExtensions = ['.png', '.jpg', '.jpeg', '.mp4'];
+    const mediaFiles = files.filter((file) => {
+        const ext = path.extname(file).toLowerCase();
+        return supportedExtensions.includes(ext);
+    });
+
+    const totalMedia = mediaFiles.length;
+
+    // Batasan jumlah file: minimal 3 dan maksimal 5
+    if (totalMedia < 3 || totalMedia > 5) {
+        return `Gagal: Jumlah file media di dalam folder harus antara 3 hingga 5 file.\nSaat ini ditemukan: ${totalMedia} file yang didukung (${supportedExtensions.join(', ')}).`;
+    }
+
+    // Memeriksa batasan ukuran file (Maksimal Video 50MB, Gambar 10MB)
+    const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+    const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+    const oversizedFiles = [];
+
+    for (const fileName of mediaFiles) {
+        const filePath = path.join(resolvedPath, fileName);
+        const stat = fs.statSync(filePath);
+        const ext = path.extname(fileName).toLowerCase();
+
+        if (ext === '.mp4' && stat.size > MAX_VIDEO_SIZE) {
+            oversizedFiles.push(`${fileName} (${(stat.size / (1024 * 1024)).toFixed(1)}MB > 50MB)`);
+        } else if (['.jpg', '.jpeg', '.png'].includes(ext) && stat.size > MAX_IMAGE_SIZE) {
+            oversizedFiles.push(`${fileName} (${(stat.size / (1024 * 1024)).toFixed(1)}MB > 10MB)`);
+        }
+    }
+
+    if (oversizedFiles.length > 0) {
+        return `Gagal: Ditemukan file yang melebihi batas ukuran:\n` + oversizedFiles.map((f) => `- ${f}`).join('\n');
+    }
+
+    // Membaca metadata / caption jika ada
+    let captionsMap = {};
+    const captionsJsonPath = path.join(resolvedPath, 'captions.json');
+    const metadataJsonPath = path.join(resolvedPath, 'metadata.json');
+
+    if (fs.existsSync(captionsJsonPath)) {
+        try {
+            captionsMap = JSON.parse(fs.readFileSync(captionsJsonPath, 'utf-8'));
+        } catch (err) {
+            console.error('Gagal membaca captions.json:', err);
+        }
+    } else if (fs.existsSync(metadataJsonPath)) {
+        try {
+            captionsMap = JSON.parse(fs.readFileSync(metadataJsonPath, 'utf-8'));
+        } catch (err) {
+            console.error('Gagal membaca metadata.json:', err);
+        }
+    }
+
+    // Kumpulkan statusJidList
+    await ctx.sock.sendMessage(ctx.jid, {
+        text: `⏳ Menyiapkan daftar kontak penerima status WhatsApp...`
+    });
+
+    const jidList = await getStatusJidList(ctx.sock, ctx);
+    if (jidList.length === 0) {
+        return `Gagal: Tidak dapat menemukan kontak penerima status WhatsApp.`;
+    }
+
+    // Kirim status awal
+    await ctx.sock.sendMessage(ctx.jid, {
+        text: `🚀 Mulai mengunggah ${totalMedia} story/status ke WhatsApp...\n\nEstimasi durasi jeda: 15 detik per media untuk mengoptimalkan proses upload.`
+    });
+
+    let successCount = 0;
+    let failCount = 0;
+    const errors = [];
+
+    for (let i = 0; i < mediaFiles.length; i++) {
+        const fileName = mediaFiles[i];
+        const filePath = path.join(resolvedPath, fileName);
+        const ext = path.extname(fileName).toLowerCase();
+
+        // Cari caption
+        let caption = undefined;
+        // 1. Coba dari map json
+        if (captionsMap[fileName]) {
+            caption = captionsMap[fileName];
+        } else {
+            // 2. Coba dari file .txt pendamping
+            const baseName = path.basename(fileName, ext);
+            const txtPath = path.join(resolvedPath, `${baseName}.txt`);
+            if (fs.existsSync(txtPath)) {
+                try {
+                    caption = fs.readFileSync(txtPath, 'utf-8').trim();
+                } catch (err) {
+                    console.error(`Gagal membaca file caption pendamping ${baseName}.txt:`, err);
+                }
+            }
+        }
+
+        try {
+            const mediaType = ext === '.mp4' ? 'video' : 'image';
+            const messageContent = {};
+
+            // Menggunakan { url: filePath } agar hemat memori RAM
+            messageContent[mediaType] = { url: filePath };
+            if (caption) {
+                messageContent.caption = caption;
+            }
+
+            // Kirim status
+            await ctx.sock.sendMessage('status@broadcast', messageContent, {
+                statusJidList: jidList,
+                broadcast: true
+            });
+
+            successCount++;
+
+            // Berikan progress update ke user
+            await ctx.sock.sendMessage(ctx.jid, {
+                text: `✅ Berhasil mengunggah (${successCount}/${totalMedia}): ${fileName}`
+            });
+
+            // Delay 15 detik untuk media besar agar tidak rate limit / gagal sync
+            if (i < mediaFiles.length - 1) {
+                await new Promise((resolve) => setTimeout(resolve, 15000));
+            }
+        } catch (err) {
+            failCount++;
+            errors.push(`${fileName}: ${err.message}`);
+            console.error(`Gagal mengunggah status ${fileName}:`, err);
+
+            await ctx.sock.sendMessage(ctx.jid, {
+                text: `❌ Gagal mengunggah: ${fileName}\nDetail: ${err.message}`
+            });
+        }
+    }
+
+    let responseText = `✅ Selesai memproses bulk upload status!\n\n• Berhasil: ${successCount}\n• Gagal: ${failCount}`;
+    if (errors.length > 0) {
+        responseText += `\n\nDetail Error:\n` + errors.map((e) => `- ${e}`).join('\n');
+    }
+
+    return responseText;
+}

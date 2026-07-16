@@ -73,3 +73,7 @@ auth_info_baileys/
 # Temporary stickers directory
 stickers/
 
+# Temporary story media directory
+story/
+
+
