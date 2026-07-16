@@ -129,33 +129,8 @@ async function getStatusJidList(sock, ctx) {
         jids.add(jidNormalizedUser(ctx.msg.key.remoteJidAlt));
     }
 
-    // 6. Ambil participant dari grup aktif untuk distribusi status ke kontak
-    try {
-        const groups = await sock.groupFetchAllParticipating();
-        const groupJids = Object.keys(groups);
-
-        // Batasi maksimal 5 grup saja untuk efisiensi
-        const selectedGroupJids = groupJids.slice(0, 5);
-        for (const gJid of selectedGroupJids) {
-            const participants = groups[gJid].participants || [];
-            for (const p of participants) {
-                if (p.id) {
-                    jids.add(jidNormalizedUser(p.id));
-                }
-                if (p.lid) {
-                    jids.add(jidNormalizedUser(p.lid));
-                }
-                // Batasi total agar tidak terlalu banyak (maksimal 200)
-                if (jids.size >= 200) break;
-            }
-            if (jids.size >= 200) break;
-        }
-    } catch (err) {
-        console.error('[Bulk Story] Gagal mengambil participant grup untuk statusJidList:', err);
-    }
-
     const finalJids = Array.from(jids);
-    console.log('[Bulk Story] Target statusJidList:', JSON.stringify(finalJids));
+    console.log('[Bulk Story] Target statusJidList (hanya kontak mutual terverifikasi):', JSON.stringify(finalJids));
     return finalJids;
 }
 
@@ -212,13 +187,17 @@ export async function execute(args, ctx) {
 
     for (const fileName of mediaFiles) {
         const filePath = path.join(resolvedPath, fileName);
-        const stat = fs.statSync(filePath);
-        const ext = path.extname(fileName).toLowerCase();
+        try {
+            const stat = fs.statSync(filePath);
+            const ext = path.extname(fileName).toLowerCase();
 
-        if (ext === '.mp4' && stat.size > MAX_VIDEO_SIZE) {
-            oversizedFiles.push(`${fileName} (${(stat.size / (1024 * 1024)).toFixed(1)}MB > 50MB)`);
-        } else if (['.jpg', '.jpeg', '.png'].includes(ext) && stat.size > MAX_IMAGE_SIZE) {
-            oversizedFiles.push(`${fileName} (${(stat.size / (1024 * 1024)).toFixed(1)}MB > 10MB)`);
+            if (ext === '.mp4' && stat.size > MAX_VIDEO_SIZE) {
+                oversizedFiles.push(`${fileName} (${(stat.size / (1024 * 1024)).toFixed(1)}MB > 50MB)`);
+            } else if (['.jpg', '.jpeg', '.png'].includes(ext) && stat.size > MAX_IMAGE_SIZE) {
+                oversizedFiles.push(`${fileName} (${(stat.size / (1024 * 1024)).toFixed(1)}MB > 10MB)`);
+            }
+        } catch (err) {
+            console.error(`[Bulk Story] Gagal membaca stat saat validasi ukuran file ${fileName}:`, err.message);
         }
     }
 
@@ -333,7 +312,12 @@ export async function execute(args, ctx) {
             const mediaType = ext === '.mp4' ? 'video' : 'image';
             const messageContent = {};
 
+            // Mengatur mimetype secara spesifik
+            const mimeType = ext === '.mp4' ? 'video/mp4' : ext === '.png' ? 'image/png' : 'image/jpeg';
+
             messageContent[mediaType] = { url: filePath };
+            messageContent.mimetype = mimeType;
+
             if (caption) {
                 messageContent.caption = caption;
             }
