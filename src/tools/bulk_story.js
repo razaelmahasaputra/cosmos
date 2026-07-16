@@ -166,10 +166,15 @@ export async function execute(args, ctx) {
     let failCount = 0;
     const errors = [];
 
+    // Tampilkan log inisiasi di console
+    console.log(`\n[Bulk Story] Memulai proses upload massal (${totalMedia} file)`);
+
     for (let i = 0; i < mediaFiles.length; i++) {
         const fileName = mediaFiles[i];
         const filePath = path.join(resolvedPath, fileName);
         const ext = path.extname(fileName).toLowerCase();
+        const stat = fs.statSync(filePath);
+        const fileSizeMB = (stat.size / (1024 * 1024)).toFixed(2);
 
         // Cari caption
         let caption = undefined;
@@ -187,16 +192,22 @@ export async function execute(args, ctx) {
             }
         }
 
-        // Tampilkan status pemrosesan file saat ini
+        // Tampilkan status pemrosesan file saat ini di WhatsApp
         const progressPercent = Math.round((i / totalMedia) * 100);
         const filledBars = Math.round((i / totalMedia) * 5);
         const emptyBars = 5 - filledBars;
         const progressBar = '▓'.repeat(filledBars) + '░'.repeat(emptyBars);
 
         await ctx.sock.sendMessage(ctx.jid, {
-            text: `⏳ Sedang mengunggah (${i + 1}/${totalMedia})\n[${progressBar}] ${progressPercent}%\n\n• File: ${fileName}\n• Status: Mengunggah media ke WhatsApp...`,
+            text: `⏳ Sedang mengunggah (${i + 1}/${totalMedia})\n[${progressBar}] ${progressPercent}%\n\n• File: ${fileName} (${fileSizeMB} MB)\n• Status: Mengunggah media ke WhatsApp...`,
             edit: statusInitMsg.key
         });
+
+        // Console log progress bar sebelum upload
+        const consoleBarBefore = '='.repeat(i) + ' '.repeat(totalMedia - i);
+        console.log(
+            `[Bulk Story] [${consoleBarBefore}] ${progressPercent}% | Uploading: ${fileName} (${fileSizeMB} MB)...`
+        );
 
         try {
             const mediaType = ext === '.mp4' ? 'video' : 'image';
@@ -217,7 +228,7 @@ export async function execute(args, ctx) {
         } catch (err) {
             failCount++;
             errors.push(`${fileName}: ${err.message}`);
-            console.error(`Gagal mengunggah status ${fileName}:`, err);
+            console.error(`[Bulk Story] Gagal mengunggah status ${fileName}:`, err);
         }
 
         // Update progress bar setelah file selesai diproses
@@ -231,6 +242,10 @@ export async function execute(args, ctx) {
             edit: statusInitMsg.key
         });
 
+        // Console log progress bar setelah upload selesai
+        const consoleBarAfter = '='.repeat(i + 1) + ' '.repeat(totalMedia - (i + 1));
+        console.log(`[Bulk Story] [${consoleBarAfter}] ${currentPercent}% | Finished: ${fileName} (${fileSizeMB} MB)`);
+
         // Delay 15 detik untuk media besar agar tidak rate limit / gagal sync
         if (i < mediaFiles.length - 1) {
             await new Promise((resolve) => setTimeout(resolve, 15000));
@@ -241,6 +256,8 @@ export async function execute(args, ctx) {
     if (errors.length > 0) {
         responseText += `\n\nDetail Error:\n` + errors.map((e) => `- ${e}`).join('\n');
     }
+
+    console.log(`[Bulk Story] Selesai: Berhasil ${successCount}, Gagal ${failCount}\n`);
 
     await ctx.sock.sendMessage(ctx.jid, {
         text: responseText,
