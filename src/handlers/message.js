@@ -1,5 +1,4 @@
 import { jidNormalizedUser } from '@whiskeysockets/baileys';
-import { processAI } from '../ai.js';
 import { addGroup, isGroupWhitelisted } from '../db.js';
 import { writeLog } from '../logger.js';
 import toolsHandler from '../tools/handler.js';
@@ -10,7 +9,10 @@ export async function handleMessage(sock, msg) {
     // Only process messages from ourselves (self-bot) or specific logic according to phase 4
     // Phase 4: Bot dikonfigurasi sebagai self-bot. Wajib mendengarkan pesan dari dirinya sendiri
     const isFromMe = msg.key.fromMe;
-    const jid = jidNormalizedUser(msg.key.remoteJid);
+    let jid = jidNormalizedUser(msg.key.remoteJid);
+    if (jid.endsWith('@lid') && msg.key.remoteJidAlt) {
+        jid = jidNormalizedUser(msg.key.remoteJidAlt);
+    }
 
     // Extract text
     const text =
@@ -46,6 +48,7 @@ export async function handleMessage(sock, msg) {
         const tool = toolsHandler.getTool(commandName);
         if (tool) {
             writeLog('INFO', 'Command executed', { command: commandName, jid });
+            console.log('[Message Handler] Command:', commandName, 'key details:', JSON.stringify(msg.key));
             if (jid.endsWith('@g.us')) {
                 const whitelisted = await isGroupWhitelisted(jid);
                 if (!whitelisted) return;
@@ -77,39 +80,4 @@ export async function handleMessage(sock, msg) {
         }
     }
 
-    // Example logic to trigger AI
-    const aiMatch = text.match(/^\.ai(?:\s+(.*))?$/s);
-    if (aiMatch) {
-        // Jika di grup, pastikan grup sudah di-whitelist
-        if (jid.endsWith('@g.us')) {
-            const whitelisted = await isGroupWhitelisted(jid);
-            if (!whitelisted) return;
-        }
-
-        const query = (aiMatch[1] || '').trim();
-
-        if (!query) {
-            await sock.sendMessage(
-                jid,
-                { text: 'Format salah atau query kosong. Gunakan: .ai <pertanyaan>\nContoh: .ai Siapa namamu?' },
-                { quoted: msg }
-            );
-            return;
-        }
-
-        writeLog('INFO', 'Command executed', { command: '.ai', jid, query });
-
-        // Mark as typing
-        await sock.sendPresenceUpdate('composing', jid);
-
-        try {
-            const response = await processAI(query, jid, { sock, msg, jid });
-            if (response) {
-                await sock.sendMessage(jid, { text: response }, { quoted: msg });
-            }
-        } catch (error) {
-            console.error('AI Processing Error:', error);
-            await sock.sendMessage(jid, { text: 'Terjadi kesalahan saat memproses permintaan.' }, { quoted: msg });
-        }
-    }
 }

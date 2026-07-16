@@ -5,6 +5,7 @@ import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeys
 import pino from 'pino';
 import dotenv from 'dotenv';
 import { handleMessage } from './handlers/message.js';
+import { cacheMessage, getCachedMessage } from './utils/messageCache.js';
 
 dns.setDefaultResultOrder('ipv4first');
 
@@ -27,7 +28,22 @@ async function connectToWhatsApp() {
         defaultQueryTimeoutMs: 60000,
         retryRequestDelayMs: 2000,
         maxMsgRetryCount: 15,
-        markOnlineOnConnect: true
+        markOnlineOnConnect: true,
+        getMessage: async (key) => {
+            console.log(
+                `[getMessage] Request received for key ID: ${key.id}, remoteJid: ${key.remoteJid}, fromMe: ${key.fromMe}`
+            );
+            try {
+                const cached = getCachedMessage(key.id);
+                if (cached) {
+                    console.log(`[getMessage] Found in cache for key ID: ${key.id}`);
+                    return cached;
+                }
+            } catch (err) {
+                console.error('Error in getMessage config:', err);
+            }
+            return undefined;
+        }
     });
 
     if (!sock.authState.creds.registered) {
@@ -71,7 +87,12 @@ async function connectToWhatsApp() {
 
     sock.ev.on('creds.update', saveCreds);
 
+
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
+        for (const msg of messages) {
+            cacheMessage(msg);
+        }
+
         if (type !== 'notify') return;
         for (const msg of messages) {
             try {
