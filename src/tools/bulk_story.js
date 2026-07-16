@@ -173,23 +173,13 @@ export async function execute(args, ctx) {
         const fileName = mediaFiles[i];
         const filePath = path.join(resolvedPath, fileName);
         const ext = path.extname(fileName).toLowerCase();
-        const stat = fs.statSync(filePath);
-        const fileSizeMB = (stat.size / (1024 * 1024)).toFixed(2);
 
-        // Cari caption
-        let caption = undefined;
-        if (captionsMap[fileName]) {
-            caption = captionsMap[fileName];
-        } else {
-            const baseName = path.basename(fileName, ext);
-            const txtPath = path.join(resolvedPath, `${baseName}.txt`);
-            if (fs.existsSync(txtPath)) {
-                try {
-                    caption = fs.readFileSync(txtPath, 'utf-8').trim();
-                } catch (err) {
-                    console.error(`Gagal membaca file caption pendamping ${baseName}.txt:`, err);
-                }
-            }
+        let fileSizeMB = '0.00';
+        try {
+            const stat = fs.statSync(filePath);
+            fileSizeMB = (stat.size / (1024 * 1024)).toFixed(2);
+        } catch (err) {
+            console.error(`[Bulk Story] Gagal membaca stat file ${fileName}:`, err);
         }
 
         // Tampilkan status pemrosesan file saat ini di WhatsApp
@@ -210,6 +200,22 @@ export async function execute(args, ctx) {
         );
 
         try {
+            // Cari caption
+            let caption = undefined;
+            if (captionsMap[fileName]) {
+                caption = captionsMap[fileName];
+            } else {
+                const baseName = path.basename(fileName, ext);
+                const txtPath = path.join(resolvedPath, `${baseName}.txt`);
+                if (fs.existsSync(txtPath)) {
+                    try {
+                        caption = fs.readFileSync(txtPath, 'utf-8').trim();
+                    } catch (err) {
+                        console.error(`Gagal membaca file caption pendamping ${baseName}.txt:`, err);
+                    }
+                }
+            }
+
             const mediaType = ext === '.mp4' ? 'video' : 'image';
             const messageContent = {};
 
