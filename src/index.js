@@ -1,11 +1,11 @@
-import { writeLog } from './logger.js';
+import { writeLog } from '#/logger.js';
 import { execSync } from 'child_process';
 import dns from 'dns';
 import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import dotenv from 'dotenv';
-import { handleMessage } from './handlers/message.js';
-import { cacheMessage, getCachedMessage } from './utils/messageCache.js';
+import { handleMessage } from '#/handlers/message.js';
+import { cacheMessage, getCachedMessage } from '#/utils/messageCache.js';
 
 dns.setDefaultResultOrder('ipv4first');
 

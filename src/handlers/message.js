@@ -1,7 +1,7 @@
 import { jidNormalizedUser } from '@whiskeysockets/baileys';
-import { addGroup, isGroupWhitelisted } from '../db.js';
-import { writeLog } from '../logger.js';
-import toolsHandler from '../tools/handler.js';
+import { addGroup, isGroupWhitelisted } from '#/db.js';
+import { writeLog } from '#/logger.js';
+import toolsHandler from '#/tools/handler.js';
 
 export async function handleMessage(sock, msg) {
     if (!msg.message || !msg.key.remoteJid) return;

@@ -3,6 +3,9 @@
     "version": "1.0.0",
     "description": "",
     "main": "index.js",
+    "imports": {
+        "#/*": "./src/*"
+    },
     "scripts": {
         "start": "node src/index.js",
         "lint": "node node_modules/eslint/bin/eslint.js .",

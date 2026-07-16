@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 import { downloadContentFromMessage } from '@whiskeysockets/baileys';
-import { writeLog } from '../logger.js';
+import { writeLog } from '#/logger.js';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -226,7 +226,7 @@ async function sendStickerFromBuffer(sock, jid, webpBuffer, quotedMsg) {
 
     // Cache for getMessage retry callback
     if (sentMsg?.key?.id && sentMsg?.message) {
-        const { cacheMessage } = await import('../utils/messageCache.js');
+        const { cacheMessage } = await import('#/utils/messageCache.js');
         cacheMessage(sentMsg);
         console.log('[Sticker] Sent message cached for retry decryption, id:', sentMsg.key.id);
     }

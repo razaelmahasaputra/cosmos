@@ -1,7 +1,7 @@
 import { downloadContentFromMessage } from '@whiskeysockets/baileys';
 import { Groq, toFile } from 'groq-sdk';
 import dotenv from 'dotenv';
-import { writeLog } from '../logger.js';
+import { writeLog } from '#/logger.js';
 
 dotenv.config();
 
