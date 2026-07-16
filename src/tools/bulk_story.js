@@ -143,18 +143,23 @@ export async function execute(args, ctx) {
     }
 
     // Kumpulkan statusJidList
-    await ctx.sock.sendMessage(ctx.jid, {
+    const statusInitMsg = await ctx.sock.sendMessage(ctx.jid, {
         text: `⏳ Menyiapkan daftar kontak penerima status WhatsApp...`
     });
 
     const jidList = await getStatusJidList(ctx.sock, ctx);
     if (jidList.length === 0) {
-        return `Gagal: Tidak dapat menemukan kontak penerima status WhatsApp.`;
+        await ctx.sock.sendMessage(ctx.jid, {
+            text: `❌ Gagal: Tidak dapat menemukan kontak penerima status WhatsApp.`,
+            edit: statusInitMsg.key
+        });
+        return;
     }
 
-    // Kirim status awal
+    // Kirim status awal dengan progress bar
     await ctx.sock.sendMessage(ctx.jid, {
-        text: `🚀 Mulai mengunggah ${totalMedia} story/status ke WhatsApp...\n\nEstimasi durasi jeda: 15 detik per media untuk mengoptimalkan proses upload.`
+        text: `🚀 Memulai proses unggah massal...\n[░░░░░] 0%\n\n• Menunggu antrean media pertama...`,
+        edit: statusInitMsg.key
     });
 
     let successCount = 0;
@@ -168,11 +173,9 @@ export async function execute(args, ctx) {
 
         // Cari caption
         let caption = undefined;
-        // 1. Coba dari map json
         if (captionsMap[fileName]) {
             caption = captionsMap[fileName];
         } else {
-            // 2. Coba dari file .txt pendamping
             const baseName = path.basename(fileName, ext);
             const txtPath = path.join(resolvedPath, `${baseName}.txt`);
             if (fs.existsSync(txtPath)) {
@@ -184,11 +187,21 @@ export async function execute(args, ctx) {
             }
         }
 
+        // Tampilkan status pemrosesan file saat ini
+        const progressPercent = Math.round((i / totalMedia) * 100);
+        const filledBars = Math.round((i / totalMedia) * 5);
+        const emptyBars = 5 - filledBars;
+        const progressBar = '▓'.repeat(filledBars) + '░'.repeat(emptyBars);
+
+        await ctx.sock.sendMessage(ctx.jid, {
+            text: `⏳ Sedang mengunggah (${i + 1}/${totalMedia})\n[${progressBar}] ${progressPercent}%\n\n• File: ${fileName}\n• Status: Mengunggah media ke WhatsApp...`,
+            edit: statusInitMsg.key
+        });
+
         try {
             const mediaType = ext === '.mp4' ? 'video' : 'image';
             const messageContent = {};
 
-            // Menggunakan { url: filePath } agar hemat memori RAM
             messageContent[mediaType] = { url: filePath };
             if (caption) {
                 messageContent.caption = caption;
@@ -201,24 +214,26 @@ export async function execute(args, ctx) {
             });
 
             successCount++;
-
-            // Berikan progress update ke user
-            await ctx.sock.sendMessage(ctx.jid, {
-                text: `✅ Berhasil mengunggah (${successCount}/${totalMedia}): ${fileName}`
-            });
-
-            // Delay 15 detik untuk media besar agar tidak rate limit / gagal sync
-            if (i < mediaFiles.length - 1) {
-                await new Promise((resolve) => setTimeout(resolve, 15000));
-            }
         } catch (err) {
             failCount++;
             errors.push(`${fileName}: ${err.message}`);
             console.error(`Gagal mengunggah status ${fileName}:`, err);
+        }
 
-            await ctx.sock.sendMessage(ctx.jid, {
-                text: `❌ Gagal mengunggah: ${fileName}\nDetail: ${err.message}`
-            });
+        // Update progress bar setelah file selesai diproses
+        const currentPercent = Math.round(((i + 1) / totalMedia) * 100);
+        const currentFilled = Math.round(((i + 1) / totalMedia) * 5);
+        const currentEmpty = 5 - currentFilled;
+        const currentBar = '▓'.repeat(currentFilled) + '░'.repeat(currentEmpty);
+
+        await ctx.sock.sendMessage(ctx.jid, {
+            text: `⏳ Progress unggah (${i + 1}/${totalMedia})\n[${currentBar}] ${currentPercent}%\n\n• Berhasil: ${successCount}\n• Gagal: ${failCount}`,
+            edit: statusInitMsg.key
+        });
+
+        // Delay 15 detik untuk media besar agar tidak rate limit / gagal sync
+        if (i < mediaFiles.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 15000));
         }
     }
 
@@ -227,5 +242,10 @@ export async function execute(args, ctx) {
         responseText += `\n\nDetail Error:\n` + errors.map((e) => `- ${e}`).join('\n');
     }
 
-    return responseText;
+    await ctx.sock.sendMessage(ctx.jid, {
+        text: responseText,
+        edit: statusInitMsg.key
+    });
+
+    return;
 }
