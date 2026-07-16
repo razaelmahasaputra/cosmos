@@ -69,3 +69,7 @@ auth_info_baileys/
 *.sln
 *.sw?
 .DS_Store
+
+# Temporary stickers directory
+stickers/
+

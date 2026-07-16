@@ -7,6 +7,7 @@ import os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import crypto from 'crypto';
+import { stickerQueue } from '#/utils/stickerQueue.js';
 
 const execPromise = promisify(exec);
 
@@ -46,7 +47,7 @@ async function getFFmpegPath() {
 const ALLOWED_FORMATS = ['mp4', 'gif', 'mov', 'webm', 'avi', 'mkv', '3gp'];
 const FORMAT_REGEX = /^[a-zA-Z0-9]+$/;
 
-async function convertVideoToSticker(buffer, format) {
+export async function convertVideoToSticker(buffer, format) {
     if (!FORMAT_REGEX.test(format) || !ALLOWED_FORMATS.includes(format.toLowerCase())) {
         throw new Error('Format media tidak didukung atau tidak valid.');
     }
@@ -101,7 +102,7 @@ async function convertVideoToSticker(buffer, format) {
     }
 }
 
-async function convertGifToStickerSharp(buffer) {
+export async function convertGifToStickerSharp(buffer) {
     let quality = 70;
     let webpBuffer = await sharp(buffer, { animated: true })
         .resize(512, 512, { fit: 'cover' })
@@ -121,12 +122,12 @@ async function convertGifToStickerSharp(buffer) {
  * Build a TIFF/EXIF binary blob containing WhatsApp sticker metadata.
  * Uses tag 0x5741 ("WA") to store JSON with pack info.
  */
-function createStickerExif(packName = '', author = 'by Razael Saputra') {
+export function createStickerExif(packName = 'WAF Sticker', author = 'by Razael Saputra') {
     const json = JSON.stringify({
         'sticker-pack-id': 'com.waf.bot',
-        'sticker-pack-name': packName,
+        'sticker-pack-name': packName || 'WAF Sticker',
         'sticker-pack-publisher': author,
-        emojis: ['']
+        emojis: ['🤖']
     });
     const jsonBuf = Buffer.from(json, 'utf-8');
 
@@ -161,7 +162,7 @@ function createStickerExif(packName = '', author = 'by Razael Saputra') {
  * Inject WhatsApp sticker EXIF metadata into a WebP buffer using the
  * system `webpmux` CLI tool, then send it and cache for retry decryption.
  */
-async function sendStickerFromBuffer(sock, jid, webpBuffer, quotedMsg) {
+export async function sendStickerFromBuffer(sock, jid, webpBuffer, quotedMsg, packName, author) {
     // Validate WebP header (RIFF....WEBP)
     if (webpBuffer.length < 12) {
         throw new Error(`Buffer terlalu kecil (${webpBuffer.length} bytes), bukan file WebP valid.`);
@@ -184,7 +185,7 @@ async function sendStickerFromBuffer(sock, jid, webpBuffer, quotedMsg) {
     let finalBuffer = webpBuffer; // fallback if webpmux fails
 
     try {
-        const exifBlob = createStickerExif();
+        const exifBlob = createStickerExif(packName, author);
         await fs.promises.writeFile(inputPath, webpBuffer);
         await fs.promises.writeFile(exifPath, exifBlob);
 
@@ -285,71 +286,82 @@ export async function execute(_, ctx) {
         return 'Gagal: Kirim atau reply gambar, video, atau GIF dengan perintah ini.';
     }
 
-    try {
-        let buffer;
-        let mimeType;
-        let ext = 'mp4';
+    return stickerQueue.add(async () => {
+        try {
+            let buffer;
+            let mimeType;
+            let ext = 'mp4';
 
-        if (imageMessage) {
-            const stream = await downloadContentFromMessage(imageMessage, 'image');
-            let chunks = [];
-            for await (const chunk of stream) {
-                chunks.push(chunk);
+            if (imageMessage) {
+                const stream = await downloadContentFromMessage(imageMessage, 'image');
+                let chunks = [];
+                for await (const chunk of stream) {
+                    chunks.push(chunk);
+                }
+                buffer = Buffer.concat(chunks);
+
+                let webpBuffer = await sharp(buffer)
+                    .resize(512, 512, { fit: 'cover' })
+                    .webp({ quality: 80 })
+                    .toBuffer();
+
+                if (webpBuffer.length > 100 * 1024) {
+                    webpBuffer = await sharp(buffer)
+                        .resize(512, 512, { fit: 'cover' })
+                        .webp({ quality: 50 })
+                        .toBuffer();
+                }
+                if (webpBuffer.length > 100 * 1024) {
+                    webpBuffer = await sharp(buffer)
+                        .resize(512, 512, { fit: 'cover' })
+                        .webp({ quality: 30 })
+                        .toBuffer();
+                }
+
+                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg);
+                return 'Sticker berhasil dibuat dan dikirim.';
             }
-            buffer = Buffer.concat(chunks);
 
-            let webpBuffer = await sharp(buffer).resize(512, 512, { fit: 'cover' }).webp({ quality: 80 }).toBuffer();
-
-            if (webpBuffer.length > 100 * 1024) {
-                webpBuffer = await sharp(buffer).resize(512, 512, { fit: 'cover' }).webp({ quality: 50 }).toBuffer();
+            if (videoMessage) {
+                const stream = await downloadContentFromMessage(videoMessage, 'video');
+                let chunks = [];
+                for await (const chunk of stream) {
+                    chunks.push(chunk);
+                }
+                buffer = Buffer.concat(chunks);
+                mimeType = videoMessage.mimetype || 'video/mp4';
+                ext = mimeType.split('/')[1] || 'mp4';
+            } else if (isGifDocument) {
+                const stream = await downloadContentFromMessage(documentMessage, 'document');
+                let chunks = [];
+                for await (const chunk of stream) {
+                    chunks.push(chunk);
+                }
+                buffer = Buffer.concat(chunks);
+                mimeType = 'image/gif';
+                ext = 'gif';
             }
-            if (webpBuffer.length > 100 * 1024) {
-                webpBuffer = await sharp(buffer).resize(512, 512, { fit: 'cover' }).webp({ quality: 30 }).toBuffer();
+
+            if (ext) {
+                ext = ext.split(';')[0].trim();
             }
 
-            await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg);
-            return 'Sticker berhasil dibuat dan dikirim.';
+            const ffmpegCmd = await getFFmpegPath();
+            if (ffmpegCmd) {
+                const webpBuffer = await convertVideoToSticker(buffer, ext);
+                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg);
+                return 'Sticker berhasil dibuat dan dikirim.';
+            } else if (mimeType === 'image/gif' || ext === 'gif') {
+                const webpBuffer = await convertGifToStickerSharp(buffer);
+                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg);
+                return 'Sticker berhasil dibuat dan dikirim.';
+            } else {
+                return 'Gagal: FFmpeg tidak terinstal di sistem untuk memproses video.';
+            }
+        } catch (err) {
+            console.error(err);
+            writeLog('ERROR', 'Error in sticker_maker tool execution', err);
+            return `Gagal: Terjadi kesalahan saat memproses media menjadi stiker. Detail: ${err.message}`;
         }
-
-        if (videoMessage) {
-            const stream = await downloadContentFromMessage(videoMessage, 'video');
-            let chunks = [];
-            for await (const chunk of stream) {
-                chunks.push(chunk);
-            }
-            buffer = Buffer.concat(chunks);
-            mimeType = videoMessage.mimetype || 'video/mp4';
-            ext = mimeType.split('/')[1] || 'mp4';
-        } else if (isGifDocument) {
-            const stream = await downloadContentFromMessage(documentMessage, 'document');
-            let chunks = [];
-            for await (const chunk of stream) {
-                chunks.push(chunk);
-            }
-            buffer = Buffer.concat(chunks);
-            mimeType = 'image/gif';
-            ext = 'gif';
-        }
-
-        if (ext) {
-            ext = ext.split(';')[0].trim();
-        }
-
-        const ffmpegCmd = await getFFmpegPath();
-        if (ffmpegCmd) {
-            const webpBuffer = await convertVideoToSticker(buffer, ext);
-            await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg);
-            return 'Sticker berhasil dibuat dan dikirim.';
-        } else if (mimeType === 'image/gif' || ext === 'gif') {
-            const webpBuffer = await convertGifToStickerSharp(buffer);
-            await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg);
-            return 'Sticker berhasil dibuat dan dikirim.';
-        } else {
-            return 'Gagal: FFmpeg tidak terinstal di sistem untuk memproses video.';
-        }
-    } catch (err) {
-        console.error(err);
-        writeLog('ERROR', 'Error in sticker_maker tool execution', err);
-        return `Gagal: Terjadi kesalahan saat memproses media menjadi stiker. Detail: ${err.message}`;
-    }
+    });
 }

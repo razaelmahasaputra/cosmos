@@ -87,7 +87,6 @@ async function connectToWhatsApp() {
 
     sock.ev.on('creds.update', saveCreds);
 
-
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
         for (const msg of messages) {
             cacheMessage(msg);

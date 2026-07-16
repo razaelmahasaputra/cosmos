@@ -8,8 +8,6 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
-
-
 export async function addGroup(jid) {
     if (!supabase) return false;
     try {
@@ -32,4 +30,3 @@ export async function isGroupWhitelisted(jid) {
         return false;
     }
 }
-
