@@ -119,50 +119,9 @@ export async function convertGifToStickerSharp(buffer) {
 }
 
 /**
- * Build a TIFF/EXIF binary blob containing WhatsApp sticker metadata.
- * Uses tag 0x5741 ("WA") to store JSON with pack info.
+ * Send a WebP sticker buffer directly to WhatsApp and cache for retry decryption.
  */
-export function createStickerExif(packName = 'WAF Sticker', author = 'by Razael Saputra') {
-    const json = JSON.stringify({
-        'sticker-pack-id': 'com.waf.bot',
-        'sticker-pack-name': packName || 'WAF Sticker',
-        'sticker-pack-publisher': author,
-        emojis: ['🤖']
-    });
-    const jsonBuf = Buffer.from(json, 'utf-8');
-
-    // TIFF header (8) + IFD count (2) + 1 IFD entry (12) + next IFD ptr (4) = 26 bytes header
-    const headerSize = 26;
-    const exif = Buffer.alloc(headerSize + jsonBuf.length);
-
-    // TIFF header — little-endian
-    exif.write('II', 0); // byte order mark
-    exif.writeUInt16LE(0x002a, 2); // TIFF magic number
-    exif.writeUInt32LE(8, 4); // offset to IFD0
-
-    // IFD0
-    exif.writeUInt16LE(1, 8); // number of directory entries
-
-    // IFD Entry: tag 0x5741
-    exif.writeUInt16LE(0x5741, 10); // tag (WhatsApp sticker metadata)
-    exif.writeUInt16LE(7, 12); // data type = UNDEFINED
-    exif.writeUInt32LE(jsonBuf.length, 14); // data count
-    exif.writeUInt32LE(headerSize, 18); // offset to data
-
-    // Next IFD offset (none)
-    exif.writeUInt32LE(0, 22);
-
-    // JSON payload
-    jsonBuf.copy(exif, headerSize);
-
-    return exif;
-}
-
-/**
- * Inject WhatsApp sticker EXIF metadata into a WebP buffer using the
- * system `webpmux` CLI tool, then send it and cache for retry decryption.
- */
-export async function sendStickerFromBuffer(sock, jid, webpBuffer, quotedMsg, packName, author) {
+export async function sendStickerFromBuffer(sock, jid, webpBuffer, quotedMsg) {
     // Validate WebP header (RIFF....WEBP)
     if (webpBuffer.length < 12) {
         throw new Error(`Buffer terlalu kecil (${webpBuffer.length} bytes), bukan file WebP valid.`);
@@ -175,39 +134,8 @@ export async function sendStickerFromBuffer(sock, jid, webpBuffer, quotedMsg, pa
 
     console.log(`[Sticker] WebP buffer valid, size: ${webpBuffer.length} bytes`);
 
-    // Inject EXIF metadata via webpmux
-    const uid = crypto.randomUUID();
-    const tempDir = os.tmpdir();
-    const inputPath = path.join(tempDir, `stk_in_${uid}.webp`);
-    const exifPath = path.join(tempDir, `stk_exif_${uid}.bin`);
-    const outputPath = path.join(tempDir, `stk_out_${uid}.webp`);
-
-    let finalBuffer = webpBuffer; // fallback if webpmux fails
-
-    try {
-        const exifBlob = createStickerExif(packName, author);
-        await fs.promises.writeFile(inputPath, webpBuffer);
-        await fs.promises.writeFile(exifPath, exifBlob);
-
-        await execPromise(`webpmux -set exif "${exifPath}" "${inputPath}" -o "${outputPath}"`);
-
-        finalBuffer = await fs.promises.readFile(outputPath);
-        console.log(`[Sticker] EXIF injected, final size: ${finalBuffer.length} bytes`);
-    } catch (exifErr) {
-        console.error('[Sticker] EXIF injection failed (sending without EXIF):', exifErr.message);
-    } finally {
-        // Cleanup temp files
-        for (const p of [inputPath, exifPath, outputPath]) {
-            try {
-                if (fs.existsSync(p)) await fs.promises.unlink(p);
-            } catch {
-                // ignore
-            }
-        }
-    }
-
     // Send sticker
-    const sentMsg = await sock.sendMessage(jid, { sticker: finalBuffer }, { quoted: quotedMsg });
+    const sentMsg = await sock.sendMessage(jid, { sticker: webpBuffer }, { quoted: quotedMsg });
 
     console.log('[Sticker] sendMessage result key:', JSON.stringify(sentMsg?.key));
     if (sentMsg?.message?.stickerMessage) {

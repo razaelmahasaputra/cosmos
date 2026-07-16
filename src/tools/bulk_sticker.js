@@ -25,8 +25,6 @@ export async function execute(args, ctx) {
 
     // Parse arguments
     const folderName = argsStr.trim() || 'sticker';
-    const packName = folderName;
-    const author = 'by Razael Saputra';
 
     const resolvedPath = path.resolve(process.cwd(), folderName);
     if (!resolvedPath.startsWith(process.cwd())) {
@@ -129,7 +127,7 @@ export async function execute(args, ctx) {
                 }
 
                 // Send the sticker
-                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, null, packName, author);
+                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, null);
             });
             successCount++;
 
