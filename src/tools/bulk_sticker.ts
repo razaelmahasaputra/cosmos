@@ -9,6 +9,7 @@ export const definition: ToolDefinition = {
     name: 'bulk_sticker',
     aliases: ['.bulksticker', '.bs', '.bulkstiker'],
     description: 'Membuat stiker secara massal dari sebuah folder.',
+    owner: true,
     parameters: {
         type: 'object',
         properties: {

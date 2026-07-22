@@ -4,6 +4,7 @@ export interface ToolDefinition {
     name: string;
     aliases?: string[];
     description: string;
+    owner?: boolean;
     parameters?: {
         type: string;
         properties?: Record<string, any>;

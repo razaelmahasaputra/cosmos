@@ -82,6 +82,11 @@ class ToolsHandler {
         return null;
     }
 
+    isOwnerOnly(nameOrAlias: string): boolean {
+        const tool = this.getTool(nameOrAlias);
+        return tool?.definition?.owner === true;
+    }
+
     getGroqTools(): Array<{ type: string; function: any }> {
         const groqTools: Array<{ type: string; function: any }> = [];
         for (const toolModule of this.tools.values()) {

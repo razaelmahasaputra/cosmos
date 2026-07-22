@@ -86,6 +86,7 @@ export const definition: ToolDefinition = {
     name: 'bulk_story',
     aliases: ['.bulkstory', '.bsy', '.bstory', '.bulkstatus'],
     description: 'Mengunggah gambar atau video secara massal ke Status/Story WhatsApp.',
+    owner: true,
     parameters: {
         type: 'object',
         properties: {
