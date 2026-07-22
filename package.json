@@ -5,10 +5,11 @@
     "main": "src/index.ts",
     "type": "module",
     "imports": {
-        "#/*": "./src/*"
+        "#/*": "./dist/*"
     },
     "scripts": {
-        "start": "tsx src/index.ts",
+        "dev": "tsx src/index.ts",
+        "start": "node dist/index.js",
         "build": "tsc",
         "typecheck": "tsc --noEmit",
         "lint": "eslint .",

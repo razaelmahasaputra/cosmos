@@ -8,8 +8,9 @@ class ToolsHandler {
     private aliases = new Map<string, string>();
 
     async loadTools(): Promise<void> {
-        const toolsPath = path.resolve(process.cwd(), 'src', 'tools');
-        if (!fs.existsSync(toolsPath)) return;
+        const distToolsPath = path.resolve(process.cwd(), 'dist', 'tools');
+        const srcToolsPath = path.resolve(process.cwd(), 'src', 'tools');
+        const toolsPath = fs.existsSync(distToolsPath) ? distToolsPath : srcToolsPath;
 
         const files = fs
             .readdirSync(toolsPath)
