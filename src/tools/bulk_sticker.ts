@@ -3,8 +3,9 @@ import path from 'path';
 import sharp from 'sharp';
 import { convertVideoToSticker, convertGifToStickerSharp, sendStickerFromBuffer } from './sticker_maker.js';
 import { stickerQueue } from '#/utils/stickerQueue.js';
+import { ToolDefinition, ToolContext } from './types.js';
 
-export const definition = {
+export const definition: ToolDefinition = {
     name: 'bulk_sticker',
     aliases: ['.bulksticker', '.bs', '.bulkstiker'],
     description: 'Membuat stiker secara massal dari sebuah folder.',
@@ -20,7 +21,7 @@ export const definition = {
     }
 };
 
-export async function execute(args, ctx) {
+export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string> {
     const argsStr = args.argsStr || '';
 
     // Parse arguments
@@ -42,10 +43,10 @@ export async function execute(args, ctx) {
     }
 
     // Read files in folder
-    let files;
+    let files: string[];
     try {
         files = fs.readdirSync(resolvedPath);
-    } catch (err) {
+    } catch (err: any) {
         return `Gagal membaca folder: ${err.message}`;
     }
 
@@ -78,7 +79,7 @@ export async function execute(args, ctx) {
 
     let successCount = 0;
     let failCount = 0;
-    const errors = [];
+    const errors: string[] = [];
 
     for (let i = 0; i < mediaFiles.length; i++) {
         const fileName = mediaFiles[i];
@@ -88,7 +89,7 @@ export async function execute(args, ctx) {
         try {
             await stickerQueue.add(async () => {
                 const buffer = fs.readFileSync(filePath);
-                let webpBuffer;
+                let webpBuffer: Buffer;
 
                 if (ext === '.webp') {
                     // If already webp, just use it
@@ -135,7 +136,7 @@ export async function execute(args, ctx) {
             if (i < mediaFiles.length - 1) {
                 await new Promise((resolve) => setTimeout(resolve, 1500));
             }
-        } catch (err) {
+        } catch (err: any) {
             failCount++;
             errors.push(`${fileName}: ${err.message}`);
             console.error(`Gagal memproses ${fileName}:`, err);

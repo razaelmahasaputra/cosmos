@@ -1,0 +1,5 @@
+allowBuilds:
+    '@whiskeysockets/baileys': true
+    esbuild: true
+    ffmpeg-static: true
+    protobufjs: true

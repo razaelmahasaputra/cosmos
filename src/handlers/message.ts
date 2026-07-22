@@ -1,9 +1,9 @@
-import { jidNormalizedUser } from '@whiskeysockets/baileys';
+import { jidNormalizedUser, WASocket, WAMessage } from '@whiskeysockets/baileys';
 import { addGroup, isGroupWhitelisted } from '#/db.js';
 import { writeLog } from '#/logger.js';
 import toolsHandler from '#/tools/handler.js';
 
-export async function handleMessage(sock, msg) {
+export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<void> {
     if (!msg.message || !msg.key.remoteJid) return;
 
     console.log('[DEBUG] Message received:', {
@@ -13,11 +13,10 @@ export async function handleMessage(sock, msg) {
     });
 
     // Only process messages from ourselves (self-bot) or specific logic according to phase 4
-    // Phase 4: Bot dikonfigurasi sebagai self-bot. Wajib mendengarkan pesan dari dirinya sendiri
     const isFromMe = msg.key.fromMe;
     let jid = jidNormalizedUser(msg.key.remoteJid);
-    if (jid.endsWith('@lid') && msg.key.remoteJidAlt) {
-        jid = jidNormalizedUser(msg.key.remoteJidAlt);
+    if (jid.endsWith('@lid') && (msg.key as any).remoteJidAlt) {
+        jid = jidNormalizedUser((msg.key as any).remoteJidAlt);
     }
 
     // Extract text
@@ -60,7 +59,7 @@ export async function handleMessage(sock, msg) {
                 if (!whitelisted) return;
             }
 
-            let args = {};
+            let args: Record<string, any> = {};
             const props = tool.definition?.parameters?.properties;
             if (props) {
                 const keys = Object.keys(props);
@@ -77,7 +76,7 @@ export async function handleMessage(sock, msg) {
 
             await sock.sendPresenceUpdate('composing', jid);
             const result = await toolsHandler.execute(commandName, args, { sock, msg, jid });
-            if (result) {
+            if (result && typeof result === 'string') {
                 if (result.startsWith('Gagal') || !result.includes('berhasil dibuat')) {
                     await sock.sendMessage(jid, { text: result }, { quoted: msg });
                 }

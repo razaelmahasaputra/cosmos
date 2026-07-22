@@ -1,22 +1,29 @@
 import fs from 'fs';
 import path from 'path';
+import { WASocket } from '@whiskeysockets/baileys';
+
+export interface LyricLine {
+    timeMs: number;
+    text: string;
+}
+
+export interface LyricsSession {
+    timers: NodeJS.Timeout[];
+    songName: string;
+    speedMultiplier: number;
+    startTime: number;
+}
 
 // Store active playbacks by JID
-// Key: JID
-// Value: { timers: Timeout[], songName: string, speedMultiplier: number, startTime: number }
-const activeSessions = new Map();
+const activeSessions = new Map<string, LyricsSession>();
 
 /**
  * Parses LRC / TXT lyrics file to extract timestamps and text.
  * Supported format: [mm:ss.xx] Lyric text or [mm:ss:xx] Lyric text or [mm:ss] Lyric text.
- * Matches: [01:23.45] text -> minutes=1, seconds=23, ms=450
- *
- * @param {string} content
- * @returns {Array<{timeMs: number, text: string}>}
  */
-export function parseLyrics(content) {
+export function parseLyrics(content: string): LyricLine[] {
     const lines = content.split(/\r?\n/);
-    const parsed = [];
+    const parsed: LyricLine[] = [];
     const regex = /\[(\d{2}):(\d{2})(?:[.:](\d{2,3}))?\](.*)/;
 
     for (const line of lines) {
@@ -49,14 +56,8 @@ export function parseLyrics(content) {
 
 /**
  * Starts playing lyrics for a given JID.
- *
- * @param {string} jid
- * @param {import('@whiskeysockets/baileys').WASocket} sock
- * @param {string} songName
- * @param {number} speedMultiplier
- * @returns {Promise<string>} status message
  */
-export async function playLyrics(jid, sock, songName, speedMultiplier = 2) {
+export async function playLyrics(jid: string, sock: WASocket, songName: string, speedMultiplier = 2): Promise<string> {
     // 1. Validation
     if (!songName) {
         return 'Gagal: Nama file lirik harus ditentukan. Contoh: .playlyrics sample';
@@ -84,7 +85,7 @@ export async function playLyrics(jid, sock, songName, speedMultiplier = 2) {
         return `Gagal: File lirik "${songName}" tidak ditemukan di direktori lyrics/.`;
     }
 
-    let content;
+    let content: string;
     try {
         content = fs.readFileSync(filePath, 'utf-8');
     } catch (err) {
@@ -104,7 +105,7 @@ export async function playLyrics(jid, sock, songName, speedMultiplier = 2) {
 
     // 3. Create new session
     const startTime = Date.now();
-    const session = {
+    const session: LyricsSession = {
         timers: [],
         songName,
         speedMultiplier,
@@ -176,12 +177,8 @@ export async function playLyrics(jid, sock, songName, speedMultiplier = 2) {
 
 /**
  * Stops playing lyrics for a given JID.
- *
- * @param {string} jid
- * @param {import('@whiskeysockets/baileys').WASocket} sock
- * @returns {Promise<string>} status message
  */
-export async function stopLyrics(jid, sock) {
+export async function stopLyrics(jid: string, sock: WASocket): Promise<string> {
     const session = activeSessions.get(jid);
     if (!session) {
         return 'Gagal: Tidak ada pemutaran lirik yang sedang berlangsung di chat ini.';

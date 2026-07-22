@@ -1,6 +1,7 @@
 import { playLyrics } from '#/utils/lyricsPlayer.js';
+import { ToolDefinition, ToolContext } from './types.js';
 
-export const definition = {
+export const definition: ToolDefinition = {
     name: 'playlyrics',
     aliases: ['.playlyrics', '.plyrics'],
     description: 'Memulai pemutaran lirik otomatis untuk file lirik (.lrc atau .txt) yang berada di folder lyrics/.',
@@ -16,13 +17,13 @@ export const definition = {
     }
 };
 
-export async function execute(args, ctx) {
-    const query = args.query ? args.query.trim() : '';
+export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string> {
+    const query = args.query ? String(args.query).trim() : '';
     if (!query) {
         return "Gagal: Format perintah salah. Gunakan: `.playlyrics 'nama file' | [multiplier]`";
     }
 
-    let songName;
+    let songName: string;
     let multiplierStr = '';
 
     // 1. Check if pipe separator exists

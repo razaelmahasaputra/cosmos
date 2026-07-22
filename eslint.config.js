@@ -1,8 +1,10 @@
 import js from '@eslint/js';
+import ts from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default [
     js.configs.recommended,
+    ...ts.configs.recommended,
     eslintConfigPrettier,
     {
         languageOptions: {
@@ -16,6 +18,16 @@ export default [
                 clearTimeout: 'readonly',
                 Buffer: 'readonly'
             }
+        },
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off',
+            '@typescript-eslint/no-unused-vars': [
+                'error',
+                {
+                    argsIgnorePattern: '^_',
+                    varsIgnorePattern: '^_'
+                }
+            ]
         }
     }
 ];

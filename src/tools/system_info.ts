@@ -1,6 +1,7 @@
 import os from 'os';
+import { ToolDefinition, ToolContext } from './types.js';
 
-export const definition = {
+export const definition: ToolDefinition = {
     name: 'system_info',
     aliases: ['.ping', '.stats', '.status', '.speed'],
     description: 'Menampilkan informasi spesifikasi server, bot, dan latensi.',
@@ -11,12 +12,12 @@ export const definition = {
     }
 };
 
-function formatBytes(bytes) {
+function formatBytes(bytes: number): string {
     const gb = bytes / (1024 * 1024 * 1024);
     return `${gb.toFixed(2)} GB`;
 }
 
-function formatUptime(seconds) {
+function formatUptime(seconds: number): string {
     const d = Math.floor(seconds / (3600 * 24));
     const h = Math.floor((seconds % (3600 * 24)) / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -24,7 +25,7 @@ function formatUptime(seconds) {
     return `${d > 0 ? `${d}d ` : ''}${h > 0 ? `${h}h ` : ''}${m > 0 ? `${m}m ` : ''}${s}s`;
 }
 
-export async function execute(_, ctx) {
+export async function execute(_args: Record<string, any>, ctx: ToolContext): Promise<string> {
     const systemUptime = formatUptime(os.uptime());
     const botUptime = formatUptime(process.uptime());
     const cpus = os.cpus();
@@ -37,14 +38,15 @@ export async function execute(_, ctx) {
     let latencyStr = 'Tidak diketahui';
     if (ctx && ctx.msg && ctx.msg.messageTimestamp) {
         let timestampVal = 0;
-        if (typeof ctx.msg.messageTimestamp === 'object' && ctx.msg.messageTimestamp !== null) {
-            if (typeof ctx.msg.messageTimestamp.toNumber === 'function') {
-                timestampVal = ctx.msg.messageTimestamp.toNumber();
+        const msgTs = ctx.msg.messageTimestamp as any;
+        if (typeof msgTs === 'object' && msgTs !== null) {
+            if (typeof msgTs.toNumber === 'function') {
+                timestampVal = msgTs.toNumber();
             } else {
-                timestampVal = Number(ctx.msg.messageTimestamp.low ?? ctx.msg.messageTimestamp.unsigned ?? 0);
+                timestampVal = Number(msgTs.low ?? msgTs.unsigned ?? 0);
             }
-        } else if (typeof ctx.msg.messageTimestamp === 'number' || typeof ctx.msg.messageTimestamp === 'string') {
-            timestampVal = Number(ctx.msg.messageTimestamp);
+        } else if (typeof msgTs === 'number' || typeof msgTs === 'string') {
+            timestampVal = Number(msgTs);
         }
 
         if (timestampVal > 0) {

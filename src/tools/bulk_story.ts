@@ -5,20 +5,21 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import crypto from 'crypto';
 import os from 'os';
-import { jidNormalizedUser } from '@whiskeysockets/baileys';
+import { jidNormalizedUser, WASocket } from '@whiskeysockets/baileys';
+import { ToolDefinition, ToolContext } from './types.js';
 
 const execPromise = promisify(exec);
 
 // Deteksi path FFmpeg secara dinamis
-let ffmpegStaticPath = null;
+let ffmpegStaticPath: string | null = null;
 try {
     const ffmpegStatic = await import('ffmpeg-static');
-    ffmpegStaticPath = ffmpegStatic.default || ffmpegStatic;
+    ffmpegStaticPath = (ffmpegStatic as any).default || ffmpegStatic;
 } catch {
     // Platform Android / Termux
 }
 
-async function getFFmpegPath() {
+async function getFFmpegPath(): Promise<string | null> {
     if (ffmpegStaticPath) {
         try {
             await execPromise(`"${ffmpegStaticPath}" -version`);
@@ -41,7 +42,7 @@ async function getFFmpegPath() {
     }
 }
 
-async function generateImageThumbnail(imagePath) {
+async function generateImageThumbnail(imagePath: string): Promise<Buffer | undefined> {
     try {
         const buffer = fs.readFileSync(imagePath);
         return await sharp(buffer).resize(96, 96, { fit: 'cover' }).jpeg({ quality: 50 }).toBuffer();
@@ -51,7 +52,7 @@ async function generateImageThumbnail(imagePath) {
     }
 }
 
-async function generateVideoThumbnail(videoPath, ffmpegCmd) {
+async function generateVideoThumbnail(videoPath: string, ffmpegCmd: string | null): Promise<Buffer | undefined> {
     if (!ffmpegCmd) return undefined;
     const tempDir = os.tmpdir();
     const outputPath = path.join(tempDir, `temp_thumb_${crypto.randomUUID()}.jpg`);
@@ -64,7 +65,7 @@ async function generateVideoThumbnail(videoPath, ffmpegCmd) {
             const buffer = fs.readFileSync(outputPath);
             try {
                 fs.unlinkSync(outputPath);
-            } catch (e) {
+            } catch (e: any) {
                 console.warn('[Bulk Story] Gagal menghapus file temp:', e.message);
             }
 
@@ -74,14 +75,14 @@ async function generateVideoThumbnail(videoPath, ffmpegCmd) {
         console.error('[Bulk Story] Gagal membuat thumbnail video:', err);
         try {
             if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
-        } catch (e) {
+        } catch (e: any) {
             console.warn('[Bulk Story] Gagal menghapus file temp:', e.message);
         }
     }
     return undefined;
 }
 
-export const definition = {
+export const definition: ToolDefinition = {
     name: 'bulk_story',
     aliases: ['.bulkstory', '.bsy', '.bstory', '.bulkstatus'],
     description: 'Mengunggah gambar atau video secara massal ke Status/Story WhatsApp.',
@@ -97,8 +98,8 @@ export const definition = {
     }
 };
 
-async function getStatusJidList(sock, ctx) {
-    const jids = new Set();
+async function getStatusJidList(sock: WASocket, ctx: ToolContext): Promise<string[]> {
+    const jids = new Set<string>();
 
     // Log detail user untuk debugging identifikasi JID/LID
     console.log('[Bulk Story] Debug sock.user:', JSON.stringify(sock.user));
@@ -110,8 +111,8 @@ async function getStatusJidList(sock, ctx) {
     }
 
     // 2. Tambahkan LID diri sendiri (sangat krusial untuk sinkronisasi status di akun ber-LID)
-    if (sock.user?.lid) {
-        jids.add(jidNormalizedUser(sock.user.lid));
+    if ((sock.user as any)?.lid) {
+        jids.add(jidNormalizedUser((sock.user as any).lid));
     }
 
     // 3. Tambahkan JID/LID pengirim perintah
@@ -125,8 +126,8 @@ async function getStatusJidList(sock, ctx) {
     }
 
     // 5. Tambahkan remoteJidAlt dari pesan jika tersedia
-    if (ctx.msg?.key?.remoteJidAlt) {
-        jids.add(jidNormalizedUser(ctx.msg.key.remoteJidAlt));
+    if ((ctx.msg?.key as any)?.remoteJidAlt) {
+        jids.add(jidNormalizedUser((ctx.msg.key as any).remoteJidAlt));
     }
 
     const finalJids = Array.from(jids);
@@ -134,12 +135,12 @@ async function getStatusJidList(sock, ctx) {
     return finalJids;
 }
 
-export async function execute(args, ctx) {
+export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string | void> {
     const argsStr = args.argsStr || '';
     const folderName = argsStr.trim() || 'story';
 
     // Mendukung folder absolut (local storage) maupun folder relatif di dalam direktori bot
-    let resolvedPath;
+    let resolvedPath: string;
     if (path.isAbsolute(folderName)) {
         resolvedPath = folderName;
     } else {
@@ -160,10 +161,10 @@ export async function execute(args, ctx) {
     }
 
     // Membaca file di folder
-    let files;
+    let files: string[];
     try {
         files = fs.readdirSync(resolvedPath);
-    } catch (err) {
+    } catch (err: any) {
         return `Gagal membaca folder: ${err.message}`;
     }
 
@@ -183,7 +184,7 @@ export async function execute(args, ctx) {
     // Memeriksa batasan ukuran file (Maksimal Video 50MB, Gambar 10MB)
     const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
     const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
-    const oversizedFiles = [];
+    const oversizedFiles: string[] = [];
 
     for (const fileName of mediaFiles) {
         const filePath = path.join(resolvedPath, fileName);
@@ -196,7 +197,7 @@ export async function execute(args, ctx) {
             } else if (['.jpg', '.jpeg', '.png'].includes(ext) && stat.size > MAX_IMAGE_SIZE) {
                 oversizedFiles.push(`${fileName} (${(stat.size / (1024 * 1024)).toFixed(1)}MB > 10MB)`);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(`[Bulk Story] Gagal membaca stat saat validasi ukuran file ${fileName}:`, err.message);
         }
     }
@@ -206,7 +207,7 @@ export async function execute(args, ctx) {
     }
 
     // Membaca metadata / caption jika ada
-    let captionsMap = {};
+    let captionsMap: Record<string, string> = {};
     const captionsJsonPath = path.join(resolvedPath, 'captions.json');
     const metadataJsonPath = path.join(resolvedPath, 'metadata.json');
 
@@ -231,22 +232,26 @@ export async function execute(args, ctx) {
 
     const jidList = await getStatusJidList(ctx.sock, ctx);
     if (jidList.length === 0) {
-        await ctx.sock.sendMessage(ctx.jid, {
-            text: `❌ Gagal: Tidak dapat menemukan kontak penerima status WhatsApp.`,
-            edit: statusInitMsg.key
-        });
+        if (statusInitMsg?.key) {
+            await ctx.sock.sendMessage(ctx.jid, {
+                text: `❌ Gagal: Tidak dapat menemukan kontak penerima status WhatsApp.`,
+                edit: statusInitMsg.key
+            });
+        }
         return;
     }
 
     // Kirim status awal dengan progress bar
-    await ctx.sock.sendMessage(ctx.jid, {
-        text: `🚀 Memulai proses unggah massal...\n[░░░░░] 0%\n\n• Menunggu antrean media pertama...`,
-        edit: statusInitMsg.key
-    });
+    if (statusInitMsg?.key) {
+        await ctx.sock.sendMessage(ctx.jid, {
+            text: `🚀 Memulai proses unggah massal...\n[░░░░░] 0%\n\n• Menunggu antrean media pertama...`,
+            edit: statusInitMsg.key
+        });
+    }
 
     let successCount = 0;
     let failCount = 0;
-    const errors = [];
+    const errors: string[] = [];
 
     // Deteksi path FFmpeg sebelum loop dimulai
     const ffmpegCmd = await getFFmpegPath();
@@ -273,10 +278,12 @@ export async function execute(args, ctx) {
         const emptyBars = 5 - filledBars;
         const progressBar = '▓'.repeat(filledBars) + '░'.repeat(emptyBars);
 
-        await ctx.sock.sendMessage(ctx.jid, {
-            text: `⏳ Sedang mengunggah (${i + 1}/${totalMedia})\n[${progressBar}] ${progressPercent}%\n\n• File: ${fileName} (${fileSizeMB} MB)\n• Status: Mengunggah media ke WhatsApp...`,
-            edit: statusInitMsg.key
-        });
+        if (statusInitMsg?.key) {
+            await ctx.sock.sendMessage(ctx.jid, {
+                text: `⏳ Sedang mengunggah (${i + 1}/${totalMedia})\n[${progressBar}] ${progressPercent}%\n\n• File: ${fileName} (${fileSizeMB} MB)\n• Status: Mengunggah media ke WhatsApp...`,
+                edit: statusInitMsg.key
+            });
+        }
 
         // Console log progress bar sebelum upload
         const consoleBarBefore = '='.repeat(i) + ' '.repeat(totalMedia - i);
@@ -286,7 +293,7 @@ export async function execute(args, ctx) {
 
         try {
             // Cari caption
-            let caption = undefined;
+            let caption: string | undefined = undefined;
             if (captionsMap[fileName]) {
                 caption = captionsMap[fileName];
             } else {
@@ -302,7 +309,7 @@ export async function execute(args, ctx) {
             }
 
             // Membuat thumbnail untuk gambar atau video
-            let thumbnail = undefined;
+            let thumbnail: Buffer | undefined = undefined;
             if (ext === '.mp4') {
                 thumbnail = await generateVideoThumbnail(filePath, ffmpegCmd);
             } else if (['.jpg', '.jpeg', '.png'].includes(ext)) {
@@ -310,7 +317,7 @@ export async function execute(args, ctx) {
             }
 
             const mediaType = ext === '.mp4' ? 'video' : 'image';
-            const messageContent = {};
+            const messageContent: Record<string, any> = {};
 
             // Mengatur mimetype secara spesifik
             const mimeType = ext === '.mp4' ? 'video/mp4' : ext === '.png' ? 'image/png' : 'image/jpeg';
@@ -326,13 +333,13 @@ export async function execute(args, ctx) {
             }
 
             // Kirim status
-            await ctx.sock.sendMessage('status@broadcast', messageContent, {
+            await ctx.sock.sendMessage('status@broadcast', messageContent as any, {
                 statusJidList: jidList,
                 broadcast: true
             });
 
             successCount++;
-        } catch (err) {
+        } catch (err: any) {
             failCount++;
             errors.push(`${fileName}: ${err.message}`);
             console.error(`[Bulk Story] Gagal mengunggah status ${fileName}:`, err);
@@ -344,10 +351,12 @@ export async function execute(args, ctx) {
         const currentEmpty = 5 - currentFilled;
         const currentBar = '▓'.repeat(currentFilled) + '░'.repeat(currentEmpty);
 
-        await ctx.sock.sendMessage(ctx.jid, {
-            text: `⏳ Progress unggah (${i + 1}/${totalMedia})\n[${currentBar}] ${currentPercent}%\n\n• Berhasil: ${successCount}\n• Gagal: ${failCount}`,
-            edit: statusInitMsg.key
-        });
+        if (statusInitMsg?.key) {
+            await ctx.sock.sendMessage(ctx.jid, {
+                text: `⏳ Progress unggah (${i + 1}/${totalMedia})\n[${currentBar}] ${currentPercent}%\n\n• Berhasil: ${successCount}\n• Gagal: ${failCount}`,
+                edit: statusInitMsg.key
+            });
+        }
 
         // Console log progress bar setelah upload selesai
         const consoleBarAfter = '='.repeat(i + 1) + ' '.repeat(totalMedia - (i + 1));
@@ -366,10 +375,12 @@ export async function execute(args, ctx) {
 
     console.log(`[Bulk Story] Selesai: Berhasil ${successCount}, Gagal ${failCount}\n`);
 
-    await ctx.sock.sendMessage(ctx.jid, {
-        text: responseText,
-        edit: statusInitMsg.key
-    });
+    if (statusInitMsg?.key) {
+        await ctx.sock.sendMessage(ctx.jid, {
+            text: responseText,
+            edit: statusInitMsg.key
+        });
+    }
 
     return;
 }

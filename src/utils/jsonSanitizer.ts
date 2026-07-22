@@ -3,11 +3,8 @@ import { jsonrepair } from 'jsonrepair';
 /**
  * Cleans a raw JSON string from markdown code block wrappers (like ```json and ```)
  * and trims leading/trailing whitespace.
- *
- * @param {string} rawString
- * @returns {string}
  */
-export function cleanRawJson(rawString) {
+export function cleanRawJson(rawString: string): string {
     if (typeof rawString !== 'string') {
         return '';
     }
@@ -29,11 +26,8 @@ export function cleanRawJson(rawString) {
 /**
  * Repairs a malformed/lightly broken JSON string and parses it to a JavaScript object.
  * Throws an error if repair and parse fail.
- *
- * @param {string} rawString
- * @returns {any}
  */
-export function repairJson(rawString) {
+export function repairJson(rawString: string): any {
     if (typeof rawString !== 'string') {
         throw new Error('Input must be a string');
     }
@@ -43,22 +37,23 @@ export function repairJson(rawString) {
         try {
             const repaired = jsonrepair(rawString);
             return JSON.parse(repaired);
-        } catch (repairError) {
+        } catch (repairError: any) {
             throw new Error(`Failed to parse or repair JSON: ${repairError.message}`, { cause: repairError });
         }
     }
 }
 
+export interface ValidationResult {
+    valid: boolean;
+    errors: string[];
+}
+
 /**
  * Validates a JSON object against a minimal JSON Schema.
  * Checks required fields and top-level property types.
- *
- * @param {any} jsonObj
- * @param {object} schema
- * @returns {{ valid: boolean, errors: string[] }}
  */
-export function validateSchema(jsonObj, schema) {
-    const errors = [];
+export function validateSchema(jsonObj: any, schema?: Record<string, any>): ValidationResult {
+    const errors: string[] = [];
 
     if (!schema || typeof schema !== 'object') {
         return { valid: true, errors: [] };
@@ -132,16 +127,18 @@ export function validateSchema(jsonObj, schema) {
     };
 }
 
+export interface SanitizeResult {
+    success: boolean;
+    data?: any;
+    error?: string;
+}
+
 /**
  * Main orchestrator to clean, repair, and validate tool call arguments.
- *
- * @param {string|object} rawArguments
- * @param {object} [schema]
- * @returns {{ success: boolean, data?: object, error?: string }}
  */
-export function sanitizeToolCall(rawArguments, schema) {
+export function sanitizeToolCall(rawArguments: any, schema?: Record<string, any>): SanitizeResult {
     try {
-        let parsedObj;
+        let parsedObj: any;
         if (typeof rawArguments === 'object' && rawArguments !== null) {
             parsedObj = rawArguments;
         } else if (typeof rawArguments === 'string') {
@@ -169,7 +166,7 @@ export function sanitizeToolCall(rawArguments, schema) {
             success: true,
             data: parsedObj
         };
-    } catch (err) {
+    } catch (err: any) {
         return {
             success: false,
             error: err.message

@@ -14,17 +14,17 @@ dotenv.config();
 const logger = pino({ level: 'silent' });
 let connectionOpenTimeSec = 0;
 
-async function connectToWhatsApp() {
+async function connectToWhatsApp(): Promise<void> {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
 
     const sock = makeWASocket({
         auth: state,
         printQRInTerminal: false,
-        logger,
+        logger: logger as any,
         browser: ['Ubuntu', 'Chrome', '20.0.04'],
         syncFullHistory: false,
         generateHighQualityLinkPreview: true,
-        keepAliveIntervalMs: 15000, // Reduced keep-alive ping interval to keep connection active
+        keepAliveIntervalMs: 15000,
         connectTimeoutMs: 60000,
         defaultQueryTimeoutMs: 60000,
         retryRequestDelayMs: 2000,
@@ -35,10 +35,12 @@ async function connectToWhatsApp() {
                 `[getMessage] Request received for key ID: ${key.id}, remoteJid: ${key.remoteJid}, fromMe: ${key.fromMe}`
             );
             try {
-                const cached = getCachedMessage(key.id);
-                if (cached) {
-                    console.log(`[getMessage] Found in cache for key ID: ${key.id}`);
-                    return cached;
+                if (key.id) {
+                    const cached = getCachedMessage(key.id);
+                    if (cached) {
+                        console.log(`[getMessage] Found in cache for key ID: ${key.id}`);
+                        return cached;
+                    }
                 }
             } catch (err) {
                 console.error('Error in getMessage config:', err);
@@ -67,8 +69,9 @@ async function connectToWhatsApp() {
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
-            const errorCode = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.code;
-            const errorMessage = lastDisconnect?.error?.message || 'Unknown Reason';
+            const lastDisconnectError = lastDisconnect?.error as any;
+            const errorCode = lastDisconnectError?.output?.statusCode || lastDisconnectError?.code;
+            const errorMessage = lastDisconnectError?.message || 'Unknown Reason';
             const shouldReconnect = errorCode !== DisconnectReason.loggedOut;
 
             console.log(
@@ -101,17 +104,20 @@ async function connectToWhatsApp() {
         for (const msg of messages) {
             try {
                 if (msg.key?.fromMe) {
-                    console.log('[DEBUG_SELF_MSG] details:', JSON.stringify({
-                        id: msg.key.id,
-                        remoteJid: msg.key.remoteJid,
-                        messageTimestamp: msg.messageTimestamp,
-                        hasMessage: !!msg.message,
-                        messageKeys: msg.message ? Object.keys(msg.message) : [],
-                        text: msg.message?.conversation || msg.message?.extendedTextMessage?.text || ''
-                    }));
+                    console.log(
+                        '[DEBUG_SELF_MSG] details:',
+                        JSON.stringify({
+                            id: msg.key.id,
+                            remoteJid: msg.key.remoteJid,
+                            messageTimestamp: msg.messageTimestamp,
+                            hasMessage: !!msg.message,
+                            messageKeys: msg.message ? Object.keys(msg.message) : [],
+                            text: msg.message?.conversation || msg.message?.extendedTextMessage?.text || ''
+                        })
+                    );
                 }
                 // Ignore historical messages older than 60 seconds
-                let msgTime = msg.messageTimestamp;
+                let msgTime: any = msg.messageTimestamp;
                 if (msgTime && typeof msgTime === 'object' && typeof msgTime.toNumber === 'function') {
                     msgTime = msgTime.toNumber();
                 } else if (msgTime && typeof msgTime === 'object') {
@@ -149,7 +155,7 @@ if (process.env.AUTO_UPDATE === 'true') {
         execSync(`git fetch ${repoUrl} main`, { stdio: 'inherit' });
         execSync('git reset --hard FETCH_HEAD', { stdio: 'inherit' });
         console.log('Update dari Github berhasil.');
-    } catch (err) {
+    } catch (err: any) {
         const safeErrorMsg = err.message.replace(/https:\/\/(.*?)@github\.com/g, 'https://***@github.com');
         console.error('Gagal melakukan update dari Github, melanjutkan startup...', safeErrorMsg);
     }

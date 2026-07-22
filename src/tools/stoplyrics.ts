@@ -1,6 +1,7 @@
 import { stopLyrics } from '#/utils/lyricsPlayer.js';
+import { ToolDefinition, ToolContext } from './types.js';
 
-export const definition = {
+export const definition: ToolDefinition = {
     name: 'stoplyrics',
     aliases: ['.stoplyrics', '.slyrics'],
     description: 'Menghentikan pemutaran lirik yang sedang berlangsung di chat ini.',
@@ -11,7 +12,7 @@ export const definition = {
     }
 };
 
-export async function execute(_, ctx) {
+export async function execute(_args: Record<string, any>, ctx: ToolContext): Promise<string> {
     try {
         const result = await stopLyrics(ctx.jid, ctx.sock);
         return result;

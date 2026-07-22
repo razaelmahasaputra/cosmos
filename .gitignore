@@ -76,4 +76,8 @@ stickers/
 # Temporary story media directory
 story/
 
+# Build output
+dist/
+
+
 
