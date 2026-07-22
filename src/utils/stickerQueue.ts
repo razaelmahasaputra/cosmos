@@ -7,15 +7,23 @@ interface QueueItem<T = any> {
 class StickerQueue {
     private queue: QueueItem[] = [];
     private processing = false;
+    private readonly maxQueueSize = 10;
 
     /**
      * Add a task to the queue and wait for its completion.
      */
     async add<T>(task: () => Promise<T>): Promise<T> {
+        if (this.queue.length >= this.maxQueueSize) {
+            throw new Error('Failed: Sticker processing queue is full. Please try again in a few moments.');
+        }
         return new Promise<T>((resolve, reject) => {
             this.queue.push({ task, resolve, reject });
             this.process();
         });
+    }
+
+    get length(): number {
+        return this.queue.length;
     }
 
     private async process(): Promise<void> {

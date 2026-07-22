@@ -60,11 +60,11 @@ export function parseLyrics(content: string): LyricLine[] {
 export async function playLyrics(jid: string, sock: WASocket, songName: string, speedMultiplier = 2): Promise<string> {
     // 1. Validation
     if (!songName) {
-        return 'Gagal: Nama file lirik harus ditentukan. Contoh: .playlyrics sample';
+        return 'Failed: Lyric filename must be specified. Example: .playlyrics sample';
     }
 
     if (isNaN(speedMultiplier) || speedMultiplier <= 0) {
-        return 'Gagal: speedMultiplier harus berupa angka positif.';
+        return 'Failed: speedMultiplier must be a positive number.';
     }
 
     const lyricsDir = path.resolve(process.cwd(), 'lyrics');
@@ -82,7 +82,7 @@ export async function playLyrics(jid: string, sock: WASocket, songName: string, 
     }
 
     if (!fs.existsSync(filePath)) {
-        return `Gagal: File lirik "${songName}" tidak ditemukan di direktori lyrics/.`;
+        return `Failed: Lyric file "${songName}" was not found in the lyrics/ directory.`;
     }
 
     let content: string;
@@ -90,12 +90,12 @@ export async function playLyrics(jid: string, sock: WASocket, songName: string, 
         content = fs.readFileSync(filePath, 'utf-8');
     } catch (err) {
         console.error('Error reading lyrics file:', err);
-        return `Gagal: Tidak dapat membaca file lirik "${songName}".`;
+        return `Failed: Unable to read lyric file "${songName}".`;
     }
 
     const parsed = parseLyrics(content);
     if (parsed.length === 0) {
-        return `Gagal: File lirik "${songName}" tidak memiliki baris lirik dengan timestamp yang valid.`;
+        return `Failed: Lyric file "${songName}" contains no lines with valid timestamps.`;
     }
 
     // 2. Stop existing session for this JID if running
@@ -172,7 +172,7 @@ export async function playLyrics(jid: string, sock: WASocket, songName: string, 
         }
     }
 
-    return `Memulai pemutaran lirik untuk "${songName}" dengan pengali kecepatan ${speedMultiplier}x (${parsed.length} baris)...`;
+    return `Starting lyrics playback for "${songName}" with a speed multiplier of ${speedMultiplier}x (${parsed.length} lines)...`;
 }
 
 /**
@@ -181,7 +181,7 @@ export async function playLyrics(jid: string, sock: WASocket, songName: string, 
 export async function stopLyrics(jid: string, sock: WASocket): Promise<string> {
     const session = activeSessions.get(jid);
     if (!session) {
-        return 'Gagal: Tidak ada pemutaran lirik yang sedang berlangsung di chat ini.';
+        return 'Failed: There is no ongoing lyrics playback in this chat.';
     }
 
     // 1. Clear all timers first to prevent any race condition
@@ -200,5 +200,5 @@ export async function stopLyrics(jid: string, sock: WASocket): Promise<string> {
     // 3. Delete session
     activeSessions.delete(jid);
 
-    return `Pemutaran lirik untuk "${session.songName}" berhasil dihentikan.`;
+    return `Lyrics playback for "${session.songName}" has been successfully stopped.`;
 }

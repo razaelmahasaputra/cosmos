@@ -73,6 +73,9 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 - **No Unused Variables:** Hindari mendeklarasikan variabel, parameter, atau import yang tidak digunakan. Pastikan kode lolos periksa ESLint (`eslint-no-unused-vars-handling`).
 - **Modul ES (ESM):** Proyek ini menggunakan `"type": "module"`. Pastikan sintaks import/export konsisten.
 
+### H. Penggunaan Bahasa Inggris Formal untuk String Output
+- **Formal English Output Strings:** Semua string bertipe output ke pengguna (pesan respon bot, deskripsi tool/command, pesan error, log sistem, dan prompt AI) WAJIB ditulis dalam Bahasa Inggris Formal (*Formal English*), bukan Bahasa Indonesia baku atau tidak baku (rujuk panduan di `.agents/skills/formal-english-output-strings/SKILL.md`).
+
 ---
 
 ## 4. Workflow Kerja AI Agent

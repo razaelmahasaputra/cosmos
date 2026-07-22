@@ -1,10 +1,9 @@
 import { ToolDefinition, ToolContext } from './types.js';
-import toolsHandler from './handler.js';
 
 export const definition: ToolDefinition = {
     name: 'help',
     aliases: ['.help', 'help', '.menu', 'menu', '.bantuan', 'bantuan'],
-    description: 'Menampilkan daftar seluruh perintah (command) bot yang tersedia beserta deskripsi dan alias-aliasnya.',
+    description: 'Displays the list of all available bot commands along with their descriptions and aliases.',
     parameters: {
         type: 'object',
         properties: {},
@@ -13,6 +12,7 @@ export const definition: ToolDefinition = {
 };
 
 export async function execute(_args: Record<string, any>, _ctx: ToolContext): Promise<string> {
+    const toolsHandler = (await import('./handler.js')).default;
     const tools = toolsHandler.getAllTools();
 
     const toolList: { name: string; description: string; aliases: string[]; owner?: boolean }[] = [];
@@ -34,28 +34,28 @@ export async function execute(_args: Record<string, any>, _ctx: ToolContext): Pr
 
         toolList.push({
             name: def.name,
-            description: def.description || 'Tidak ada deskripsi.',
+            description: def.description || 'No description available.',
             aliases: formattedAliases,
             owner: def.owner
         });
     }
 
-    let menuText = `🤖 *WAF (WhatsApp Bot Framework) - MENU PERINTAH*\n\n`;
-    menuText += `Berikut adalah daftar perintah yang tersedia:\n\n`;
+    let menuText = `🤖 *WAF (WhatsApp Bot Framework) - COMMAND MENU*\n\n`;
+    menuText += `Below is the list of available commands:\n\n`;
 
     toolList.forEach((t, index) => {
         const primaryCommand = t.aliases.length > 0 ? t.aliases[0] : `.${t.name}`;
         const ownerTag = t.owner ? ' 🔒 *(Owner Only)*' : '';
 
         menuText += `${index + 1}. *${primaryCommand}*${ownerTag}\n`;
-        menuText += `   📝 *Deskripsi:* ${t.description}\n`;
+        menuText += `   📝 *Description:* ${t.description}\n`;
         if (t.aliases.length > 0) {
-            menuText += `   🏷️ *Alias:* ${t.aliases.join(', ')}\n`;
+            menuText += `   🏷️ *Aliases:* ${t.aliases.join(', ')}\n`;
         }
         menuText += `\n`;
     });
 
-    menuText += `💡 *Tips:* Jalankan perintah dengan menggunakan titik di depan command (contoh: \`.help\`, \`.menu\`, \`.sticker\`).`;
+    menuText += `💡 *Tip:* Execute commands by adding a dot prefix (e.g., \`.help\`, \`.menu\`, \`.sticker\`).`;
 
     return menuText;
 }

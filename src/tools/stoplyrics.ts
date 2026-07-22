@@ -4,7 +4,7 @@ import { ToolDefinition, ToolContext } from './types.js';
 export const definition: ToolDefinition = {
     name: 'stoplyrics',
     aliases: ['.stoplyrics', '.slyrics'],
-    description: 'Menghentikan pemutaran lirik yang sedang berlangsung di chat ini.',
+    description: 'Stops ongoing lyrics playback in this chat.',
     parameters: {
         type: 'object',
         properties: {},
@@ -18,6 +18,6 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         return result;
     } catch (err) {
         console.error('Error in stoplyrics tool:', err);
-        return 'Gagal: Terjadi kesalahan saat menghentikan pemutaran lirik.';
+        return 'Failed: An error occurred while stopping lyrics playback.';
     }
 }

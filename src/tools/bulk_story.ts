@@ -85,7 +85,7 @@ async function generateVideoThumbnail(videoPath: string, ffmpegCmd: string | nul
 export const definition: ToolDefinition = {
     name: 'bulk_story',
     aliases: ['.bulkstory', '.bsy', '.bstory', '.bulkstatus'],
-    description: 'Mengunggah gambar atau video secara massal ke Status/Story WhatsApp.',
+    description: 'Uploads images or videos in bulk to WhatsApp Status/Story.',
     owner: true,
     parameters: {
         type: 'object',
@@ -102,37 +102,31 @@ export const definition: ToolDefinition = {
 async function getStatusJidList(sock: WASocket, ctx: ToolContext): Promise<string[]> {
     const jids = new Set<string>();
 
-    // Log detail user untuk debugging identifikasi JID/LID
     console.log('[Bulk Story] Debug sock.user:', JSON.stringify(sock.user));
     console.log('[Bulk Story] Debug ctx.msg.key:', JSON.stringify(ctx.msg?.key));
 
-    // 1. Tambahkan JID reguler diri sendiri
     if (sock.user?.id) {
         jids.add(jidNormalizedUser(sock.user.id));
     }
 
-    // 2. Tambahkan LID diri sendiri (sangat krusial untuk sinkronisasi status di akun ber-LID)
     if ((sock.user as any)?.lid) {
         jids.add(jidNormalizedUser((sock.user as any).lid));
     }
 
-    // 3. Tambahkan JID/LID pengirim perintah
     if (ctx.jid) {
         jids.add(jidNormalizedUser(ctx.jid));
     }
 
-    // 4. Tambahkan remoteJid asli dari pesan (bisa berupa LID)
     if (ctx.msg?.key?.remoteJid) {
         jids.add(jidNormalizedUser(ctx.msg.key.remoteJid));
     }
 
-    // 5. Tambahkan remoteJidAlt dari pesan jika tersedia
     if ((ctx.msg?.key as any)?.remoteJidAlt) {
         jids.add(jidNormalizedUser((ctx.msg.key as any).remoteJidAlt));
     }
 
     const finalJids = Array.from(jids);
-    console.log('[Bulk Story] Target statusJidList (hanya kontak mutual terverifikasi):', JSON.stringify(finalJids));
+    console.log('[Bulk Story] Target statusJidList:', JSON.stringify(finalJids));
     return finalJids;
 }
 
@@ -140,7 +134,6 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     const argsStr = args.argsStr || '';
     const folderName = argsStr.trim() || 'story';
 
-    // Mendukung folder absolut (local storage) maupun folder relatif di dalam direktori bot
     let resolvedPath: string;
     if (path.isAbsolute(folderName)) {
         resolvedPath = folderName;
@@ -149,24 +142,23 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     }
 
     if (!fs.existsSync(resolvedPath)) {
-        // Jika folder relatif tidak ada, kita buatkan
         if (!path.isAbsolute(folderName)) {
             try {
                 fs.mkdirSync(resolvedPath, { recursive: true });
-                return `Folder "${folderName}" tidak ditemukan. Folder baru telah dibuat di direktori bot. Silakan letakkan 3 hingga 5 file gambar/video di dalamnya dan jalankan kembali perintah ini.`;
+                return `Folder "${folderName}" not found. A new folder has been created in the bot directory. Please place 3 to 5 image/video files inside it and run this command again.`;
             } catch {
-                return `Gagal: Folder "${folderName}" tidak ditemukan dan tidak dapat dibuat.`;
+                return `Failed: Folder "${folderName}" was not found and could not be created.`;
             }
         }
-        return `Gagal: Folder absolut "${folderName}" tidak ditemukan di local storage.`;
+        return `Failed: Absolute folder "${folderName}" was not found in local storage.`;
     }
 
-    // Membaca file di folder
+    // Read files in folder
     let files: string[];
     try {
         files = fs.readdirSync(resolvedPath);
     } catch (err: any) {
-        return `Gagal membaca folder: ${err.message}`;
+        return `Failed to read folder: ${err.message}`;
     }
 
     const supportedExtensions = ['.png', '.jpg', '.jpeg', '.mp4'];
@@ -177,12 +169,12 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
     const totalMedia = mediaFiles.length;
 
-    // Batasan jumlah file: minimal 3 dan maksimal 5
+    // File count constraint: min 3 and max 5
     if (totalMedia < 3 || totalMedia > 5) {
-        return `Gagal: Jumlah file media di dalam folder harus antara 3 hingga 5 file.\nSaat ini ditemukan: ${totalMedia} file yang didukung (${supportedExtensions.join(', ')}).`;
+        return `Failed: The number of media files in the folder must be between 3 and 5 files.\nCurrently found: ${totalMedia} supported files (${supportedExtensions.join(', ')}).`;
     }
 
-    // Memeriksa batasan ukuran file (Maksimal Video 50MB, Gambar 10MB)
+    // Check file size limits (Max Video 50MB, Image 10MB)
     const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
     const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
     const oversizedFiles: string[] = [];
@@ -199,15 +191,15 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 oversizedFiles.push(`${fileName} (${(stat.size / (1024 * 1024)).toFixed(1)}MB > 10MB)`);
             }
         } catch (err: any) {
-            console.error(`[Bulk Story] Gagal membaca stat saat validasi ukuran file ${fileName}:`, err.message);
+            console.error(`[Bulk Story] Failed to read stat for ${fileName}:`, err.message);
         }
     }
 
     if (oversizedFiles.length > 0) {
-        return `Gagal: Ditemukan file yang melebihi batas ukuran:\n` + oversizedFiles.map((f) => `- ${f}`).join('\n');
+        return `Failed: Files exceeding maximum size limits were found:\n` + oversizedFiles.map((f) => `- ${f}`).join('\n');
     }
 
-    // Membaca metadata / caption jika ada
+    // Read metadata / captions if available
     let captionsMap: Record<string, string> = {};
     const captionsJsonPath = path.join(resolvedPath, 'captions.json');
     const metadataJsonPath = path.join(resolvedPath, 'metadata.json');
@@ -216,36 +208,36 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         try {
             captionsMap = JSON.parse(fs.readFileSync(captionsJsonPath, 'utf-8'));
         } catch (err) {
-            console.error('Gagal membaca captions.json:', err);
+            console.error('Failed to read captions.json:', err);
         }
     } else if (fs.existsSync(metadataJsonPath)) {
         try {
             captionsMap = JSON.parse(fs.readFileSync(metadataJsonPath, 'utf-8'));
         } catch (err) {
-            console.error('Gagal membaca metadata.json:', err);
+            console.error('Failed to read metadata.json:', err);
         }
     }
 
-    // Kumpulkan statusJidList
+    // Collect statusJidList
     const statusInitMsg = await ctx.sock.sendMessage(ctx.jid, {
-        text: `⏳ Menyiapkan daftar kontak penerima status WhatsApp...`
+        text: `⏳ Preparing recipient list for WhatsApp status...`
     });
 
     const jidList = await getStatusJidList(ctx.sock, ctx);
     if (jidList.length === 0) {
         if (statusInitMsg?.key) {
             await ctx.sock.sendMessage(ctx.jid, {
-                text: `❌ Gagal: Tidak dapat menemukan kontak penerima status WhatsApp.`,
+                text: `❌ Failed: Unable to find recipient contacts for WhatsApp status.`,
                 edit: statusInitMsg.key
             });
         }
         return;
     }
 
-    // Kirim status awal dengan progress bar
+    // Send initial status with progress bar
     if (statusInitMsg?.key) {
         await ctx.sock.sendMessage(ctx.jid, {
-            text: `🚀 Memulai proses unggah massal...\n[░░░░░] 0%\n\n• Menunggu antrean media pertama...`,
+            text: `🚀 Starting bulk status upload...\n[░░░░░] 0%\n\n• Waiting for the first media item in queue...`,
             edit: statusInitMsg.key
         });
     }
@@ -254,11 +246,10 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     let failCount = 0;
     const errors: string[] = [];
 
-    // Deteksi path FFmpeg sebelum loop dimulai
+    // Detect FFmpeg path before loop starts
     const ffmpegCmd = await getFFmpegPath();
 
-    // Tampilkan log inisiasi di console
-    console.log(`\n[Bulk Story] Memulai proses upload massal (${totalMedia} file)`);
+    console.log(`\n[Bulk Story] Starting bulk status upload (${totalMedia} files)`);
 
     for (let i = 0; i < mediaFiles.length; i++) {
         const fileName = mediaFiles[i];
@@ -270,10 +261,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             const stat = fs.statSync(filePath);
             fileSizeMB = (stat.size / (1024 * 1024)).toFixed(2);
         } catch (err) {
-            console.error(`[Bulk Story] Gagal membaca stat file ${fileName}:`, err);
+            console.error(`[Bulk Story] Failed to read stat for ${fileName}:`, err);
         }
 
-        // Tampilkan status pemrosesan file saat ini di WhatsApp
         const progressPercent = Math.round((i / totalMedia) * 100);
         const filledBars = Math.round((i / totalMedia) * 5);
         const emptyBars = 5 - filledBars;
@@ -281,19 +271,17 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
         if (statusInitMsg?.key) {
             await ctx.sock.sendMessage(ctx.jid, {
-                text: `⏳ Sedang mengunggah (${i + 1}/${totalMedia})\n[${progressBar}] ${progressPercent}%\n\n• File: ${fileName} (${fileSizeMB} MB)\n• Status: Mengunggah media ke WhatsApp...`,
+                text: `⏳ Uploading (${i + 1}/${totalMedia})\n[${progressBar}] ${progressPercent}%\n\n• File: ${fileName} (${fileSizeMB} MB)\n• Status: Uploading media to WhatsApp...`,
                 edit: statusInitMsg.key
             });
         }
 
-        // Console log progress bar sebelum upload
         const consoleBarBefore = '='.repeat(i) + ' '.repeat(totalMedia - i);
         console.log(
             `[Bulk Story] [${consoleBarBefore}] ${progressPercent}% | Uploading: ${fileName} (${fileSizeMB} MB)...`
         );
 
         try {
-            // Cari caption
             let caption: string | undefined = undefined;
             if (captionsMap[fileName]) {
                 caption = captionsMap[fileName];
@@ -304,12 +292,11 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     try {
                         caption = fs.readFileSync(txtPath, 'utf-8').trim();
                     } catch (err) {
-                        console.error(`Gagal membaca file caption pendamping ${baseName}.txt:`, err);
+                        console.error(`Failed to read caption file ${baseName}.txt:`, err);
                     }
                 }
             }
 
-            // Membuat thumbnail untuk gambar atau video
             let thumbnail: Buffer | undefined = undefined;
             if (ext === '.mp4') {
                 thumbnail = await generateVideoThumbnail(filePath, ffmpegCmd);
@@ -320,7 +307,6 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             const mediaType = ext === '.mp4' ? 'video' : 'image';
             const messageContent: Record<string, any> = {};
 
-            // Mengatur mimetype secara spesifik
             const mimeType = ext === '.mp4' ? 'video/mp4' : ext === '.png' ? 'image/png' : 'image/jpeg';
 
             messageContent[mediaType] = { url: filePath };
@@ -333,7 +319,6 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 messageContent.jpegThumbnail = thumbnail;
             }
 
-            // Kirim status
             await ctx.sock.sendMessage('status@broadcast', messageContent as any, {
                 statusJidList: jidList,
                 broadcast: true
@@ -343,10 +328,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         } catch (err: any) {
             failCount++;
             errors.push(`${fileName}: ${err.message}`);
-            console.error(`[Bulk Story] Gagal mengunggah status ${fileName}:`, err);
+            console.error(`[Bulk Story] Failed to upload status for ${fileName}:`, err);
         }
 
-        // Update progress bar setelah file selesai diproses
         const currentPercent = Math.round(((i + 1) / totalMedia) * 100);
         const currentFilled = Math.round(((i + 1) / totalMedia) * 5);
         const currentEmpty = 5 - currentFilled;
@@ -354,27 +338,25 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
         if (statusInitMsg?.key) {
             await ctx.sock.sendMessage(ctx.jid, {
-                text: `⏳ Progress unggah (${i + 1}/${totalMedia})\n[${currentBar}] ${currentPercent}%\n\n• Berhasil: ${successCount}\n• Gagal: ${failCount}`,
+                text: `⏳ Upload progress (${i + 1}/${totalMedia})\n[${currentBar}] ${currentPercent}%\n\n• Successful: ${successCount}\n• Failed: ${failCount}`,
                 edit: statusInitMsg.key
             });
         }
 
-        // Console log progress bar setelah upload selesai
         const consoleBarAfter = '='.repeat(i + 1) + ' '.repeat(totalMedia - (i + 1));
         console.log(`[Bulk Story] [${consoleBarAfter}] ${currentPercent}% | Finished: ${fileName} (${fileSizeMB} MB)`);
 
-        // Delay 15 detik untuk media besar agar tidak rate limit / gagal sync
         if (i < mediaFiles.length - 1) {
             await new Promise((resolve) => setTimeout(resolve, 15000));
         }
     }
 
-    let responseText = `✅ Selesai memproses bulk upload status!\n\n• Berhasil: ${successCount}\n• Gagal: ${failCount}`;
+    let responseText = `✅ Finished processing bulk status upload!\n\n• Successful: ${successCount}\n• Failed: ${failCount}`;
     if (errors.length > 0) {
-        responseText += `\n\nDetail Error:\n` + errors.map((e) => `- ${e}`).join('\n');
+        responseText += `\n\nError Details:\n` + errors.map((e) => `- ${e}`).join('\n');
     }
 
-    console.log(`[Bulk Story] Selesai: Berhasil ${successCount}, Gagal ${failCount}\n`);
+    console.log(`[Bulk Story] Completed: Successful ${successCount}, Failed ${failCount}\n`);
 
     if (statusInitMsg?.key) {
         await ctx.sock.sendMessage(ctx.jid, {

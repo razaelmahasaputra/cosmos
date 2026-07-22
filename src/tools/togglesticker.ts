@@ -23,7 +23,7 @@ export const definition: ToolDefinition = {
         '.astiker',
         'astiker'
     ],
-    description: 'Mengaktifkan atau mematikan fitur pembuat stiker otomatis (Auto Sticker Maker) untuk chat ini.',
+    description: 'Enables or disables the Auto Sticker Maker feature for this chat.',
     parameters: {
         type: 'object',
         properties: {},
@@ -34,8 +34,8 @@ export const definition: ToolDefinition = {
 export async function execute(_args: Record<string, any>, ctx: ToolContext): Promise<string> {
     const isEnabled = toggleAutoSticker(ctx.jid);
     if (isEnabled) {
-        return '✨ *Auto Sticker Maker BERHASIL DIAKTIFKAN* untuk chat ini.\n\nSetiap foto, video, atau GIF yang dikirim di chat ini akan otomatis diubah menjadi stiker.\n\nKetik *.stoptogglesticker* (atau *.stopautosticker* / *.stoptgls*) untuk mematikan.';
+        return '✨ *Auto Sticker Maker ACTIVATED* for this chat.\n\nEvery photo, video, or GIF sent in this chat will automatically be converted into a sticker.\n\nType *.stoptogglesticker* (or *.stopautosticker* / *.stoptgls*) to disable.';
     } else {
-        return '🔴 *Auto Sticker Maker BERHASIL DIMATIKAN* untuk chat ini.';
+        return '🔴 *Auto Sticker Maker DEACTIVATED* for this chat.';
     }
 }

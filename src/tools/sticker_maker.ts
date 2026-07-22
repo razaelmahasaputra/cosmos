@@ -50,7 +50,7 @@ const FORMAT_REGEX = /^[a-zA-Z0-9]+$/;
 
 export async function convertVideoToSticker(buffer: Buffer, format: string): Promise<Buffer> {
     if (!FORMAT_REGEX.test(format) || !ALLOWED_FORMATS.includes(format.toLowerCase())) {
-        throw new Error('Format media tidak didukung atau tidak valid.');
+        throw new Error('Media format is not supported or invalid.');
     }
 
     const tempDir = os.tmpdir();
@@ -60,7 +60,7 @@ export async function convertVideoToSticker(buffer: Buffer, format: string): Pro
         await fs.promises.writeFile(inputPath, buffer);
         const ffmpegCmd = await getFFmpegPath();
         if (!ffmpegCmd) {
-            throw new Error('FFmpeg tidak ditemukan di sistem.');
+            throw new Error('FFmpeg not found on system.');
         }
 
         const qualities = [65, 40, 25];
@@ -90,7 +90,7 @@ export async function convertVideoToSticker(buffer: Buffer, format: string): Pro
         }
 
         if (!outputBuffer) {
-            throw new Error('Gagal memproses video menjadi stiker.');
+            throw new Error('Failed to process video into a sticker.');
         }
 
         return outputBuffer;
@@ -98,7 +98,7 @@ export async function convertVideoToSticker(buffer: Buffer, format: string): Pro
         try {
             if (fs.existsSync(inputPath)) await fs.promises.unlink(inputPath);
         } catch (e) {
-            console.error('Gagal menghapus file temporary:', e);
+            console.error('Failed to delete temporary file:', e);
         }
     }
 }
@@ -130,12 +130,12 @@ export async function sendStickerFromBuffer(
 ): Promise<any> {
     // Validate WebP header (RIFF....WEBP)
     if (webpBuffer.length < 12) {
-        throw new Error(`Buffer terlalu kecil (${webpBuffer.length} bytes), bukan file WebP valid.`);
+        throw new Error(`Buffer is too small (${webpBuffer.length} bytes), not a valid WebP file.`);
     }
     const riffHeader = webpBuffer.subarray(0, 4).toString('ascii');
     const webpMagic = webpBuffer.subarray(8, 12).toString('ascii');
     if (riffHeader !== 'RIFF' || webpMagic !== 'WEBP') {
-        throw new Error(`Buffer bukan format WebP valid. Header: ${riffHeader}, Magic: ${webpMagic}`);
+        throw new Error(`Buffer is not a valid WebP format. Header: ${riffHeader}, Magic: ${webpMagic}`);
     }
 
     console.log(`[Sticker] WebP buffer valid, size: ${webpBuffer.length} bytes`);
@@ -172,7 +172,7 @@ export async function sendStickerFromBuffer(
 export const definition: ToolDefinition = {
     name: 'sticker_maker',
     aliases: ['.sticker', '.s', '.stiker'],
-    description: 'Membuat stiker dari gambar, video, atau GIF yang dikirim oleh pengguna.',
+    description: 'Creates a sticker from an image, video, or GIF sent by the user.',
     parameters: {
         type: 'object',
         properties: {},
@@ -180,7 +180,23 @@ export const definition: ToolDefinition = {
     }
 };
 
-export async function execute(_: Record<string, any>, ctx: ToolContext): Promise<string> {
+const lastStickerTimes = new Map<string, number>();
+const STICKER_COOLDOWN_MS = 2500; // 2.5 seconds cooldown
+const MAX_MEDIA_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB limit
+
+function getMediaFileLength(msg: any): number {
+    if (!msg || !msg.fileLength) return 0;
+    const len = msg.fileLength;
+    if (typeof len === 'number') return len;
+    if (typeof len === 'string') return parseInt(len, 10) || 0;
+    if (typeof len === 'object') {
+        if (typeof len.toNumber === 'function') return len.toNumber();
+        return Number(len.low ?? len.unsigned ?? 0);
+    }
+    return 0;
+}
+
+export async function execute(_: Record<string, any>, ctx: ToolContext): Promise<string | null> {
     const getMessage = (m: any): { msg: any; isViewOnce: boolean } => {
         if (!m) return { msg: null, isViewOnce: false };
         if (m.viewOnceMessage?.message) {
@@ -206,7 +222,7 @@ export async function execute(_: Record<string, any>, ctx: ToolContext): Promise
     const isViewOnce = direct.isViewOnce || quoted.isViewOnce;
 
     if (isViewOnce) {
-        console.log('[Sticker Maker] Mendeteksi media View Once.');
+        console.log('[Sticker Maker] Detected View Once media.');
     }
 
     const imageMessage = directMsg?.imageMessage || quotedMsg?.imageMessage;
@@ -217,7 +233,23 @@ export async function execute(_: Record<string, any>, ctx: ToolContext): Promise
         documentMessage && (documentMessage.mimetype === 'image/gif' || documentMessage.fileName?.endsWith('.gif'));
 
     if (!imageMessage && !videoMessage && !isGifDocument) {
-        return 'Gagal: Kirim atau reply gambar, video, atau GIF dengan perintah ini.';
+        return 'Failed: Please send or reply to an image, video, or GIF with this command.';
+    }
+
+    // 1. Rate limiting / cooldown check
+    const now = Date.now();
+    const lastTime = lastStickerTimes.get(ctx.jid) || 0;
+    if (now - lastTime < STICKER_COOLDOWN_MS) {
+        return 'Failed: Please wait a moment before requesting another sticker.';
+    }
+    lastStickerTimes.set(ctx.jid, now);
+
+    // 2. Pre-download file size check (15MB max)
+    const targetMedia = imageMessage || videoMessage || documentMessage;
+    const mediaSize = getMediaFileLength(targetMedia);
+    if (mediaSize > MAX_MEDIA_SIZE_BYTES) {
+        const sizeMB = (mediaSize / (1024 * 1024)).toFixed(1);
+        return `Failed: Media file is too large (${sizeMB} MB). Maximum allowed size is 15 MB.`;
     }
 
     return stickerQueue.add(async () => {
@@ -253,7 +285,7 @@ export async function execute(_: Record<string, any>, ctx: ToolContext): Promise
                 }
 
                 await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg);
-                return 'Sticker berhasil dibuat dan dikirim.';
+                return null;
             }
 
             if (videoMessage) {
@@ -276,7 +308,7 @@ export async function execute(_: Record<string, any>, ctx: ToolContext): Promise
                 mimeType = 'image/gif';
                 ext = 'gif';
             } else {
-                return 'Gagal: Format media tidak dapat diproses.';
+                return 'Failed: Media format cannot be processed.';
             }
 
             if (ext) {
@@ -287,18 +319,18 @@ export async function execute(_: Record<string, any>, ctx: ToolContext): Promise
             if (ffmpegCmd) {
                 const webpBuffer = await convertVideoToSticker(buffer, ext);
                 await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg);
-                return 'Sticker berhasil dibuat dan dikirim.';
+                return null;
             } else if (mimeType === 'image/gif' || ext === 'gif') {
                 const webpBuffer = await convertGifToStickerSharp(buffer);
                 await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg);
-                return 'Sticker berhasil dibuat dan dikirim.';
+                return null;
             } else {
-                return 'Gagal: FFmpeg tidak terinstal di sistem untuk memproses video.';
+                return 'Failed: FFmpeg is not installed on the system to process video stickers.';
             }
         } catch (err: any) {
             console.error(err);
             writeLog('ERROR', 'Error in sticker_maker tool execution', err);
-            return `Gagal: Terjadi kesalahan saat memproses media menjadi stiker. Detail: ${err.message}`;
+            return `Failed: An error occurred while converting media to a sticker. Details: ${err.message}`;
         }
     });
 }

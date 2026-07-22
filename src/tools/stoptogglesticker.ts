@@ -23,7 +23,7 @@ export const definition: ToolDefinition = {
         '.stopastiker',
         'stopastiker'
     ],
-    description: 'Mematikan fitur pembuat stiker otomatis (Auto Sticker Maker) untuk chat ini.',
+    description: 'Disables the Auto Sticker Maker feature for this chat.',
     parameters: {
         type: 'object',
         properties: {},
@@ -33,5 +33,5 @@ export const definition: ToolDefinition = {
 
 export async function execute(_args: Record<string, any>, ctx: ToolContext): Promise<string> {
     disableAutoSticker(ctx.jid);
-    return '🔴 *Auto Sticker Maker BERHASIL DIMATIKAN* untuk chat ini.';
+    return '🔴 *Auto Sticker Maker DEACTIVATED* for this chat.';
 }

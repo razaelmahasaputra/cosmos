@@ -11,7 +11,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 export const definition: ToolDefinition = {
     name: 'stt',
     aliases: ['.stt', '.ptt'],
-    description: 'Mentranskripsikan voice note yang di-quote menjadi teks menggunakan Groq Whisper.',
+    description: 'Transcribes a quoted voice note into text using Groq Whisper.',
     parameters: {
         type: 'object',
         properties: {},
@@ -25,15 +25,15 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     const audioMessage = quotedMessage?.audioMessage;
 
     if (!contextInfo || !audioMessage) {
-        return 'Gagal: Quote sebuah voice note terlebih dahulu, lalu ketik perintah ini.';
+        return 'Failed: Please quote a voice note first, then execute this command.';
     }
 
     if (!audioMessage.ptt) {
-        return 'Gagal: Pesan yang di-quote bukan voice note (push-to-talk).';
+        return 'Failed: The quoted message is not a push-to-talk voice note.';
     }
 
     try {
-        // Download audio stream dari quoted message
+        // Download audio stream from quoted message
         const stream = await downloadContentFromMessage(audioMessage, 'audio');
         const chunks: Buffer[] = [];
         for await (const chunk of stream) {
@@ -41,7 +41,7 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         }
         const buffer = Buffer.concat(chunks);
 
-        // Kirim ke Groq Whisper menggunakan toFile helper dari SDK
+        // Send to Groq Whisper using SDK toFile helper
         const file = await toFile(buffer, 'audio.ogg', { type: 'audio/ogg' });
         const transcription: any = await groq.audio.transcriptions.create({
             file,
@@ -53,12 +53,12 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         const text = typeof rawText === 'string' ? rawText.trim() : '';
 
         if (!text) {
-            return 'Gagal: Tidak ada teks yang terdeteksi dari voice note ini.';
+            return 'Failed: No text detected from this voice note.';
         }
 
         writeLog('INFO', 'STT transcription success', { jid: ctx.jid, length: text.length });
 
-        // Deteksi secara akurat apakah voice note berasal dari nomor bot itu sendiri (mendukung JID & LID)
+        // Accurately detect if quoted voice note is from bot number (supports JID & LID)
         const cleanId = (idStr?: string | null) => (idStr ? idStr.split(':')[0].split('@')[0] : null);
         const botRawJid = cleanId(ctx.sock.user?.id);
         const botRawLid = cleanId(ctx.sock.user?.lid);
@@ -69,7 +69,7 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
             (botRawJid !== null && participantRaw === botRawJid) ||
             (botRawLid !== null && participantRaw === botRawLid);
 
-        // Reconstruct quoted message object agar balasan menunjuk ke voice note asli
+        // Reconstruct quoted message object pointing to original voice note
         const quotedVoiceNote: WAMessage = {
             key: {
                 remoteJid: ctx.jid,
@@ -82,11 +82,11 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
 
         await ctx.sock.sendMessage(ctx.jid, { text }, { quoted: quotedVoiceNote });
 
-        // Return null agar message.js tidak mengirim pesan duplikat
+        // Return null so message.js does not send duplicate messages
         return null;
     } catch (err: any) {
         console.error('[STT Tool Error]', err);
         writeLog('ERROR', 'STT transcription failed', { jid: ctx.jid, error: err.message });
-        return 'Gagal: Terjadi kesalahan saat mentranskripsi voice note.';
+        return 'Failed: An error occurred while transcribing the voice note.';
     }
 }

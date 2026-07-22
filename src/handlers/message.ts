@@ -3,6 +3,12 @@ import { addGroup, isGroupWhitelisted } from '#/db.js';
 import { writeLog } from '#/logger.js';
 import toolsHandler from '#/tools/handler.js';
 import { isAutoStickerEnabled } from '#/utils/autoSticker.js';
+import {
+    isAutoCorrectionEnabled,
+    isMessageProcessed,
+    markMessageProcessed,
+    analyzeAndCorrectText
+} from '#/utils/autoCorrection.js';
 
 function getUnwrappedMessage(m: any): any {
     if (!m) return null;
@@ -78,31 +84,31 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
 
     if (commandName === '.addgroup') {
         if (!isOwner) {
-            await sock.sendMessage(jid, { text: 'Perintah ini hanya dapat digunakan oleh owner bot.' }, { quoted: msg });
+            await sock.sendMessage(jid, { text: 'This command can only be used by the bot owner.' }, { quoted: msg });
             return;
         }
         writeLog('INFO', 'Command executed', { command: '.addgroup', jid });
         if (!jid.endsWith('@g.us')) {
-            await sock.sendMessage(jid, { text: 'Perintah ini hanya bisa digunakan di dalam grup.' });
+            await sock.sendMessage(jid, { text: 'This command can only be executed within a group.' });
             return;
         }
         const success = await addGroup(jid);
         if (success) {
-            await sock.sendMessage(jid, { text: 'Grup berhasil ditambahkan ke whitelist!' });
+            await sock.sendMessage(jid, { text: 'Group successfully added to the whitelist!' });
         } else {
-            await sock.sendMessage(jid, { text: 'Gagal menambahkan grup ke database.' });
+            await sock.sendMessage(jid, { text: 'Failed to add group to the database.' });
         }
         return;
     }
 
     const tool = toolsHandler.getTool(commandName);
     if (tool) {
-        // Cek batasan hak akses owner/publik
+        // Check owner permission constraints
         const isOwnerOnly = tool.definition?.owner === true;
         if (isOwnerOnly && !isOwner) {
             await sock.sendMessage(
                 jid,
-                { text: 'Perintah ini hanya dapat digunakan oleh owner bot.' },
+                { text: 'This command can only be used by the bot owner.' },
                 { quoted: msg }
             );
             return;
@@ -133,12 +139,29 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
 
         await sock.sendPresenceUpdate('composing', jid);
         const result = await toolsHandler.execute(commandName, args, { sock, msg, jid });
-        if (result && typeof result === 'string') {
-            if (result.startsWith('Gagal') || !result.includes('berhasil dibuat')) {
-                await sock.sendMessage(jid, { text: result }, { quoted: msg });
-            }
+        if (result && typeof result === 'string' && result.trim().length > 0) {
+            await sock.sendMessage(jid, { text: result }, { quoted: msg });
         }
         return;
+    }
+
+    // Auto-correct processing for owner's sent text messages
+    if (isOwner && Boolean(msg.key.fromMe) && isAutoCorrectionEnabled(jid)) {
+        const msgId = msg.key.id;
+        if (msgId && !isMessageProcessed(msgId) && trimmedText.length > 1 && !trimmedText.startsWith('.')) {
+            markMessageProcessed(msgId);
+            try {
+                const corrected = await analyzeAndCorrectText(trimmedText);
+                if (corrected && corrected !== trimmedText) {
+                    writeLog('INFO', 'Auto-correct executed', { jid, original: trimmedText, corrected });
+                    console.log(`[Auto-Correct] Editing message in ${jid}: "${trimmedText}" -> "${corrected}"`);
+                    await sock.sendMessage(jid, { text: corrected, edit: msg.key });
+                }
+            } catch (err: any) {
+                console.error('[Auto-Correct Error]', err);
+                writeLog('ERROR', 'Auto-correct handler failed', { error: err.message });
+            }
+        }
     }
 
     // Auto sticker processing if enabled for this chat and message contains direct media
@@ -154,10 +177,11 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         await sock.sendPresenceUpdate('composing', jid);
         const result = await toolsHandler.execute('sticker_maker', {}, { sock, msg, jid });
         if (result && typeof result === 'string') {
-            if (result.startsWith('Gagal')) {
+            if (result.startsWith('Failed') || result.startsWith('Error') || result.startsWith('Gagal')) {
                 await sock.sendMessage(jid, { text: result }, { quoted: msg });
             }
         }
         return;
     }
 }
+

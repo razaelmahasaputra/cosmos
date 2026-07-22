@@ -4,7 +4,7 @@ import { ToolDefinition, ToolContext } from './types.js';
 export const definition: ToolDefinition = {
     name: 'system_info',
     aliases: ['.ping', '.stats', '.status', '.speed'],
-    description: 'Menampilkan informasi spesifikasi server, bot, dan latensi.',
+    description: 'Displays server specifications, bot status, and network latency.',
     parameters: {
         type: 'object',
         properties: {},
@@ -29,13 +29,13 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     const systemUptime = formatUptime(os.uptime());
     const botUptime = formatUptime(process.uptime());
     const cpus = os.cpus();
-    const cpuModel = cpus && cpus[0] ? cpus[0].model.trim() : 'Tidak diketahui';
+    const cpuModel = cpus && cpus[0] ? cpus[0].model.trim() : 'Unknown';
     const cpuArch = os.arch();
     const totalMem = formatBytes(os.totalmem());
     const freeMem = formatBytes(os.freemem());
     const usedMem = formatBytes(os.totalmem() - os.freemem());
 
-    let latencyStr = 'Tidak diketahui';
+    let latencyStr = 'Unknown';
     if (ctx && ctx.msg && ctx.msg.messageTimestamp) {
         let timestampVal = 0;
         const msgTs = ctx.msg.messageTimestamp as any;
@@ -57,13 +57,13 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     }
 
     return (
-        `*⚡ STATUS BOT & SERVER*\n\n` +
-        `• *Latensi:* ${latencyStr}\n` +
+        `*⚡ BOT & SERVER STATUS*\n\n` +
+        `• *Latency:* ${latencyStr}\n` +
         `• *OS:* ${os.type()} (${os.release()})\n` +
         `• *CPU:* ${cpuModel} (${cpuArch})\n` +
-        `• *RAM:* ${usedMem} / ${totalMem} (Sisa: ${freeMem})\n` +
-        `• *Uptime Server:* ${systemUptime}\n` +
-        `• *Uptime Bot:* ${botUptime}\n` +
+        `• *RAM:* ${usedMem} / ${totalMem} (Free: ${freeMem})\n` +
+        `• *Server Uptime:* ${systemUptime}\n` +
+        `• *Bot Uptime:* ${botUptime}\n` +
         `• *Node.js:* ${process.version}`
     );
 }

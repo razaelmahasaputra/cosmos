@@ -7,7 +7,10 @@ class ToolsHandler {
     private tools = new Map<string, ToolModule>();
     private aliases = new Map<string, string>();
 
+    private isLoaded = false;
+
     async loadTools(): Promise<void> {
+        if (this.isLoaded) return;
         const distToolsPath = path.resolve(process.cwd(), 'dist', 'tools');
         const srcToolsPath = path.resolve(process.cwd(), 'src', 'tools');
         const toolsPath = fs.existsSync(distToolsPath) ? distToolsPath : srcToolsPath;
@@ -37,16 +40,17 @@ class ToolsHandler {
                     }
                 }
             } catch (err) {
-                console.error(`Gagal memuat tool ${file}:`, err);
+                console.error(`Failed to load tool ${file}:`, err);
             }
         }
+        this.isLoaded = true;
     }
 
     getTool(nameOrAlias?: string): ToolModule | null {
         if (!nameOrAlias) return null;
         const normalized = nameOrAlias.trim().toLowerCase();
 
-        // 1. Coba cari langsung dengan input mentah yang di-lowercase
+        // 1. Search directly with raw lowercased input
         if (this.tools.has(normalized)) {
             return this.tools.get(normalized) || null;
         }
@@ -55,7 +59,7 @@ class ToolsHandler {
             return this.tools.get(name) || null;
         }
 
-        // 2. Jika input tidak diawali titik, coba cari dengan titik di depannya
+        // 2. If input does not start with a dot, try matching with a dot prefix
         if (!normalized.startsWith('.')) {
             const dotted = '.' + normalized;
             if (this.tools.has(dotted)) {
@@ -67,7 +71,7 @@ class ToolsHandler {
             }
         }
 
-        // 3. Jika input diawali titik, coba cari tanpa titik
+        // 3. If input starts with a dot, try matching without the dot prefix
         if (normalized.startsWith('.')) {
             const undotted = normalized.slice(1);
             if (this.tools.has(undotted)) {
@@ -114,5 +118,4 @@ class ToolsHandler {
 }
 
 const toolsHandler = new ToolsHandler();
-await toolsHandler.loadTools();
 export default toolsHandler;

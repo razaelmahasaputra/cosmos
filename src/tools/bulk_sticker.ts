@@ -8,7 +8,7 @@ import { ToolDefinition, ToolContext } from './types.js';
 export const definition: ToolDefinition = {
     name: 'bulk_sticker',
     aliases: ['.bulksticker', '.bs', '.bulkstiker'],
-    description: 'Membuat stiker secara massal dari sebuah folder.',
+    description: 'Creates stickers in bulk from a specified local folder.',
     owner: true,
     parameters: {
         type: 'object',
@@ -30,16 +30,16 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
     const resolvedPath = path.resolve(process.cwd(), folderName);
     if (!resolvedPath.startsWith(process.cwd())) {
-        return 'Gagal: Folder harus berada di dalam direktori bot untuk alasan keamanan.';
+        return 'Failed: Folder must be located within the bot root directory for security reasons.';
     }
 
     if (!fs.existsSync(resolvedPath)) {
-        // Let's create it if it doesn't exist, and notify the user to put files in it
+        // Create folder if it doesn't exist, and notify user
         try {
             fs.mkdirSync(resolvedPath, { recursive: true });
-            return `Folder "${folderName}" tidak ditemukan. Folder baru telah dibuat, silakan letakkan file gambar/video di dalamnya dan jalankan kembali perintah ini.`;
+            return `Folder "${folderName}" not found. A new folder has been created; please place image/video files inside it and run this command again.`;
         } catch {
-            return `Gagal: Folder "${folderName}" tidak ditemukan dan tidak dapat dibuat.`;
+            return `Failed: Folder "${folderName}" was not found and could not be created.`;
         }
     }
 
@@ -48,7 +48,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     try {
         files = fs.readdirSync(resolvedPath);
     } catch (err: any) {
-        return `Gagal membaca folder: ${err.message}`;
+        return `Failed to read folder: ${err.message}`;
     }
 
     const supportedExtensions = [
@@ -70,12 +70,12 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     });
 
     if (mediaFiles.length === 0) {
-        return `Folder "${folderName}" kosong atau tidak berisi file media yang didukung (${supportedExtensions.join(', ')}).`;
+        return `Folder "${folderName}" is empty or contains no supported media files (${supportedExtensions.join(', ')}).`;
     }
 
     // Send initial status message
     await ctx.sock.sendMessage(ctx.jid, {
-        text: `🚀 Memproses ${mediaFiles.length} file dari folder "${folderName}"...\n\nMohon tunggu sebentar...`
+        text: `🚀 Processing ${mediaFiles.length} files from folder "${folderName}"...\n\nPlease wait...`
     });
 
     let successCount = 0;
@@ -140,20 +140,20 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         } catch (err: any) {
             failCount++;
             errors.push(`${fileName}: ${err.message}`);
-            console.error(`Gagal memproses ${fileName}:`, err);
+            console.error(`Failed to process ${fileName}:`, err);
         }
     }
 
-    let responseText = `✅ Selesai memproses bulk sticker!\n\n• Berhasil: ${successCount}\n• Gagal: ${failCount}`;
+    let responseText = `✅ Finished processing bulk stickers!\n\n• Successful: ${successCount}\n• Failed: ${failCount}`;
     if (errors.length > 0) {
         responseText +=
-            `\n\nDetail Error:\n` +
+            `\n\nError Details:\n` +
             errors
                 .slice(0, 10)
                 .map((e) => `- ${e}`)
                 .join('\n');
         if (errors.length > 10) {
-            responseText += `\n- ...dan ${errors.length - 10} error lainnya.`;
+            responseText += `\n- ...and ${errors.length - 10} other errors.`;
         }
     }
 

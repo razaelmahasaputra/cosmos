@@ -6,6 +6,7 @@ import pino from 'pino';
 import dotenv from 'dotenv';
 import { handleMessage } from '#/handlers/message.js';
 import { cacheMessage, getCachedMessage } from '#/utils/messageCache.js';
+import toolsHandler from '#/tools/handler.js';
 
 dns.setDefaultResultOrder('ipv4first');
 
@@ -142,11 +143,11 @@ async function connectToWhatsApp(): Promise<void> {
 
 if (process.env.AUTO_UPDATE === 'true') {
     try {
-        console.log('Mencoba update dari Github...');
-        // Mengatasi error 'dubious ownership' di Pterodactyl docker
+        console.log('Attempting update from GitHub...');
+        // Handle 'dubious ownership' error in Pterodactyl Docker environments
         execSync('git config --global --add safe.directory "*"', { stdio: 'inherit' });
 
-        // Mendukung private repo jika GITHUB_TOKEN diset di .env
+        // Support private repositories if GITHUB_TOKEN is set in .env
         const token = process.env.GITHUB_TOKEN;
         const repoUrl = token
             ? `https://${token}@github.com/razaeldotexe/waf.git`
@@ -154,11 +155,12 @@ if (process.env.AUTO_UPDATE === 'true') {
 
         execSync(`git fetch ${repoUrl} main`, { stdio: 'inherit' });
         execSync('git reset --hard FETCH_HEAD', { stdio: 'inherit' });
-        console.log('Update dari Github berhasil.');
+        console.log('Update from GitHub completed successfully.');
     } catch (err: any) {
         const safeErrorMsg = err.message.replace(/https:\/\/(.*?)@github\.com/g, 'https://***@github.com');
-        console.error('Gagal melakukan update dari Github, melanjutkan startup...', safeErrorMsg);
+        console.error('Failed to update from GitHub, continuing startup...', safeErrorMsg);
     }
 }
 
+await toolsHandler.loadTools();
 connectToWhatsApp();
