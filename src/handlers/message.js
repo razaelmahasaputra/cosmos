@@ -6,6 +6,12 @@ import toolsHandler from '#/tools/handler.js';
 export async function handleMessage(sock, msg) {
     if (!msg.message || !msg.key.remoteJid) return;
 
+    console.log('[DEBUG] Message received:', {
+        fromMe: msg.key.fromMe,
+        remoteJid: msg.key.remoteJid,
+        text: msg.message.conversation || msg.message.extendedTextMessage?.text || ''
+    });
+
     // Only process messages from ourselves (self-bot) or specific logic according to phase 4
     // Phase 4: Bot dikonfigurasi sebagai self-bot. Wajib mendengarkan pesan dari dirinya sendiri
     const isFromMe = msg.key.fromMe;

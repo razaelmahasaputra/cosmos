@@ -12,6 +12,7 @@ dns.setDefaultResultOrder('ipv4first');
 dotenv.config();
 
 const logger = pino({ level: 'silent' });
+let connectionOpenTimeSec = 0;
 
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -74,6 +75,8 @@ async function connectToWhatsApp() {
                 `[Connection] Closed (Reason: ${errorMessage}, Code: ${errorCode}). Reconnecting: ${shouldReconnect}`
             );
 
+            connectionOpenTimeSec = 0;
+
             // Log details safely to file for debugging without cluttering console log
             if (lastDisconnect?.error) {
                 writeLog('ERROR', `Connection close details: ${errorMessage}`, lastDisconnect.error);
@@ -82,19 +85,47 @@ async function connectToWhatsApp() {
             if (shouldReconnect) connectToWhatsApp();
         } else if (connection === 'open') {
             console.log('Opened connection');
+            connectionOpenTimeSec = Math.floor(Date.now() / 1000);
         }
     });
 
     sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
+        console.log(`[DEBUG] messages.upsert type: ${type}, count: ${messages.length}`);
         for (const msg of messages) {
             cacheMessage(msg);
         }
 
-        if (type !== 'notify') return;
+        if (type !== 'notify' && type !== 'append') return;
         for (const msg of messages) {
             try {
+                if (msg.key?.fromMe) {
+                    console.log('[DEBUG_SELF_MSG] details:', JSON.stringify({
+                        id: msg.key.id,
+                        remoteJid: msg.key.remoteJid,
+                        messageTimestamp: msg.messageTimestamp,
+                        hasMessage: !!msg.message,
+                        messageKeys: msg.message ? Object.keys(msg.message) : [],
+                        text: msg.message?.conversation || msg.message?.extendedTextMessage?.text || ''
+                    }));
+                }
+                // Ignore historical messages older than 60 seconds
+                let msgTime = msg.messageTimestamp;
+                if (msgTime && typeof msgTime === 'object' && typeof msgTime.toNumber === 'function') {
+                    msgTime = msgTime.toNumber();
+                } else if (msgTime && typeof msgTime === 'object') {
+                    msgTime = Number(msgTime.low ?? msgTime.unsigned ?? 0);
+                }
+                msgTime = Number(msgTime || 0);
+
+                if (msgTime > 0 && connectionOpenTimeSec > 0) {
+                    // Ignore messages sent before the bot finished connecting (history catchup)
+                    if (msgTime < connectionOpenTimeSec - 2) {
+                        continue;
+                    }
+                }
+
                 await handleMessage(sock, msg);
             } catch (error) {
                 console.error('Error handling message:', error);
