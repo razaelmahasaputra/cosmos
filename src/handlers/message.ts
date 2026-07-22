@@ -2,6 +2,34 @@ import { jidNormalizedUser, WASocket, WAMessage } from '@whiskeysockets/baileys'
 import { addGroup, isGroupWhitelisted } from '#/db.js';
 import { writeLog } from '#/logger.js';
 import toolsHandler from '#/tools/handler.js';
+import { isAutoStickerEnabled } from '#/utils/autoSticker.js';
+
+function getUnwrappedMessage(m: any): any {
+    if (!m) return null;
+    if (m.viewOnceMessage?.message) return getUnwrappedMessage(m.viewOnceMessage.message);
+    if (m.viewOnceMessageV2?.message) return getUnwrappedMessage(m.viewOnceMessageV2.message);
+    if (m.viewOnceMessageV2Extension?.message) return getUnwrappedMessage(m.viewOnceMessageV2Extension.message);
+    return m;
+}
+
+function hasDirectMedia(rawMsg: any): boolean {
+    const m = getUnwrappedMessage(rawMsg);
+    if (!m) return false;
+    if (m.imageMessage) return true;
+    if (m.videoMessage) return true;
+    if (m.documentMessage) {
+        const mime = m.documentMessage.mimetype || '';
+        const filename = m.documentMessage.fileName || '';
+        if (
+            mime.startsWith('image/') ||
+            mime.startsWith('video/') ||
+            /\.(jpg|jpeg|png|gif|mp4|mov|webm|mkv|3gp)$/i.test(filename)
+        ) {
+            return true;
+        }
+    }
+    return false;
+}
 
 export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<void> {
     if (!msg.message || !msg.key.remoteJid) return;
@@ -25,8 +53,6 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         msg.message.imageMessage?.caption ||
         msg.message.videoMessage?.caption ||
         '';
-
-    if (!text) return;
 
     // Detect if sender is owner (supports JID, LID, device JID, and BOT_PHONE_NUMBER)
     const cleanId = (idStr?: string | null) => (idStr ? idStr.split(':')[0].split('@')[0] : null);
@@ -109,6 +135,26 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         const result = await toolsHandler.execute(commandName, args, { sock, msg, jid });
         if (result && typeof result === 'string') {
             if (result.startsWith('Gagal') || !result.includes('berhasil dibuat')) {
+                await sock.sendMessage(jid, { text: result }, { quoted: msg });
+            }
+        }
+        return;
+    }
+
+    // Auto sticker processing if enabled for this chat and message contains direct media
+    if (!msg.key.fromMe && isAutoStickerEnabled(jid) && hasDirectMedia(msg.message)) {
+        if (jid.endsWith('@g.us')) {
+            const whitelisted = await isGroupWhitelisted(jid);
+            if (!whitelisted) return;
+        }
+
+        writeLog('INFO', 'Auto sticker executed', { jid });
+        console.log('[Message Handler] Auto sticker executing for jid:', jid);
+
+        await sock.sendPresenceUpdate('composing', jid);
+        const result = await toolsHandler.execute('sticker_maker', {}, { sock, msg, jid });
+        if (result && typeof result === 'string') {
+            if (result.startsWith('Gagal')) {
                 await sock.sendMessage(jid, { text: result }, { quoted: msg });
             }
         }
