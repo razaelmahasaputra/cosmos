@@ -87,6 +87,14 @@ class ToolsHandler {
         return tool?.definition?.owner === true;
     }
 
+    getAllTools(): ToolModule[] {
+        const uniqueTools = new Set<ToolModule>();
+        for (const tool of this.tools.values()) {
+            uniqueTools.add(tool);
+        }
+        return Array.from(uniqueTools);
+    }
+
     getGroqTools(): Array<{ type: string; function: any }> {
         const groqTools: Array<{ type: string; function: any }> = [];
         for (const toolModule of this.tools.values()) {
