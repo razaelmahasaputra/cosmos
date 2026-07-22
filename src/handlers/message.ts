@@ -165,7 +165,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
     }
 
     // Auto sticker processing if enabled for this chat and message contains direct media
-    if (!msg.key.fromMe && isAutoStickerEnabled(jid) && hasDirectMedia(msg.message)) {
+    if (isAutoStickerEnabled(jid) && hasDirectMedia(msg.message)) {
         if (jid.endsWith('@g.us')) {
             const whitelisted = await isGroupWhitelisted(jid);
             if (!whitelisted) return;

@@ -180,8 +180,6 @@ export const definition: ToolDefinition = {
     }
 };
 
-const lastStickerTimes = new Map<string, number>();
-const STICKER_COOLDOWN_MS = 2500; // 2.5 seconds cooldown
 const MAX_MEDIA_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB limit
 
 function getMediaFileLength(msg: any): number {
@@ -236,15 +234,7 @@ export async function execute(_: Record<string, any>, ctx: ToolContext): Promise
         return 'Failed: Please send or reply to an image, video, or GIF with this command.';
     }
 
-    // 1. Rate limiting / cooldown check
-    const now = Date.now();
-    const lastTime = lastStickerTimes.get(ctx.jid) || 0;
-    if (now - lastTime < STICKER_COOLDOWN_MS) {
-        return 'Failed: Please wait a moment before requesting another sticker.';
-    }
-    lastStickerTimes.set(ctx.jid, now);
-
-    // 2. Pre-download file size check (15MB max)
+    // Pre-download file size check (15MB max)
     const targetMedia = imageMessage || videoMessage || documentMessage;
     const mediaSize = getMediaFileLength(targetMedia);
     if (mediaSize > MAX_MEDIA_SIZE_BYTES) {
