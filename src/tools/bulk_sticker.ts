@@ -7,6 +7,8 @@ import { ToolDefinition, ToolContext } from './types.js';
 
 export const definition: ToolDefinition = {
     name: 'bulk_sticker',
+    title: 'Bulk Sticker Generator',
+    category: 'Media & Stickers',
     aliases: ['.bulksticker', '.bs', '.bulkstiker'],
     description: 'Creates stickers in bulk from a specified local folder.',
     owner: true,

@@ -3,6 +3,8 @@ import { ToolDefinition, ToolContext } from './types.js';
 
 export const definition: ToolDefinition = {
     name: 'system_info',
+    title: 'System Information',
+    category: 'System & Help',
     aliases: ['.ping', '.stats', '.status', '.speed'],
     description: 'Displays server specifications, bot status, and network latency.',
     parameters: {

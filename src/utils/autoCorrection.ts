@@ -4,41 +4,42 @@ import { writeLog } from '#/logger.js';
 
 dotenv.config();
 
-const activeAutoCorrectionJids = new Set<string>();
+import {
+    isSessionActive,
+    activateSession,
+    deactivateSession,
+    toggleSession
+} from '#/utils/sessionStore.js';
+
+const FEATURE_NAME = 'autocorrection';
 let isGlobalAutoCorrectionEnabled = false;
 
 const processedMsgIds = new Set<string>();
 const MAX_PROCESSED_IDS = 1000;
 
-export function enableAutoCorrection(jid?: string): void {
+export async function enableAutoCorrection(jid?: string): Promise<void> {
     if (jid) {
-        activeAutoCorrectionJids.add(jid);
+        await activateSession(FEATURE_NAME, jid);
     } else {
         isGlobalAutoCorrectionEnabled = true;
     }
 }
 
-export function disableAutoCorrection(jid?: string): boolean {
+export async function disableAutoCorrection(jid?: string): Promise<boolean> {
     if (jid) {
-        return activeAutoCorrectionJids.delete(jid);
+        return await deactivateSession(FEATURE_NAME, jid);
     } else {
         isGlobalAutoCorrectionEnabled = false;
         return true;
     }
 }
 
-export function toggleAutoCorrection(jid: string): boolean {
-    if (activeAutoCorrectionJids.has(jid)) {
-        activeAutoCorrectionJids.delete(jid);
-        return false;
-    } else {
-        activeAutoCorrectionJids.add(jid);
-        return true;
-    }
+export async function toggleAutoCorrection(jid: string): Promise<boolean> {
+    return await toggleSession(FEATURE_NAME, jid);
 }
 
 export function isAutoCorrectionEnabled(jid: string): boolean {
-    return isGlobalAutoCorrectionEnabled || activeAutoCorrectionJids.has(jid);
+    return isGlobalAutoCorrectionEnabled || isSessionActive(FEATURE_NAME, jid);
 }
 
 export function isMessageProcessed(msgId: string): boolean {

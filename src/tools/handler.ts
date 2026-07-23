@@ -59,19 +59,7 @@ class ToolsHandler {
             return this.tools.get(name) || null;
         }
 
-        // 2. If input does not start with a dot, try matching with a dot prefix
-        if (!normalized.startsWith('.')) {
-            const dotted = '.' + normalized;
-            if (this.tools.has(dotted)) {
-                return this.tools.get(dotted) || null;
-            }
-            if (this.aliases.has(dotted)) {
-                const name = this.aliases.get(dotted)!;
-                return this.tools.get(name) || null;
-            }
-        }
-
-        // 3. If input starts with a dot, try matching without the dot prefix
+        // 2. If input starts with a dot, try matching without the dot prefix
         if (normalized.startsWith('.')) {
             const undotted = normalized.slice(1);
             if (this.tools.has(undotted)) {

@@ -8,6 +8,11 @@ import { handleMessage } from '#/handlers/message.js';
 import { cacheMessage, getCachedMessage } from '#/utils/messageCache.js';
 import toolsHandler from '#/tools/handler.js';
 
+import { supabase } from '#/db.js';
+import { useSupabaseAuthState } from '#/utils/supabaseAuthState.js';
+import { loadEnvFromSupabase } from '#/utils/cloudEnv.js';
+import { initActiveSessions } from '#/utils/sessionStore.js';
+
 dns.setDefaultResultOrder('ipv4first');
 
 dotenv.config();
@@ -16,7 +21,13 @@ const logger = pino({ level: 'silent' });
 let connectionOpenTimeSec = 0;
 
 async function connectToWhatsApp(): Promise<void> {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
+    await loadEnvFromSupabase();
+
+    const authState = supabase
+        ? await useSupabaseAuthState(supabase)
+        : await useMultiFileAuthState('auth_info_baileys');
+
+    const { state, saveCreds } = authState;
 
     const sock = makeWASocket({
         auth: state,
@@ -67,7 +78,7 @@ async function connectToWhatsApp(): Promise<void> {
         }, 3000);
     }
 
-    sock.ev.on('connection.update', (update) => {
+    sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
             const lastDisconnectError = lastDisconnect?.error as any;
@@ -90,6 +101,7 @@ async function connectToWhatsApp(): Promise<void> {
         } else if (connection === 'open') {
             console.log('Opened connection');
             connectionOpenTimeSec = Math.floor(Date.now() / 1000);
+            await initActiveSessions();
         }
     });
 

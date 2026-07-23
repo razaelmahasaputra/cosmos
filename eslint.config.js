@@ -3,6 +3,9 @@ import ts from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default [
+    {
+        ignores: ['dist/**', 'node_modules/**', 'coverage/**']
+    },
     js.configs.recommended,
     ...ts.configs.recommended,
     eslintConfigPrettier,
@@ -16,6 +19,8 @@ export default [
                 URL: 'readonly',
                 setTimeout: 'readonly',
                 clearTimeout: 'readonly',
+                setInterval: 'readonly',
+                clearInterval: 'readonly',
                 Buffer: 'readonly'
             }
         },

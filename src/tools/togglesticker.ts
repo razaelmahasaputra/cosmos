@@ -3,25 +3,18 @@ import { toggleAutoSticker } from '#/utils/autoSticker.js';
 
 export const definition: ToolDefinition = {
     name: 'togglesticker',
+    title: 'Enable Auto-Sticker',
+    category: 'Media & Stickers',
     aliases: [
         '.togglesticker',
-        'togglesticker',
         '.autosticker',
-        'autosticker',
         '.autostiker',
-        'autostiker',
         '.togglestickermaker',
-        'togglestickermaker',
         '.togsticker',
-        'togsticker',
         '.tglsticker',
-        'tglsticker',
         '.tgls',
-        'tgls',
         '.asticker',
-        'asticker',
-        '.astiker',
-        'astiker'
+        '.astiker'
     ],
     description: 'Enables or disables the Auto Sticker Maker feature for this chat.',
     parameters: {
@@ -32,7 +25,7 @@ export const definition: ToolDefinition = {
 };
 
 export async function execute(_args: Record<string, any>, ctx: ToolContext): Promise<string> {
-    const isEnabled = toggleAutoSticker(ctx.jid);
+    const isEnabled = await toggleAutoSticker(ctx.jid);
     if (isEnabled) {
         return '✨ *Auto Sticker Maker ACTIVATED* for this chat.\n\nEvery photo, video, or GIF sent in this chat will automatically be converted into a sticker.\n\nType *.stoptogglesticker* (or *.stopautosticker* / *.stoptgls*) to disable.';
     } else {

@@ -6,10 +6,14 @@ import { ToolDefinition, ToolContext } from './types.js';
 
 dotenv.config();
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+function getGroqClient(): Groq {
+    return new Groq({ apiKey: process.env.GROQ_API_KEY });
+}
 
 export const definition: ToolDefinition = {
     name: 'stt',
+    title: 'Speech to Text (Transcribe)',
+    category: 'AI & Correction',
     aliases: ['.stt', '.ptt'],
     description: 'Transcribes a quoted voice note into text using Groq Whisper.',
     parameters: {
@@ -43,7 +47,7 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
 
         // Send to Groq Whisper using SDK toFile helper
         const file = await toFile(buffer, 'audio.ogg', { type: 'audio/ogg' });
-        const transcription: any = await groq.audio.transcriptions.create({
+        const transcription: any = await getGroqClient().audio.transcriptions.create({
             file,
             model: 'whisper-large-v3-turbo',
             response_format: 'text'

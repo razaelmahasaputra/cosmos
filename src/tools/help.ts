@@ -2,8 +2,11 @@ import { ToolDefinition, ToolContext } from './types.js';
 
 export const definition: ToolDefinition = {
     name: 'help',
-    aliases: ['.help', 'help', '.menu', 'menu', '.bantuan', 'bantuan'],
-    description: 'Displays the list of all available bot commands along with their descriptions and aliases.',
+    title: 'Command Help Menu',
+    category: 'System & Help',
+    aliases: ['.help', '.menu', '.bantuan'],
+    description:
+        'Displays the list of all available bot commands dynamically grouped by category with titles, descriptions, and aliases.',
     parameters: {
         type: 'object',
         properties: {},
@@ -15,7 +18,15 @@ export async function execute(_args: Record<string, any>, _ctx: ToolContext): Pr
     const toolsHandler = (await import('./handler.js')).default;
     const tools = toolsHandler.getAllTools();
 
-    const toolList: { name: string; description: string; aliases: string[]; owner?: boolean }[] = [];
+    interface ProcessedTool {
+        name: string;
+        title: string;
+        description: string;
+        aliases: string[];
+        owner?: boolean;
+    }
+
+    const categorizedTools: Record<string, ProcessedTool[]> = {};
     const seenNames = new Set<string>();
 
     for (const tool of tools) {
@@ -23,39 +34,49 @@ export async function execute(_args: Record<string, any>, _ctx: ToolContext): Pr
         if (!def || seenNames.has(def.name)) continue;
         seenNames.add(def.name);
 
+        const category = def.category || 'General Commands';
+        if (!categorizedTools[category]) {
+            categorizedTools[category] = [];
+        }
+
         const rawAliases = def.aliases || [];
         const formattedAliases = Array.from(
             new Set(
-                rawAliases
-                    .map((a) => (a.startsWith('.') ? a : `.${a}`))
-                    .map((a) => a.toLowerCase())
+                rawAliases.map((a) => (a.startsWith('.') ? a : `.${a}`)).map((a) => a.toLowerCase())
             )
         );
 
-        toolList.push({
+        categorizedTools[category].push({
             name: def.name,
+            title: def.title || def.name.toUpperCase(),
             description: def.description || 'No description available.',
             aliases: formattedAliases,
             owner: def.owner
         });
     }
 
-    let menuText = `🤖 *WAF (WhatsApp Bot Framework) - COMMAND MENU*\n\n`;
-    menuText += `Below is the list of available commands:\n\n`;
+    let menuText = `🤖 *WAF (WhatsApp Bot Framework) - COMMAND MENU*\n`;
+    menuText += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    toolList.forEach((t, index) => {
-        const primaryCommand = t.aliases.length > 0 ? t.aliases[0] : `.${t.name}`;
-        const ownerTag = t.owner ? ' 🔒 *(Owner Only)*' : '';
+    const categories = Object.keys(categorizedTools);
 
-        menuText += `${index + 1}. *${primaryCommand}*${ownerTag}\n`;
-        menuText += `   📝 *Description:* ${t.description}\n`;
-        if (t.aliases.length > 0) {
-            menuText += `   🏷️ *Aliases:* ${t.aliases.join(', ')}\n`;
-        }
-        menuText += `\n`;
+    categories.forEach((cat) => {
+        menuText += `📂 *${cat.toUpperCase()}*\n`;
+
+        categorizedTools[cat].forEach((t) => {
+            const primaryCommand = t.aliases.length > 0 ? t.aliases[0] : `.${t.name}`;
+            const ownerBadge = t.owner ? ' 🔒 *(Owner Only)*' : '';
+            const aliasStr =
+                t.aliases.length > 0 ? t.aliases.join(', ') : `.${t.name}`;
+
+            menuText += `• *${t.title}* (${primaryCommand})${ownerBadge}\n`;
+            menuText += `  📝 *Description:* ${t.description}\n`;
+            menuText += `  🏷️ *Aliases:* ${aliasStr}\n\n`;
+        });
     });
 
-    menuText += `💡 *Tip:* Execute commands by adding a dot prefix (e.g., \`.help\`, \`.menu\`, \`.sticker\`).`;
+    menuText += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    menuText += `💡 *Tip:* Execute commands by typing their dot prefix (e.g. \`.help\`, \`.sticker\`).`;
 
     return menuText;
 }

@@ -3,6 +3,8 @@ import { ToolDefinition, ToolContext } from './types.js';
 
 export const definition: ToolDefinition = {
     name: 'stoplyrics',
+    title: 'Stop Lyrics Player',
+    category: 'Music & Lyrics',
     aliases: ['.stoplyrics', '.slyrics'],
     description: 'Stops ongoing lyrics playback in this chat.',
     parameters: {

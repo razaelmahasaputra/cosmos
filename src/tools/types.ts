@@ -2,6 +2,8 @@ import { WASocket, WAMessage } from '@whiskeysockets/baileys';
 
 export interface ToolDefinition {
     name: string;
+    title?: string;
+    category?: string;
     aliases?: string[];
     description: string;
     owner?: boolean;

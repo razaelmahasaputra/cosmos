@@ -3,15 +3,13 @@ import { toggleAutoCorrection } from '#/utils/autoCorrection.js';
 
 export const definition: ToolDefinition = {
     name: 'toggleautocorrection',
+    title: 'Toggle AI Auto-Correction',
+    category: 'AI & Correction',
     aliases: [
         '.toggleautocorrection',
-        'toggleautocorrection',
         '.autocorrect',
-        'autocorrect',
         '.autocorrection',
-        'autocorrection',
-        '.autotyo',
-        'autotyo'
+        '.autotyo'
     ],
     description: 'Toggles automated AI message auto-correction via Groq for this chat.',
     owner: true,
@@ -23,7 +21,7 @@ export const definition: ToolDefinition = {
 };
 
 export async function execute(_args: Record<string, any>, ctx: ToolContext): Promise<string> {
-    const isEnabled = toggleAutoCorrection(ctx.jid);
+    const isEnabled = await toggleAutoCorrection(ctx.jid);
     if (isEnabled) {
         return '✨ *Auto-Correction ACTIVATED* for this chat.\n\nSent messages will automatically be analyzed and corrected by Groq AI if typos or misspoken words are detected.\n\nType *.stopautocorrection* (or *.autocorrect*) to disable.';
     } else {

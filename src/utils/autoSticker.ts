@@ -1,23 +1,25 @@
-const activeAutoStickerJids = new Set<string>();
+import {
+    isSessionActive,
+    activateSession,
+    deactivateSession,
+    toggleSession
+} from '#/utils/sessionStore.js';
 
-export function enableAutoSticker(jid: string): void {
-    activeAutoStickerJids.add(jid);
+const FEATURE_NAME = 'autosticker';
+
+export async function enableAutoSticker(jid: string): Promise<void> {
+    await activateSession(FEATURE_NAME, jid);
 }
 
-export function disableAutoSticker(jid: string): boolean {
-    return activeAutoStickerJids.delete(jid);
+export async function disableAutoSticker(jid: string): Promise<boolean> {
+    return await deactivateSession(FEATURE_NAME, jid);
 }
 
-export function toggleAutoSticker(jid: string): boolean {
-    if (activeAutoStickerJids.has(jid)) {
-        activeAutoStickerJids.delete(jid);
-        return false;
-    } else {
-        activeAutoStickerJids.add(jid);
-        return true;
-    }
+export async function toggleAutoSticker(jid: string): Promise<boolean> {
+    return await toggleSession(FEATURE_NAME, jid);
 }
 
 export function isAutoStickerEnabled(jid: string): boolean {
-    return activeAutoStickerJids.has(jid);
+    return isSessionActive(FEATURE_NAME, jid);
 }
+

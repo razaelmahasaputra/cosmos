@@ -3,6 +3,8 @@ import { ToolDefinition, ToolContext } from './types.js';
 
 export const definition: ToolDefinition = {
     name: 'playlyrics',
+    title: 'Play Synchronized Lyrics',
+    category: 'Music & Lyrics',
     aliases: ['.playlyrics', '.plyrics'],
     description: 'Starts automated lyrics playback for lyric files (.lrc or .txt) located in the lyrics/ folder.',
     parameters: {

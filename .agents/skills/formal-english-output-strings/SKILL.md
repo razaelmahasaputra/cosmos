@@ -12,7 +12,7 @@ Sering kali AI Coding Agent membuat atau menambahkan string bertipe output ke pe
 
 ## Kenapa Salah
 
-1. Standar internasional antarmuka aplikasi dan bot menghendaki konsistensi bahasa menggunakan **Bahasa Inggris Formal** (*Formal English*).
+1. Standar internasional antarmuka aplikasi dan bot menghendaki konsistensi bahasa menggunakan **Bahasa Inggris Formal** (_Formal English_).
 2. Campur aduk bahasa pada output bot membuat antarmuka terlihat tidak profesional dan membingungkan pengguna internasional atau sistem integrasi eksternal.
 
 ## Yang Benar
@@ -58,8 +58,8 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
 ## Aturan Baku
 
 - **SELALU** gunakan Bahasa Inggris Formal untuk:
-  1. Teks respon balasan bot yang akan terkirim ke pengguna WhatsApp (`sendMessage`, return value tool `execute`).
-  2. Deskripsi perintah dan deskripsi parameter pada `ToolDefinition` (`description`, `properties.<key>.description`).
-  3. Pesan error dan pemberitahuan status sistem (`Failed: ...`, `Error: ...`).
-  4. System prompt untuk LLM / AI API (seperti Groq SDK prompt).
+    1. Teks respon balasan bot yang akan terkirim ke pengguna WhatsApp (`sendMessage`, return value tool `execute`).
+    2. Deskripsi perintah dan deskripsi parameter pada `ToolDefinition` (`description`, `properties.<key>.description`).
+    3. Pesan error dan pemberitahuan status sistem (`Failed: ...`, `Error: ...`).
+    4. System prompt untuk LLM / AI API (seperti Groq SDK prompt).
 - **DILARANG KERAS** menggunakan Bahasa Indonesia baku atau tidak baku untuk string output kode di dalam proyek.
