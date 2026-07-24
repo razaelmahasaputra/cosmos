@@ -84,38 +84,38 @@ export async function analyzeAndCorrectText(originalText: string): Promise<strin
         return null;
     }
 
-    const systemPrompt = `You are an automated message auto-correct AI assistant.
-Your task is to analyze the sender's text message and correct ONLY if there are typos, spelling mistakes, or misspoken words.
+    const systemPrompt = `You are an automated message auto-correct AI assistant for casual chat/messaging.
+Your task is to analyze the sender's text message and correct ONLY clear typos or severe spelling mistakes.
 
 STRICT RULES:
-1. If there is a typo or misspelled word, return ONLY the corrected text message.
-2. STRICTLY FORBIDDEN to add extra words outside the correction, explanations, greetings, intros, outros, or wrapping quotes.
-3. STRICTLY FORBIDDEN to alter the overall message structure, casual style, or rephrase sentences unless correcting an actual typo.
-4. If the message is already correct and contains no typos or misspoken words, you MUST respond ONLY with the exact string: NO_CHANGE
-5. Preserve casual slang, common messaging abbreviations (e.g. yg, gak, klo, etc.), emojis, markdown formatting (*bold*, _italic_), and proper nouns/names.
-6. Use Native Function Calling API if needed. STRICTLY FORBIDDEN to type XML tags like <function=...> manually inside your text response!`;
+1. Return ONLY the corrected text message without any explanation, context, preamble, or wrapping quote.
+2. STRICTLY FORBIDDEN to guess slang, phonetic jokes, internet shorthand, or dialect phrases as typos (e.g., "sek" -> "bentar", "tayem" -> "time").
+3. Do NOT rephrase sentences, add context, or standardize casual informal speech into formal language.
+4. If the message is intended casual slang, abbreviation, or has no clear typo, respond ONLY with: NO_CHANGE
+5. Preserve original slang, abbreviations, emojis, and informal formatting.
+6. Use Native Function Calling API if needed. STRICTLY FORBIDDEN to type XML tags like <function=...> manually!`;
 
     try {
         const groq = getGroqClient();
         let response;
         try {
             response = await groq.chat.completions.create({
-                model: 'llama-3.3-70b-versatile',
+                model: 'openai/gpt-oss-120b',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: trimmed }
                 ],
-                temperature: 0.5
+                temperature: 0.1
             });
         } catch (modelErr: any) {
-            console.warn('[AutoCorrect] Llama 3.3 failed, retrying with Llama 3.1 8b...', modelErr?.message);
+            console.warn('[AutoCorrect] openai/gpt-oss-120b failed, retrying with openai/gpt-oss-20b...', modelErr?.message);
             response = await groq.chat.completions.create({
-                model: 'llama-3.1-8b-instant',
+                model: 'openai/gpt-oss-20b',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: trimmed }
                 ],
-                temperature: 0.5
+                temperature: 0.1
             });
         }
 

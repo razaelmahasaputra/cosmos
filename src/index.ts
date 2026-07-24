@@ -1,7 +1,6 @@
 import { writeLog } from '#/logger.js';
-import { execSync } from 'child_process';
 import dns from 'dns';
-import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
+import { makeWASocket, DisconnectReason } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import dotenv from 'dotenv';
 import { handleMessage } from '#/handlers/message.js';
@@ -9,9 +8,10 @@ import { cacheMessage, getCachedMessage } from '#/utils/messageCache.js';
 import toolsHandler from '#/tools/handler.js';
 
 import { supabase } from '#/db.js';
-import { useSupabaseAuthState } from '#/utils/supabaseAuthState.js';
+import { usePrismaAuthState } from '#/utils/prismaAuthState.js';
 import { loadEnvFromSupabase } from '#/utils/cloudEnv.js';
 import { initActiveSessions } from '#/utils/sessionStore.js';
+import { startAutoBackup } from '#/utils/backup.js';
 
 dns.setDefaultResultOrder('ipv4first');
 
@@ -20,12 +20,14 @@ dotenv.config();
 const logger = pino({ level: 'silent' });
 let connectionOpenTimeSec = 0;
 
+// Start auto backup every 12 hours
+startAutoBackup(43200000);
+
+
 async function connectToWhatsApp(): Promise<void> {
     await loadEnvFromSupabase();
 
-    const authState = supabase
-        ? await useSupabaseAuthState(supabase)
-        : await useMultiFileAuthState('auth_info_baileys');
+    const authState = await usePrismaAuthState('default');
 
     const { state, saveCreds } = authState;
 
@@ -153,26 +155,6 @@ async function connectToWhatsApp(): Promise<void> {
     });
 }
 
-if (process.env.AUTO_UPDATE === 'true') {
-    try {
-        console.log('Attempting update from GitHub...');
-        // Handle 'dubious ownership' error in Pterodactyl Docker environments
-        execSync('git config --global --add safe.directory "*"', { stdio: 'inherit' });
-
-        // Support private repositories if GITHUB_TOKEN is set in .env
-        const token = process.env.GITHUB_TOKEN;
-        const repoUrl = token
-            ? `https://${token}@github.com/razaeldotexe/waf.git`
-            : 'https://github.com/razaeldotexe/waf.git';
-
-        execSync(`git fetch ${repoUrl} main`, { stdio: 'inherit' });
-        execSync('git reset --hard FETCH_HEAD', { stdio: 'inherit' });
-        console.log('Update from GitHub completed successfully.');
-    } catch (err: any) {
-        const safeErrorMsg = err.message.replace(/https:\/\/(.*?)@github\.com/g, 'https://***@github.com');
-        console.error('Failed to update from GitHub, continuing startup...', safeErrorMsg);
-    }
-}
 
 await toolsHandler.loadTools();
 connectToWhatsApp();

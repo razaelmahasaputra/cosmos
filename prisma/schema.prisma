@@ -1,0 +1,38 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model WhatsAppAuth {
+  id         String   @id
+  value      String
+  updated_at DateTime @default(now()) @updatedAt
+}
+
+model WhitelistedGroup {
+  jid String @id
+}
+
+model AppConfig {
+  key   String @id
+  value String
+}
+
+model ActiveSession {
+  feature    String
+  jid        String
+  metadata   String?
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@id([feature, jid])
+}

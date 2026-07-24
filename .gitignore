@@ -81,3 +81,9 @@ dist/
 
 
 
+
+/src/generated/prisma
+
+# Local SQLite Database
+storage/*.sqlite
+storage/*.sqlite-journal

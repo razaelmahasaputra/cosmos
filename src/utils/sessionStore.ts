@@ -1,10 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import { supabase } from '#/db.js';
+import { prisma } from '#/db.js';
 
 const STORAGE_DIR = path.resolve(process.cwd(), 'storage');
 const LOCAL_FILE = path.join(STORAGE_DIR, 'active_sessions.json');
-const TABLE_NAME = 'active_sessions';
 
 export interface ActiveSessionRecord {
     feature: string;
@@ -56,33 +55,29 @@ function saveLocalFile(): void {
 }
 
 /**
- * Initializes active sessions from Supabase (or local fallback file).
+ * Initializes active sessions from Prisma (or local fallback file).
  */
 export async function initActiveSessions(): Promise<void> {
     memoryStore.clear();
 
-    if (supabase) {
-        try {
-            const { data, error } = await supabase.from(TABLE_NAME).select('feature, jid, metadata');
-            if (!error && data) {
-                for (const row of data) {
-                    if (!memoryStore.has(row.feature)) {
-                        memoryStore.set(row.feature, new Map());
-                    }
-                    memoryStore.get(row.feature)!.set(row.jid, row.metadata || {});
+    try {
+        const data = await prisma.activeSession.findMany();
+        if (data && data.length > 0) {
+            for (const row of data) {
+                if (!memoryStore.has(row.feature)) {
+                    memoryStore.set(row.feature, new Map());
                 }
-                saveLocalFile(); // Keep local fallback in sync
-                console.log(`[SessionStore] Loaded ${data.length} active session(s) from Supabase.`);
-                return;
-            } else {
-                console.warn('[SessionStore] Failed or table active_sessions not present in Supabase, using local file:', error?.message);
+                memoryStore.get(row.feature)!.set(row.jid, row.metadata ? JSON.parse(row.metadata) : {});
             }
-        } catch (err) {
-            console.error('[SessionStore] Exception fetching sessions from Supabase:', err);
+            saveLocalFile(); // Keep local fallback in sync
+            console.log(`[SessionStore] Loaded ${data.length} active session(s) from local database.`);
+            return;
         }
+    } catch (err) {
+        console.error('[SessionStore] Exception fetching sessions from local database:', err);
     }
 
-    // Fallback to local file if Supabase is unavailable or failed
+    // Fallback to local file if DB is empty or failed
     const localData = loadLocalFile();
     for (const row of localData) {
         if (!memoryStore.has(row.feature)) {
@@ -120,17 +115,20 @@ export async function activateSession(feature: string, jid: string, metadata: Re
     memoryStore.get(feature)!.set(jid, metadata);
     saveLocalFile();
 
-    if (supabase) {
-        try {
-            await supabase.from(TABLE_NAME).upsert({
-                feature,
-                jid,
-                metadata,
-                updated_at: new Date().toISOString()
-            }, { onConflict: 'feature,jid' });
-        } catch (err) {
-            console.error(`[SessionStore] Exception persisting activateSession (${feature}, ${jid}):`, err);
-        }
+    try {
+        const metadataStr = JSON.stringify(metadata);
+        await prisma.activeSession.upsert({
+            where: {
+                feature_jid: {
+                    feature,
+                    jid
+                }
+            },
+            update: { metadata: metadataStr },
+            create: { feature, jid, metadata: metadataStr }
+        });
+    } catch (err) {
+        console.error(`[SessionStore] Exception persisting activateSession (${feature}, ${jid}):`, err);
     }
 }
 
@@ -145,12 +143,21 @@ export async function deactivateSession(feature: string, jid: string): Promise<b
     jidMap.delete(jid);
     saveLocalFile();
 
-    if (supabase) {
-        try {
-            await supabase.from(TABLE_NAME).delete().eq('feature', feature).eq('jid', jid);
-        } catch (err) {
-            console.error(`[SessionStore] Exception persisting deactivateSession (${feature}, ${jid}):`, err);
+    try {
+        await prisma.activeSession.delete({
+            where: {
+                feature_jid: {
+                    feature,
+                    jid
+                }
+            }
+        });
+    } catch (err) {
+        // Ignore record not found error
+        if (err && typeof err === 'object' && 'code' in err && err.code === 'P2025') {
+            return true;
         }
+        console.error(`[SessionStore] Exception persisting deactivateSession (${feature}, ${jid}):`, err);
     }
     return true;
 }

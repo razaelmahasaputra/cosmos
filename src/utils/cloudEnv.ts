@@ -1,17 +1,11 @@
-import { supabase } from '#/db.js';
+import { prisma } from '#/db.js';
 
 /**
- * Dynamically loads environment variables stored in Supabase 'app_config' table into process.env.
- * Allows managing bot environment variables centrally in Supabase Cloud.
+ * Dynamically loads environment variables stored in local SQLite 'AppConfig' table into process.env.
  */
 export async function loadEnvFromSupabase(): Promise<number> {
-    if (!supabase) return 0;
     try {
-        const { data, error } = await supabase.from('app_config').select('key, value');
-        if (error || !data) {
-            // Table might not exist yet or no rows found
-            return 0;
-        }
+        const data = await prisma.appConfig.findMany();
 
         let loadedCount = 0;
         for (const row of data) {
@@ -22,11 +16,12 @@ export async function loadEnvFromSupabase(): Promise<number> {
         }
 
         if (loadedCount > 0) {
-            console.log(`[CloudEnv] Successfully loaded ${loadedCount} environment variable(s) from Supabase cloud.`);
+            console.log(`[CloudEnv] Successfully loaded ${loadedCount} environment variable(s) from local database.`);
         }
         return loadedCount;
     } catch (err) {
-        console.error('[CloudEnv] Error loading environment variables from Supabase:', err);
+        console.error('[CloudEnv] Error loading environment variables from local database:', err);
         return 0;
     }
 }
+

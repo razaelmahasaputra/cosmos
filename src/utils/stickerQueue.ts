@@ -7,7 +7,7 @@ interface QueueItem<T = any> {
 class StickerQueue {
     private queue: QueueItem[] = [];
     private processing = false;
-    private readonly maxQueueSize = 10;
+    private readonly maxQueueSize = 100;
 
     /**
      * Add a task to the queue and wait for its completion.
