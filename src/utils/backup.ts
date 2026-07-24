@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
 import FormData from 'form-data';
+import cron from 'node-cron';
 
 export async function sendBackupToTelegram(): Promise<void> {
     const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -37,10 +38,16 @@ export async function sendBackupToTelegram(): Promise<void> {
     }
 }
 
-export function startAutoBackup(intervalMs: number = 86400000): void {
-    // 86400000 ms = 24 hours
-    setInterval(() => {
+export function startAutoBackup(): void {
+    // Jalankan backup sekali saat bot baru mulai
+    sendBackupToTelegram();
+    
+    // Jadwalkan backup setiap jam 00:00 WIB (Asia/Jakarta)
+    cron.schedule('0 0 * * *', () => {
         sendBackupToTelegram();
-    }, intervalMs);
-    console.log(`[Backup] Auto-backup started. Interval: ${intervalMs / 1000 / 60 / 60} hours.`);
+    }, {
+        timezone: "Asia/Jakarta"
+    });
+    
+    console.log(`[Backup] Auto-backup started on startup and scheduled at 00:00 WIB daily.`);
 }

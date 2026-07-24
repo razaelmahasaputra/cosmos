@@ -20,8 +20,8 @@ dotenv.config();
 const logger = pino({ level: 'silent' });
 let connectionOpenTimeSec = 0;
 
-// Start auto backup every 12 hours
-startAutoBackup(43200000);
+// Start auto backup (on startup and daily at 00:00 WIB)
+startAutoBackup();
 
 
 async function connectToWhatsApp(): Promise<void> {
