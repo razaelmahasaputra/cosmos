@@ -84,7 +84,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         const commandName = parts[0];
         const argsStr = trimmedText.substring(commandName.length).trim();
 
-        if (commandName === '.addgroup') {
+        if (commandName === '.addgroup' || commandName === '.addwhitelist') {
             if (!isOwner) {
                 await sock.sendMessage(jid, { text: 'This command can only be used by the bot owner.' }, { quoted: msg });
                 return;
@@ -164,7 +164,9 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
     }
 
     // Auto sticker processing if enabled for this chat and message contains direct media
-    if (isAutoStickerEnabled(jid) && hasDirectMedia(msg.message)) {
+    // Ignore programmatic bot responses (which usually start with ✅, ⏳, or ❌) to prevent loops, but allow owner's manual media
+    const isBotResponse = msg.key.fromMe && text && (text.startsWith('✅') || text.startsWith('⏳') || text.startsWith('❌'));
+    if (!isBotResponse && isAutoStickerEnabled(jid) && hasDirectMedia(msg.message)) {
         if (jid.endsWith('@g.us')) {
             const whitelisted = await isGroupWhitelisted(jid);
             if (!whitelisted) return;

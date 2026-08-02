@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Default path if not specified in .env
-let dbPath = process.env.DATABASE_URL?.replace('file:', '') || './storage/database.sqlite';
+const dbPath = process.env.DATABASE_URL?.replace('file:', '') || './storage/database.sqlite';
 const adapter = new PrismaBetterSqlite3({ url: dbPath });
 
 export const prisma = new PrismaClient({ adapter });

@@ -7,7 +7,6 @@ import { handleMessage } from '#/handlers/message.js';
 import { cacheMessage, getCachedMessage } from '#/utils/messageCache.js';
 import toolsHandler from '#/tools/handler.js';
 
-import { supabase } from '#/db.js';
 import { usePrismaAuthState } from '#/utils/prismaAuthState.js';
 import { loadEnvFromSupabase } from '#/utils/cloudEnv.js';
 import { initActiveSessions } from '#/utils/sessionStore.js';
@@ -19,10 +18,16 @@ dotenv.config();
 
 const logger = pino({ level: 'silent' });
 let connectionOpenTimeSec = 0;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 15;
+const RECONNECT_BASE_DELAY_MS = 3000;
 
 // Start auto backup (on startup and daily at 00:00 WIB)
 startAutoBackup();
 
+function delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function connectToWhatsApp(): Promise<void> {
     await loadEnvFromSupabase();
@@ -63,30 +68,59 @@ async function connectToWhatsApp(): Promise<void> {
         }
     });
 
-    if (!sock.authState.creds.registered) {
-        const phoneNumber = process.env.BOT_PHONE_NUMBER;
+    const pendingPairing = !sock.authState.creds.registered;
+    let phoneNumber: string | undefined;
+    if (pendingPairing) {
+        phoneNumber = process.env.BOT_PHONE_NUMBER;
         if (!phoneNumber) {
             console.error('BOT_PHONE_NUMBER is not set in .env');
             process.exit(1);
         }
-        console.log(`Requesting pairing code for ${phoneNumber}...`);
-        setTimeout(async () => {
-            try {
-                const code = await sock.requestPairingCode(phoneNumber);
-                console.log(`Pairing code: ${code}`);
-            } catch (err) {
-                console.error('Failed to request pairing code:', err);
-            }
-        }, 3000);
+        console.log(`[Pairing] Will request pairing code for ${phoneNumber} after WebSocket connects...`);
     }
+
+    let pairingRequested = false;
 
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
+
+        if (connection === 'open') {
+            console.log('Opened connection');
+            reconnectAttempts = 0;
+            connectionOpenTimeSec = Math.floor(Date.now() / 1000);
+            await initActiveSessions();
+        }
+
+        if (update.qr && pendingPairing && !sock.authState.creds.registered && !pairingRequested) {
+            pairingRequested = true;
+            try {
+                console.log(`[Pairing] Requesting pairing code for ${phoneNumber}...`);
+                const code = await sock.requestPairingCode(phoneNumber!);
+                const formattedCode = code.match(/.{1,4}/g)?.join('-') || code;
+                const msg = [
+                    '',
+                    '╔══════════════════════════════════════╗',
+                    '║         PAIRING CODE                 ║',
+                    `║     ${formattedCode.padEnd(34)}║`,
+                    '╚══════════════════════════════════════╝',
+                    '',
+                    `[Pairing] Enter this code in WhatsApp > Linked Devices > Pair a device`,
+                    ''
+                ].join('\n');
+                console.log(msg);
+                console.error(msg);
+            } catch (err) {
+                console.error('[Pairing] Failed to request pairing code:', err);
+                pairingRequested = false;
+            }
+        }
+
         if (connection === 'close') {
             const lastDisconnectError = lastDisconnect?.error as any;
             const errorCode = lastDisconnectError?.output?.statusCode || lastDisconnectError?.code;
             const errorMessage = lastDisconnectError?.message || 'Unknown Reason';
-            const shouldReconnect = errorCode !== DisconnectReason.loggedOut;
+            const isLoggedOut = errorCode === DisconnectReason.loggedOut;
+            const shouldReconnect = !isLoggedOut || pendingPairing;
 
             console.log(
                 `[Connection] Closed (Reason: ${errorMessage}, Code: ${errorCode}). Reconnecting: ${shouldReconnect}`
@@ -94,16 +128,21 @@ async function connectToWhatsApp(): Promise<void> {
 
             connectionOpenTimeSec = 0;
 
-            // Log details safely to file for debugging without cluttering console log
             if (lastDisconnect?.error) {
                 writeLog('ERROR', `Connection close details: ${errorMessage}`, lastDisconnect.error);
             }
 
-            if (shouldReconnect) connectToWhatsApp();
-        } else if (connection === 'open') {
-            console.log('Opened connection');
-            connectionOpenTimeSec = Math.floor(Date.now() / 1000);
-            await initActiveSessions();
+            if (shouldReconnect && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                reconnectAttempts++;
+                const reconnectDelay = RECONNECT_BASE_DELAY_MS * Math.min(reconnectAttempts, 5);
+                console.log(
+                    `[Connection] Reconnecting in ${reconnectDelay}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`
+                );
+                await delay(reconnectDelay);
+                connectToWhatsApp();
+            } else if (shouldReconnect) {
+                console.error(`[Connection] Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached. Giving up.`);
+            }
         }
     });
 

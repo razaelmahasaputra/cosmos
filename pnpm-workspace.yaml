@@ -6,3 +6,5 @@ allowBuilds:
   ffmpeg-static: true
   prisma: true
   protobufjs: true
+minimumReleaseAgeExclude:
+  - '@whiskeysockets/baileys@7.0.0-rc14'
