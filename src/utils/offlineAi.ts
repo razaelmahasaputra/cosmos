@@ -1,5 +1,5 @@
 import { Groq } from 'groq-sdk';
-import { WASocket, WAMessage } from '@whiskeysockets/baileys';
+import { WASocket, WAMessage, downloadContentFromMessage } from '@whiskeysockets/baileys';
 import { writeLog } from '#/logger.js';
 import dotenv from 'dotenv';
 import { isGroupWhitelisted } from '#/db.js';
@@ -11,6 +11,7 @@ let isGlobalOfflineAiEnabled = false;
 
 // Buffer to hold incoming messages while waiting for the 3-second delay
 const messageBuffer = new Map<string, string[]>();
+const imageBuffer = new Map<string, string[]>();
 
 // Keeps track of JIDs that are currently being processed
 const processingJids = new Set<string>();
@@ -38,19 +39,62 @@ export async function handleOfflineAiResponder(sock: WASocket, msg: WAMessage, j
     // Do not respond to commands
     if (text.trim().startsWith('.')) return false;
     
-    // Ignore empty messages
-    if (!text.trim()) return false;
+    const m = msg.message;
+    const unwrapped = m?.viewOnceMessage?.message || m?.viewOnceMessageV2?.message || m?.viewOnceMessageV2Extension?.message || m;
+    const imageMsg = unwrapped?.imageMessage;
 
-    // If it's a group, only respond if whitelisted
+    // Ignore if no text and no image
+    if (!text.trim() && !imageMsg) return false;
+
+    // If it's a group, only respond if whitelisted, AND if the bot/owner is mentioned or replied to
     if (jid.endsWith('@g.us')) {
         const whitelisted = await isGroupWhitelisted(jid);
         if (!whitelisted) return false;
+
+        const cleanId = (idStr?: string | null) => (idStr ? idStr.split(':')[0].split('@')[0] : null);
+        const botRawJid = cleanId(sock.user?.id);
+        const botRawLid = cleanId((sock.user as any)?.lid);
+
+        const contextInfo = unwrapped?.extendedTextMessage?.contextInfo || unwrapped?.imageMessage?.contextInfo || unwrapped?.videoMessage?.contextInfo;
+        
+        const mentionedJids: string[] = contextInfo?.mentionedJid || [];
+        const isMentioned = mentionedJids.some(j => {
+            const raw = cleanId(j);
+            return (botRawJid && raw === botRawJid) || (botRawLid && raw === botRawLid);
+        });
+
+        const repliedToJid = contextInfo?.participant;
+        const repliedToRaw = cleanId(repliedToJid);
+        const isReplied = (botRawJid && repliedToRaw === botRawJid) || (botRawLid && repliedToRaw === botRawLid);
+
+        if (!isMentioned && !isReplied) {
+            return false;
+        }
     }
 
-    // Add message to buffer
+    let base64Image: string | null = null;
+    if (imageMsg) {
+        try {
+            const stream = await downloadContentFromMessage(imageMsg, 'image');
+            let buffer = Buffer.from([]);
+            for await (const chunk of stream) {
+                buffer = Buffer.concat([buffer, chunk]);
+            }
+            const mime = imageMsg.mimetype || 'image/jpeg';
+            base64Image = `data:${mime};base64,${buffer.toString('base64')}`;
+        } catch (err) {
+            console.error('[Offline AI] Failed to download image:', err);
+        }
+    }
+
+    // Add message and image to buffer
     const currentBuffer = messageBuffer.get(jid) || [];
-    currentBuffer.push(text.trim());
+    if (text.trim()) currentBuffer.push(text.trim());
     messageBuffer.set(jid, currentBuffer);
+
+    const currentImageBuffer = imageBuffer.get(jid) || [];
+    if (base64Image) currentImageBuffer.push(base64Image);
+    imageBuffer.set(jid, currentImageBuffer);
 
     // Anti-spam system: check if already processing a message from this JID
     if (processingJids.has(jid)) {
@@ -73,10 +117,14 @@ export async function handleOfflineAiResponder(sock: WASocket, msg: WAMessage, j
         messageBuffer.delete(jid);
         const combinedText = finalMessages.join('\n\n');
         
-        if (!combinedText) return false;
+        const finalImages = imageBuffer.get(jid) || [];
+        imageBuffer.delete(jid);
+
+        if (!combinedText && finalImages.length === 0) return false;
 
         // Add the new combined user message to history
-        addMessageToHistory(jid, 'user', combinedText);
+        const historyText = combinedText || '[Image received]';
+        addMessageToHistory(jid, 'user', historyText);
 
         const systemPrompt = `You are a helpful AI assistant replying on behalf of the user who is currently offline.
 Engage in casual conversation with the contacts while they wait for the user to come back online.
@@ -89,8 +137,21 @@ Important: Reply natively. Do not use XML tags for function calls. Return ONLY t
         // Retrieve the conversation context (includes summary and recent messages)
         const chatContext = await getConversationContext(jid, groq);
 
+        let modelToUse = 'openai/gpt-oss-20b';
+        if (finalImages.length > 0) {
+            modelToUse = 'qwen/qwen3.6-27b';
+            const lastMsg = chatContext[chatContext.length - 1];
+            if (lastMsg && lastMsg.role === 'user') {
+                const contentArray: any[] = [{ type: 'text', text: historyText }];
+                for (const img of finalImages) {
+                    contentArray.push({ type: 'image_url', image_url: { url: img } });
+                }
+                lastMsg.content = contentArray;
+            }
+        }
+
         const response = await groq.chat.completions.create({
-            model: 'openai/gpt-oss-20b',
+            model: modelToUse,
             messages: [
                 { role: 'system', content: systemPrompt },
                 ...chatContext
