@@ -36,3 +36,19 @@ model ActiveSession {
 
   @@id([feature, jid])
 }
+
+model AiChatSession {
+  jid        String   @id
+  summary    String   @default("")
+  updated_at DateTime @default(now()) @updatedAt
+  messages   AiChatMessage[]
+}
+
+model AiChatMessage {
+  id         Int      @id @default(autoincrement())
+  jid        String
+  session    AiChatSession @relation(fields: [jid], references: [jid], onDelete: Cascade)
+  role       String
+  content    String
+  timestamp  DateTime @default(now())
+}

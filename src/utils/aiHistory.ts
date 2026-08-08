@@ -1,46 +1,51 @@
 import { Groq } from 'groq-sdk';
 import { writeLog } from '#/logger.js';
 import axios from 'axios';
+import { prisma } from '#/db.js';
 
-export type ChatMessage = {
-    role: 'user' | 'assistant';
-    content: string;
-    timestamp: number;
-};
-
-export type ChatSession = {
-    summary: string;
-    messages: ChatMessage[];
-};
-
-const chatSessions = new Map<string, ChatSession>();
 const TWO_HOURS = 2 * 60 * 60 * 1000;
 const MAX_MESSAGES_BEFORE_SUMMARY = 10;
 
-export function addMessageToHistory(jid: string, role: 'user' | 'assistant', content: string): void {
-    if (!chatSessions.has(jid)) {
-        chatSessions.set(jid, { summary: '', messages: [] });
-    }
-    const session = chatSessions.get(jid)!;
-    session.messages.push({ role, content, timestamp: Date.now() });
+export async function addMessageToHistory(jid: string, role: 'user' | 'assistant', content: string): Promise<void> {
+    await prisma.aiChatSession.upsert({
+        where: { jid },
+        update: {},
+        create: { jid }
+    });
+
+    await prisma.aiChatMessage.create({
+        data: {
+            jid,
+            role,
+            content
+        }
+    });
 }
 
 export async function getConversationContext(jid: string, groqClient: Groq): Promise<any[]> {
-    if (!chatSessions.has(jid)) return [];
+    const session = await prisma.aiChatSession.findUnique({
+        where: { jid },
+        include: {
+            messages: {
+                orderBy: { timestamp: 'asc' }
+            }
+        }
+    });
+
+    if (!session) return [];
     
-    const session = chatSessions.get(jid)!;
     const now = Date.now();
     
     // Filter messages strictly within the last 2 hours to avoid stale context
-    session.messages = session.messages.filter(m => now - m.timestamp < TWO_HOURS);
+    let sessionMessages = session.messages.filter(m => now - m.timestamp.getTime() < TWO_HOURS);
     
     // If the history is getting too long, summarize the older parts to save AI quota
-    if (session.messages.length > MAX_MESSAGES_BEFORE_SUMMARY) {
+    if (sessionMessages.length > MAX_MESSAGES_BEFORE_SUMMARY) {
         // Keep the last 2 messages intact for immediate context, summarize the rest
         const keepCount = 2;
-        const summarizeCount = session.messages.length - keepCount;
-        const messagesToSummarize = session.messages.slice(0, summarizeCount);
-        const remainingMessages = session.messages.slice(summarizeCount);
+        const summarizeCount = sessionMessages.length - keepCount;
+        const messagesToSummarize = sessionMessages.slice(0, summarizeCount);
+        const remainingMessages = sessionMessages.slice(summarizeCount);
         
         const transcript = messagesToSummarize.map(m => `${m.role === 'user' ? 'User' : 'AI'}: ${m.content}`).join('\n');
         
@@ -87,8 +92,19 @@ Return ONLY the updated summary text. Do not add any conversational filler.`;
             }
             
             if (newSummary) {
+                await prisma.$transaction([
+                    prisma.aiChatSession.update({
+                        where: { jid },
+                        data: { summary: newSummary }
+                    }),
+                    prisma.aiChatMessage.deleteMany({
+                        where: {
+                            id: { in: messagesToSummarize.map(m => m.id) }
+                        }
+                    })
+                ]);
                 session.summary = newSummary;
-                session.messages = remainingMessages;
+                sessionMessages = remainingMessages;
                 writeLog('INFO', 'AI History summarized', { jid, newSummaryLength: newSummary.length });
             }
         } catch (err: any) {
@@ -108,8 +124,8 @@ Return ONLY the updated summary text. Do not add any conversational filler.`;
         });
     }
     
-    for (const m of session.messages) {
-        contextMessages.push({ role: m.role, content: m.content });
+    for (const m of sessionMessages) {
+        contextMessages.push({ role: m.role as any, content: m.content });
     }
     
     return contextMessages;
