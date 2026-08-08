@@ -9,6 +9,7 @@ import {
     markMessageProcessed,
     analyzeAndCorrectText
 } from '#/utils/autoCorrection.js';
+import { handleOfflineAiResponder } from '#/utils/offlineAi.js';
 
 function getUnwrappedMessage(m: any): any {
     if (!m) return null;
@@ -142,6 +143,12 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
             }
             return;
         }
+    }
+
+    // Offline AI Responder
+    if (!isOwner) {
+        const handled = await handleOfflineAiResponder(sock, msg, jid, text);
+        if (handled) return;
     }
 
     // Auto-correct processing for owner's sent text messages
