@@ -7,11 +7,14 @@ import {
     SignalDataTypeMap,
     SignalDataSet
 } from '@whiskeysockets/baileys';
-import { prisma } from '#/db.js';
+import { getPrismaClient } from '#/db.js';
+import fs from 'fs';
+import path from 'path';
 
 export async function usePrismaAuthState(
     sessionCategory: string = 'default'
 ): Promise<{ state: AuthenticationState; saveCreds: () => Promise<void> }> {
+    const prisma = getPrismaClient(sessionCategory);
     const fixId = (id: string): string => `${sessionCategory}_${id.replace(/\//g, '__').replace(/:/g, '-')}`;
 
     const readData = async (id: string): Promise<any> => {
@@ -101,4 +104,25 @@ export async function usePrismaAuthState(
             await writeData('creds.json', creds);
         }
     };
+}
+
+export async function getAllSessionCategories(): Promise<string[]> {
+    try {
+        const storageDir = path.resolve(process.cwd(), 'storage');
+        if (!fs.existsSync(storageDir)) return [];
+        
+        const files = fs.readdirSync(storageDir);
+        const categories: string[] = [];
+        
+        for (const file of files) {
+            if (file.startsWith('subbot_') && file.endsWith('.sqlite')) {
+                categories.push(file.replace('.sqlite', ''));
+            }
+        }
+        
+        return categories;
+    } catch (err) {
+        console.error('[PrismaAuth] Error fetching session categories from storage:', err);
+        return [];
+    }
 }

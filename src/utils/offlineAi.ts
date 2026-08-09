@@ -4,6 +4,7 @@ import { writeLog } from '#/logger.js';
 import dotenv from 'dotenv';
 import { isGroupWhitelisted } from '#/db.js';
 import { addMessageToHistory, getConversationContext } from '#/utils/aiHistory.js';
+import toolsHandler from '#/tools/handler.js';
 
 dotenv.config();
 
@@ -141,22 +142,23 @@ export async function handleOfflineAiResponder(sock: WASocket, msg: WAMessage, j
 
         const systemPrompt = `You are Sara, a helpful, friendly female AI assistant managing the WhatsApp account of the owner, who is currently offline.
 Engage in casual conversation with the contacts while they wait for the owner to come back online.
+You have access to several tools and features. If the user asks to use a feature (like becoming a bot, pairing their number, generating sticker, etc.), use the corresponding tool.
 Keep your responses friendly, casual, and natural. Do not mention that you are an AI unless explicitly asked; act naturally as a stand-in named Sara.
 
 [Owner's Contact Info Context]
 ${ownerContextStr}
 
 CRITICAL INSTRUCTION: Always reply in the exact same language that the contact is using (e.g., if they speak Indonesian, reply in Indonesian; if they speak Spanish, reply in Spanish).
-Important: Reply natively. Do not use XML tags for function calls. Return ONLY the text you want to send.`;
+Important: Gunakan Native Function Calling API. DILARANG KERAS mengetik tag XML seperti <function=...> secara manual di dalam teks balasan Anda! Return ONLY the text you want to send when not calling a tool.`;
 
         const groq = getGroqClient();
         
         // Retrieve the conversation context (includes summary and recent messages)
         const chatContext = await getConversationContext(jid, groq);
 
-        let modelToUse = 'openai/gpt-oss-20b';
+        let modelToUse = 'llama3-70b-8192'; // Use model that supports tool calling well
         if (finalImages.length > 0) {
-            modelToUse = 'qwen/qwen3.6-27b';
+            modelToUse = 'llama-3.2-90b-vision-preview'; // Vision model
             const lastMsg = chatContext[chatContext.length - 1];
             if (lastMsg && lastMsg.role === 'user') {
                 const contentArray: any[] = [{ type: 'text', text: historyText }];
@@ -167,16 +169,45 @@ Important: Reply natively. Do not use XML tags for function calls. Return ONLY t
             }
         }
 
+        const groqTools = toolsHandler.getGroqTools();
+        const hasTools = groqTools.length > 0 && finalImages.length === 0;
+
         const response = await groq.chat.completions.create({
             model: modelToUse,
             messages: [
                 { role: 'system', content: systemPrompt },
                 ...chatContext
             ],
-            temperature: 0.7
+            temperature: hasTools ? 0.1 : 0.7,
+            tools: hasTools ? groqTools : undefined,
+            tool_choice: hasTools ? 'auto' : undefined
         });
         
-        const aiText = response.choices[0]?.message?.content?.trim();
+        const message = response.choices[0]?.message;
+
+        if (message?.tool_calls && message.tool_calls.length > 0) {
+            // Handle tool calls
+            for (const toolCall of message.tool_calls) {
+                const funcName = toolCall.function.name;
+                const args = JSON.parse(toolCall.function.arguments || '{}');
+                
+                try {
+                    const ctx = { sock, msg, jid };
+                    writeLog('INFO', 'Offline AI executing tool', { jid, funcName, args });
+                    const result = await toolsHandler.execute(funcName, args, ctx);
+                    
+                    if (result && typeof result === 'string') {
+                        await sock.sendMessage(jid, { text: result }, { quoted: msg });
+                    }
+                } catch (err: any) {
+                    console.error(`[Offline AI Tool Error] ${funcName}:`, err);
+                    await sock.sendMessage(jid, { text: `Sorry, there was an error executing ${funcName}.` }, { quoted: msg });
+                }
+            }
+            return true;
+        }
+
+        const aiText = message?.content?.trim();
         if (aiText) {
             // Save AI response to history
             await addMessageToHistory(jid, 'assistant', aiText);
