@@ -47,17 +47,18 @@ export async function getConversationContext(jid: string, groqClient: Groq): Pro
         const messagesToSummarize = sessionMessages.slice(0, summarizeCount);
         const remainingMessages = sessionMessages.slice(summarizeCount);
         
-        const transcript = messagesToSummarize.map(m => `${m.role === 'user' ? 'User' : 'AI'}: ${m.content}`).join('\n');
+        const truncate = (str: string, len: number) => str.length > len ? str.substring(0, len) + '...' : str;
+        const transcript = messagesToSummarize.map(m => `${m.role === 'user' ? 'User' : 'AI'}: ${truncate(m.content, 1000)}`).join('\n');
         
         const summaryPrompt = `You are an AI tasked with maintaining a concise running summary of a conversation.
 Update the previous summary with the new chat history provided below.
 Be extremely concise. Retain important facts, context, and the user's intent.
 
 [Previous Summary]
-${session.summary || 'No previous summary.'}
+${truncate(session.summary || 'No previous summary.', 2000)}
 
 [New Chat History]
-${transcript}
+${truncate(transcript, 4000)}
 
 Return ONLY the updated summary text. Do not add any conversational filler.`;
         
@@ -117,15 +118,17 @@ Return ONLY the updated summary text. Do not add any conversational filler.`;
 
     const contextMessages: any[] = [];
     
+    const truncateContext = (str: string, len: number) => str.length > len ? str.substring(0, len) + '...' : str;
+    
     if (session.summary) {
         contextMessages.push({ 
             role: 'system', 
-            content: `[Previous Conversation Context/Summary]\n${session.summary}` 
+            content: `[Previous Conversation Context/Summary]\n${truncateContext(session.summary, 1500)}` 
         });
     }
     
     for (const m of sessionMessages) {
-        contextMessages.push({ role: m.role as any, content: m.content });
+        contextMessages.push({ role: m.role as any, content: truncateContext(m.content, 1000) });
     }
     
     return contextMessages;

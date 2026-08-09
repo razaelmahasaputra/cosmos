@@ -8,6 +8,7 @@ import { addMessageToHistory, getConversationContext } from '#/utils/aiHistory.j
 dotenv.config();
 
 let isGlobalOfflineAiEnabled = false;
+let ownerContextStr = '';
 
 // Buffer to hold incoming messages while waiting for the 3-second delay
 const messageBuffer = new Map<string, string[]>();
@@ -126,9 +127,25 @@ export async function handleOfflineAiResponder(sock: WASocket, msg: WAMessage, j
         const historyText = combinedText || '[Image received]';
         await addMessageToHistory(jid, 'user', historyText);
 
-        const systemPrompt = `You are a helpful AI assistant replying on behalf of the user who is currently offline.
-Engage in casual conversation with the contacts while they wait for the user to come back online.
-Keep your responses friendly, casual, and natural. Do not mention that you are an AI unless explicitly asked, act naturally as a stand-in.
+        // Fetch owner context once
+        if (!ownerContextStr && sock.user?.id) {
+            try {
+                const ownerJid = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+                const status = await sock.fetchStatus(ownerJid) as any;
+                const ownerName = sock.user.name || 'Razael';
+                ownerContextStr = `Owner Name: ${ownerName}\nOwner Status/Bio: ${status?.status || 'Not set'}`;
+            } catch {
+                ownerContextStr = `Owner Name: ${sock.user?.name || 'Razael'}`;
+            }
+        }
+
+        const systemPrompt = `You are Sara, a helpful, friendly female AI assistant managing the WhatsApp account of the owner, who is currently offline.
+Engage in casual conversation with the contacts while they wait for the owner to come back online.
+Keep your responses friendly, casual, and natural. Do not mention that you are an AI unless explicitly asked; act naturally as a stand-in named Sara.
+
+[Owner's Contact Info Context]
+${ownerContextStr}
+
 CRITICAL INSTRUCTION: Always reply in the exact same language that the contact is using (e.g., if they speak Indonesian, reply in Indonesian; if they speak Spanish, reply in Spanish).
 Important: Reply natively. Do not use XML tags for function calls. Return ONLY the text you want to send.`;
 
