@@ -40,7 +40,8 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     const quotedMsgRaw = quotedMsgInfo?.quotedMessage;
 
     if (!quotedMsgRaw) {
-        return 'Failed: Please reply to a view-once message with this command.';
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+        return;
     }
 
     const { msg: quotedMsg, isViewOnce: wrapperIsViewOnce } = getMessage(quotedMsgRaw);
@@ -52,12 +53,16 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     const isViewOnce = wrapperIsViewOnce || imageMessage?.viewOnce || videoMessage?.viewOnce || audioMessage?.viewOnce;
 
     if (!isViewOnce) {
-        return 'Failed: The quoted message is not a view-once message.';
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+        return;
     }
 
     if (!imageMessage && !videoMessage && !audioMessage) {
-        return 'Failed: Unsupported view-once media type.';
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+        return;
     }
+
+    await ctx.sock.sendMessage(ctx.jid, { react: { text: '⏳', key: ctx.msg.key } });
 
     try {
         let type: 'image' | 'video' | 'audio';
@@ -93,21 +98,22 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
             mentionedJid: normalizedSender ? [normalizedSender] : []
         };
 
+        let sentMsg: any;
         if (type === 'image') {
-            await sock.sendMessage(jid, {
+            sentMsg = await sock.sendMessage(jid, {
                 image: buffer,
                 caption: mediaMessage.caption || '',
                 contextInfo
             });
         } else if (type === 'video') {
-            await sock.sendMessage(jid, {
+            sentMsg = await sock.sendMessage(jid, {
                 video: buffer,
                 caption: mediaMessage.caption || '',
                 mimetype: mediaMessage.mimetype,
                 contextInfo
             });
         } else if (type === 'audio') {
-            await sock.sendMessage(jid, {
+            sentMsg = await sock.sendMessage(jid, {
                 audio: buffer,
                 ptt: mediaMessage.ptt || false,
                 mimetype: mediaMessage.mimetype,
@@ -115,11 +121,21 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
             });
         }
 
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
+
+        // Auto-delete the revealed message after 10 seconds
+        if (sentMsg?.key) {
+            setTimeout(async () => {
+                await sock.sendMessage(jid, { delete: sentMsg.key }).catch(() => {});
+            }, 10000);
+        }
+
         writeLog('INFO', 'Revealed view-once message', { jid, type });
         return;
     } catch (err: any) {
         console.error('[Read View Once Error]', err);
         writeLog('ERROR', 'Failed to reveal view-once message', { error: err.message });
-        return `Failed: Could not process the view-once message. Error: ${err.message}`;
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+        return;
     }
 }
