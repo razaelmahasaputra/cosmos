@@ -80,10 +80,31 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
 
     const trimmedText = text.trim();
 
-    if (trimmedText.startsWith('.')) {
-        const parts = trimmedText.split(/\s+/);
-        const commandName = parts[0];
-        const argsStr = trimmedText.substring(commandName.length).trim();
+    // Check if it's a bare number replying to a play search result
+    let isPlayReply = false;
+    if (/^\d+$/.test(trimmedText)) {
+        const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (quotedMsg) {
+            const extText = quotedMsg.extendedTextMessage;
+            const quotedText = quotedMsg.conversation || extText?.text || extText?.matchedText || '';
+            if (quotedText.toLowerCase().includes('reply with a number') && quotedText.includes('results for')) {
+                isPlayReply = true;
+            }
+        }
+    }
+
+    if (trimmedText.startsWith('.') || isPlayReply) {
+        let commandName: string;
+        let argsStr: string;
+
+        if (isPlayReply) {
+            commandName = '.play';
+            argsStr = trimmedText;
+        } else {
+            const parts = trimmedText.split(/\s+/);
+            commandName = parts[0];
+            argsStr = trimmedText.substring(commandName.length).trim();
+        }
 
         if (commandName === '.addgroup' || commandName === '.addwhitelist') {
             if (!isOwner) {

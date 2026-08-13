@@ -70,9 +70,12 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     const outTemplate = path.join(storagePath, `ytdl_${timestamp}_%(id)s.%(ext)s`);
 
     try {
+        const cookiesPath = path.resolve(process.cwd(), 'cookies.txt');
+        const cookiesArg = fs.existsSync(cookiesPath) ? `--cookies "${cookiesPath}"` : '';
+
         // Limit the filesize to 15MB to ensure it can be sent via WhatsApp.
         const ffmpegLoc = ffmpeg ? `--ffmpeg-location "${ffmpeg}"` : '';
-        const command = `"${ytdlpPath}" ${ffmpegLoc} -f "best[filesize<15M]/bestvideo[filesize<10M]+bestaudio/best[filesize<15M]" --merge-output-format mp4 -o "${outTemplate}" "${targetUrl}" --print after_move:filepath`;
+        const command = `"${ytdlpPath}" ${cookiesArg} ${ffmpegLoc} -f "best[filesize<15M]/bestvideo[filesize<10M]+bestaudio/best[filesize<15M]" --merge-output-format mp4 -o "${outTemplate}" "${targetUrl}" --print after_move:filepath`;
         
         const { stdout, stderr } = await execAsync(command);
         // yt-dlp might print multiple lines if multiple files are downloaded, we take the last non-empty line
