@@ -55,28 +55,44 @@ export async function execute(_args: Record<string, any>, _ctx: ToolContext): Pr
         });
     }
 
-    let menuText = `🤖 *WAF (WhatsApp Bot Framework) - COMMAND MENU*\n`;
-    menuText += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    const readmore = String.fromCharCode(8206).repeat(4001);
+    let menuText = `*WAF - COMMAND MENU*\n${readmore}\n\n`;
 
+    let commandCount = 0;
     const categories = Object.keys(categorizedTools);
 
-    categories.forEach((cat) => {
-        menuText += `📂 *${cat.toUpperCase()}*\n`;
+    categories.forEach((cat, catIndex) => {
+        menuText += `*${cat.toUpperCase()}*\n\n`;
 
-        categorizedTools[cat].forEach((t) => {
+        const toolsInCategory = categorizedTools[cat];
+
+        toolsInCategory.forEach((t, tIndex) => {
             const primaryCommand = t.aliases.length > 0 ? t.aliases[0] : `.${t.name}`;
-            const ownerBadge = t.owner ? ' 🔒 *(Owner Only)*' : '';
+            const ownerBadge = t.owner ? ' *(Owner)*' : '';
             const aliasStr =
-                t.aliases.length > 0 ? t.aliases.join(', ') : `.${t.name}`;
+                t.aliases.length > 0 ? t.aliases.map(a => `\`\`\`${a}\`\`\``).join(', ') : `\`\`\`.${t.name}\`\`\``;
 
-            menuText += `• *${t.title}* (${primaryCommand})${ownerBadge}\n`;
-            menuText += `  📝 *Description:* ${t.description}\n`;
-            menuText += `  🏷️ *Aliases:* ${aliasStr}\n\n`;
+            menuText += `\`\`\`${primaryCommand}\`\`\`${ownerBadge}\n`;
+            menuText += `Alias: ${aliasStr}\n`;
+            menuText += `Desc: ${t.description}`;
+
+            commandCount++;
+
+            const isLastCategory = catIndex === categories.length - 1;
+            const isLastToolInCategory = tIndex === toolsInCategory.length - 1;
+            const isVeryLastCommand = isLastCategory && isLastToolInCategory;
+
+            if (!isVeryLastCommand) {
+                if (commandCount % 3 === 0) {
+                    menuText += `\n\n${readmore}\n\n`;
+                } else {
+                    menuText += '\n\n';
+                }
+            }
         });
     });
 
-    menuText += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    menuText += `💡 *Tip:* Execute commands by typing their dot prefix (e.g. \`.help\`, \`.sticker\`).`;
+    menuText += `\n\n*Tip:* Use the dot prefix to execute (e.g. \`\`\`.help\`\`\`).`;
 
-    return menuText;
+    return menuText.trim();
 }
