@@ -26,6 +26,7 @@ export const definition: ToolDefinition = {
 
 export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string | void> {
     let targetUrl = args.url;
+    const senderJid = ctx.msg.key.participant || ctx.msg.key.remoteJid;
 
     if (!targetUrl || targetUrl.trim() === '') {
         const quotedMsg = ctx.msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
@@ -41,7 +42,8 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     }
 
     if (!targetUrl) {
-        return 'Error: Please provide a valid TikTok URL, or reply to a message containing the URL.';
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+        return;
     }
 
     const urlRegex = /(https?:\/\/[^\s]+)/;
@@ -49,7 +51,8 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     if (match) {
         targetUrl = match[1];
     } else {
-        return 'Error: No valid URL found in the provided text.';
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+        return;
     }
 
     if (targetUrl.includes('vt.tiktok.com') || targetUrl.includes('vm.tiktok.com')) {
@@ -65,8 +68,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
     await ctx.sock.sendMessage(
         ctx.jid,
-        { text: '⏳ Initiating TikTok video download process. Please wait...' },
-        { quoted: ctx.msg }
+        { react: { text: '⏳', key: ctx.msg.key } }
     );
 
     const ytdlpPath = 'python3 -m yt_dlp';
@@ -135,7 +137,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
                     await ctx.sock.sendMessage(
                         ctx.jid,
-                        { video: { url: outputVideo }, caption: '✅ TikTok Slideshow' },
+                        { video: { url: outputVideo }, caption: '✅ TikTok Slideshow', mentions: senderJid ? [senderJid] : undefined },
                         { quoted: ctx.msg }
                     );
                     fs.unlinkSync(outputVideo);
@@ -162,7 +164,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                         await execAsync(ffmpegCommand);
                         await ctx.sock.sendMessage(
                             ctx.jid,
-                            { video: { url: compressedFile }, caption: '✅ TikTok Video' },
+                            { video: { url: compressedFile }, caption: '✅ TikTok Video', mentions: senderJid ? [senderJid] : undefined },
                             { quoted: ctx.msg }
                         );
                         fs.unlinkSync(file);
@@ -171,7 +173,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                         console.error('[TikTokDL Tool] FFmpeg compression error:', ffmpegErr);
                         await ctx.sock.sendMessage(
                             ctx.jid,
-                            { video: { url: file }, caption: '✅ TikTok Video (compression skipped)' },
+                            { video: { url: file }, caption: '✅ TikTok Video (compression skipped)', mentions: senderJid ? [senderJid] : undefined },
                             { quoted: ctx.msg }
                         );
                         fs.unlinkSync(file);
@@ -180,44 +182,37 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 } else if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
                     await ctx.sock.sendMessage(
                         ctx.jid,
-                        { image: { url: file } },
+                        { image: { url: file }, mentions: senderJid ? [senderJid] : undefined },
                         { quoted: ctx.msg }
                     );
                     fs.unlinkSync(file);
                 } else if (['.mp3', '.m4a', '.aac', '.wav'].includes(ext)) {
                     await ctx.sock.sendMessage(
                         ctx.jid,
-                        { audio: { url: file }, mimetype: 'audio/mp4' },
+                        { audio: { url: file }, mimetype: 'audio/mp4', mentions: senderJid ? [senderJid] : undefined },
                         { quoted: ctx.msg }
                     );
                     fs.unlinkSync(file);
                 } else {
                     await ctx.sock.sendMessage(
                         ctx.jid,
-                        { document: { url: file }, mimetype: 'application/octet-stream', fileName: path.basename(file) },
+                        { document: { url: file }, mimetype: 'application/octet-stream', fileName: path.basename(file), mentions: senderJid ? [senderJid] : undefined },
                         { quoted: ctx.msg }
                     );
                     fs.unlinkSync(file);
                 }
                 processedCount++;
             }
-            return 'The TikTok media was successfully downloaded and transmitted to the user.';
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
+            return;
         } else {
             console.error('[TikTokDL Tool] File not found after download.', { stdout, stderr });
-            return 'Error: The media files could not be located after the download process.';
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+            return;
         }
     } catch (error: any) {
         console.error('[TikTokDL Tool] Execution error:', error);
-        
-        let userMessage = 'Error: The TikTok media could not be downloaded. It may be private, age-restricted, or deleted.';
-        if (error.message) {
-            if (error.message.includes('403: Forbidden')) {
-                userMessage = 'Error: Download blocked by TikTok (403 Forbidden). This usually happens if the video is restricted or the cookies are expired.';
-            } else if (error.message.includes('Unsupported URL')) {
-                userMessage = 'Error: The provided URL format is not supported.';
-            }
-        }
-        
-        return userMessage;
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+        return;
     }
 }

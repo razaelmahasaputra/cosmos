@@ -26,6 +26,7 @@ export const definition: ToolDefinition = {
 
 export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string> {
     const argsStr = args.argsStr || '';
+    const senderJid = ctx.msg.key.participant || ctx.msg.key.remoteJid;
 
     // Parse arguments
     const folderName = argsStr.trim() || 'sticker';
@@ -75,10 +76,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         return `Folder "${folderName}" is empty or contains no supported media files (${supportedExtensions.join(', ')}).`;
     }
 
-    // Send initial status message
-    await ctx.sock.sendMessage(ctx.jid, {
-        text: `🚀 Processing ${mediaFiles.length} files from folder "${folderName}"...\n\nPlease wait...`
-    });
+    await ctx.sock.sendMessage(ctx.jid, { react: { text: '⏳', key: ctx.msg.key } });
 
     let successCount = 0;
     let failCount = 0;
@@ -131,7 +129,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 }
 
                 // Send the sticker
-                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, null);
+                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, null, senderJid ? [senderJid] : undefined);
             });
             successCount++;
 

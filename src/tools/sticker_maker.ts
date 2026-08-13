@@ -126,7 +126,8 @@ export async function sendStickerFromBuffer(
     sock: WASocket,
     jid: string,
     webpBuffer: Buffer,
-    quotedMsg: WAMessage | null | undefined
+    quotedMsg: WAMessage | null | undefined,
+    mentions?: string[]
 ): Promise<any> {
     // Validate WebP header (RIFF....WEBP)
     if (webpBuffer.length < 12) {
@@ -141,7 +142,7 @@ export async function sendStickerFromBuffer(
     console.log(`[Sticker] WebP buffer valid, size: ${webpBuffer.length} bytes`);
 
     // Send sticker
-    const sentMsg = await sock.sendMessage(jid, { sticker: webpBuffer }, quotedMsg ? { quoted: quotedMsg } : undefined);
+    const sentMsg = await sock.sendMessage(jid, { sticker: webpBuffer, mentions }, quotedMsg ? { quoted: quotedMsg } : undefined);
 
     console.log('[Sticker] sendMessage result key:', JSON.stringify(sentMsg?.key));
     if (sentMsg?.message?.stickerMessage) {
@@ -232,16 +233,19 @@ export async function execute(_: Record<string, any>, ctx: ToolContext): Promise
     const isGifDocument =
         documentMessage && (documentMessage.mimetype === 'image/gif' || documentMessage.fileName?.endsWith('.gif'));
 
+    const senderJid = ctx.msg.key.participant || ctx.msg.key.remoteJid;
+
     if (!imageMessage && !videoMessage && !isGifDocument) {
-        return 'Failed: Please send or reply to an image, video, or GIF with this command.';
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+        return null;
     }
 
     // Pre-download file size check (15MB max)
     const targetMedia = imageMessage || videoMessage || documentMessage;
     const mediaSize = getMediaFileLength(targetMedia);
     if (mediaSize > MAX_MEDIA_SIZE_BYTES) {
-        const sizeMB = (mediaSize / (1024 * 1024)).toFixed(1);
-        return `Failed: Media file is too large (${sizeMB} MB). Maximum allowed size is 15 MB.`;
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+        return null;
     }
 
     return stickerQueue.add(async () => {
@@ -276,7 +280,8 @@ export async function execute(_: Record<string, any>, ctx: ToolContext): Promise
                         .toBuffer();
                 }
 
-                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg);
+                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg, senderJid ? [senderJid] : undefined);
+                await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
                 return null;
             }
 
@@ -300,7 +305,8 @@ export async function execute(_: Record<string, any>, ctx: ToolContext): Promise
                 mimeType = 'image/gif';
                 ext = 'gif';
             } else {
-                return 'Failed: Media format cannot be processed.';
+                await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+                return null;
             }
 
             if (ext) {
@@ -310,19 +316,23 @@ export async function execute(_: Record<string, any>, ctx: ToolContext): Promise
             const ffmpegCmd = await getFFmpegPath();
             if (ffmpegCmd) {
                 const webpBuffer = await convertVideoToSticker(buffer, ext);
-                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg);
+                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg, senderJid ? [senderJid] : undefined);
+                await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
                 return null;
             } else if (mimeType === 'image/gif' || ext === 'gif') {
                 const webpBuffer = await convertGifToStickerSharp(buffer);
-                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg);
+                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg, senderJid ? [senderJid] : undefined);
+                await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
                 return null;
             } else {
-                return 'Failed: FFmpeg is not installed on the system to process video stickers.';
+                await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+                return null;
             }
         } catch (err: any) {
             console.error(err);
             writeLog('ERROR', 'Error in sticker_maker tool execution', err);
-            return `Failed: An error occurred while converting media to a sticker. Details: ${err.message}`;
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+            return null;
         }
     });
 }

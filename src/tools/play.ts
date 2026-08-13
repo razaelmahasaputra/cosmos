@@ -28,6 +28,7 @@ export const definition: ToolDefinition = {
 
 export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string | void> {
     let query = args.query ? String(args.query).trim() : '';
+    const senderJid = ctx.msg.key.participant || ctx.msg.key.remoteJid;
     let quotedText = '';
     let enableLyrics = false;
     let stanzaIdToDelete = '';
@@ -56,7 +57,8 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             query = quotedText;
             originalQueryStr = query;
         } else {
-            return 'Error: Please provide a valid search query for the song.';
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+            return;
         }
     }
 
@@ -80,10 +82,12 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             if (urlMatch) {
                 query = urlMatch[1]; // Override query with the extracted URL
             } else {
-                return 'Error: Could not extract URL from the selected option.';
+                await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+                return;
             }
         } else {
-            return 'Error: Invalid selection number.';
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+            return;
         }
     }
 
@@ -93,25 +97,19 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     const cookiesArg = fs.existsSync(cookiesPath) ? `--cookies "${cookiesPath}"` : '';
 
     if (!isUrl) {
-        // Perform search and return list
-        const searchMsg = await ctx.sock.sendMessage(
+        await ctx.sock.sendMessage(
             ctx.jid,
-            { text: `⏳ Searching for: *${query}*. Please wait...` },
-            { quoted: ctx.msg }
+            { react: { text: '⏳', key: ctx.msg.key } }
         );
 
         try {
-            const command = `"${ytdlpPath}" ${cookiesArg} --print "%(title)s - %(webpage_url)s" "ytsearch5:${query}"`;
+            const command = `"${ytdlpPath}" --js-runtimes node ${cookiesArg} --print "%(title)s - %(webpage_url)s" "ytsearch5:${query}"`;
             const { stdout } = await execAsync(command);
             
-            // Delete the search message
-            if (searchMsg?.key) {
-                await ctx.sock.sendMessage(ctx.jid, { delete: searchMsg.key }).catch(() => {});
-            }
-
             const results = stdout.trim().split('\n').filter(line => line.trim() !== '');
             if (results.length === 0) {
-                return `No results found for "${query}".`;
+                await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+                return;
             }
 
             let replyText = `Here are the top results for *${query}*.\nPlease reply with a number (1-${results.length}) to this message to download:\n`;
@@ -129,24 +127,19 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 { quoted: ctx.msg }
             );
 
-            return `Sent a list of search results to the user for "${query}".`;
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
+            return;
         } catch (error: any) {
-            if (searchMsg?.key) {
-                await ctx.sock.sendMessage(ctx.jid, { delete: searchMsg.key }).catch(() => {});
-            }
             console.error('[Play Tool Search Error]', error);
-            return `Error occurred during search: ${error.message}`;
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+            return;
         }
     } else {
-        // Delete the quoted list message if this is a reply interaction
-        if (stanzaIdToDelete) {
-            await ctx.sock.sendMessage(ctx.jid, { delete: { remoteJid: ctx.jid, fromMe: true, id: stanzaIdToDelete } }).catch(() => {});
-        }
 
-        const downloadingMsg = await ctx.sock.sendMessage(
+
+        await ctx.sock.sendMessage(
             ctx.jid,
-            { text: `⏳ Downloading audio... Please wait...` },
-            { quoted: ctx.msg }
+            { react: { text: '⏳', key: ctx.msg.key } }
         );
 
         const storagePath = path.resolve(process.cwd(), 'storage');
@@ -159,7 +152,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
         try {
             const ffmpegLoc = ffmpeg ? `--ffmpeg-location "${ffmpeg}"` : '';
-            const command = `"${ytdlpPath}" ${cookiesArg} ${ffmpegLoc} --ignore-errors --max-downloads 1 -x --audio-format mp3 -o "${outTemplate}" "${query}" --print after_move:filepath`;
+            const command = `"${ytdlpPath}" --js-runtimes node ${cookiesArg} ${ffmpegLoc} --ignore-errors --max-downloads 1 -x --audio-format mp3 -o "${outTemplate}" "${query}" --print after_move:filepath`;
             
             let stdout = '';
             let stderr = '';
@@ -177,17 +170,13 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             const outputLines = stdout.trim().split('\n').filter(line => line.trim() !== '');
             const downloadedFile = outputLines.length > 0 ? outputLines[outputLines.length - 1].trim() : '';
 
-            // Delete the downloading message
-            if (downloadingMsg?.key) {
-                await ctx.sock.sendMessage(ctx.jid, { delete: downloadingMsg.key }).catch(() => {});
-            }
-
             if (downloadedFile && fs.existsSync(downloadedFile)) {
                 await ctx.sock.sendMessage(
                     ctx.jid,
                     { 
                         audio: { url: downloadedFile },
-                        mimetype: 'audio/mpeg'
+                        mimetype: 'audio/mpeg',
+                        mentions: senderJid ? [senderJid] : undefined
                     },
                     { quoted: ctx.msg }
                 );
@@ -199,17 +188,22 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     await playLyrics(ctx.jid, ctx.sock, originalQueryStr, 1);
                 }
 
-                return `The audio was successfully downloaded and transmitted.`;
+                // Delete the quoted list message if this is a reply interaction, since processing succeeded
+                if (stanzaIdToDelete) {
+                    await ctx.sock.sendMessage(ctx.jid, { delete: { remoteJid: ctx.jid, fromMe: true, id: stanzaIdToDelete } }).catch(() => {});
+                }
+
+                await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
+                return;
             } else {
                 console.error('[Play Tool] File not found after download.', { stdout, stderr });
-                return 'Error: The audio file could not be located after the download process.';
+                await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+                return;
             }
         } catch (error: any) {
-            if (downloadingMsg?.key) {
-                await ctx.sock.sendMessage(ctx.jid, { delete: downloadingMsg.key }).catch(() => {});
-            }
             console.error('[Play Tool] Execution error:', error);
-            return `Error: An unexpected issue occurred while downloading the audio. Details: ${error.message}`;
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+            return;
         }
     }
 }
