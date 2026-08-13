@@ -8,7 +8,6 @@
 
 - ⚡ **TypeScript & ESM Native:** Written in strict TypeScript with ES Modules (`type: "module"`).
 - ☁️ **Supabase Cloud Authentication State:** Session keys & pairing tokens are stored in Supabase PostgreSQL (`whatsapp_auth` table), ensuring zero session loss across restarts or server redeployments.
-- ⚙️ **Cloud Environment Variables:** App configurations are loaded dynamically from Supabase Cloud (`app_config` table).
 - 🤖 **Groq AI & Native Function Calling:** Native integration with Groq LLMs and Whisper Speech-to-Text.
 - 🎨 **Media & Sticker Processing:** High-performance image and video sticker rendering via `sharp` & `ffmpeg-static`.
 - 🔄 **Daemon & Systemd Support:** Background process management with Systemd service (`waf-bot.service`) and standalone daemon scripts without unwanted auto-restarts.
@@ -43,21 +42,14 @@
 Before starting the bot, create the required database tables in your **Supabase Dashboard -> SQL Editor**:
 
 ```sql
--- 1. Table for storing Environment Variables in Cloud
-CREATE TABLE IF NOT EXISTS app_config (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 2. Table for storing Baileys WhatsApp Authentication Tokens
+-- 1. Table for storing Baileys WhatsApp Authentication Tokens
 CREATE TABLE IF NOT EXISTS whatsapp_auth (
     id TEXT PRIMARY KEY,
     value JSONB NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Table for storing Scheduled WhatsApp Status / Story Posts
+-- 2. Table for storing Scheduled WhatsApp Status / Story Posts
 CREATE TABLE IF NOT EXISTS scheduled_stories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     sender_jid TEXT NOT NULL,
@@ -93,7 +85,7 @@ SUPABASE_URL="https://your-project.supabase.co"
 SUPABASE_SERVICE_ROLE_KEY="your-supabase-service-role-key"
 ```
 
-> **Note:** Additional configurations (`BOT_PHONE_NUMBER`, `GROQ_API_KEY`, `AUTO_UPDATE`, `GITHUB_TOKEN`) are automatically loaded from the `app_config` table in Supabase Cloud.
+> **Note:** Make sure you have your other configurations (`BOT_PHONE_NUMBER`, `GROQ_API_KEY`, etc.) set in your `.env` file or environment variables.
 
 ### 3. Build & Typecheck
 
@@ -173,7 +165,6 @@ waf/
 │   ├── tools/                    # Bot commands and tools
 │   └── utils/
 │       ├── supabaseAuthState.ts  # Baileys auth state handler for Supabase
-│       ├── cloudEnv.ts           # Cloud environment variables loader
 │       ├── autoCorrection.ts     # AI message auto-correction
 │       ├── autoSticker.ts        # Sticker generation utilities
 │       └── messageCache.ts       # Message caching

@@ -3,7 +3,6 @@ import dns from 'dns';
 import dotenv from 'dotenv';
 import toolsHandler from '#/tools/handler.js';
 
-import { loadEnvFromSupabase } from '#/utils/cloudEnv.js';
 import { startAutoBackup } from '#/utils/backup.js';
 import { connectToWhatsApp } from '#/utils/connectionManager.js';
 import { getAllSessionCategories } from '#/utils/prismaAuthState.js';
@@ -17,7 +16,6 @@ startAutoBackup();
 
 async function startSystem(): Promise<void> {
     await toolsHandler.loadTools();
-    await loadEnvFromSupabase();
 
     const phoneNumber = process.env.BOT_PHONE_NUMBER;
     if (!phoneNumber) {

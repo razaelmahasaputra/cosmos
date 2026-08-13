@@ -22,10 +22,7 @@ model WhitelistedGroup {
   jid String @id
 }
 
-model AppConfig {
-  key   String @id
-  value String
-}
+
 
 model ActiveSession {
   feature    String
