@@ -56,9 +56,8 @@ export async function execute(_args: Record<string, any>, _ctx: ToolContext): Pr
     }
 
     const readmore = String.fromCharCode(8206).repeat(4001);
-    let menuText = `*WAF - COMMAND MENU*\n${readmore}\n\n`;
+    let menuText = `*WAF - COMMAND MENU*\n\n`;
 
-    let commandCount = 0;
     const categories = Object.keys(categorizedTools);
 
     categories.forEach((cat, catIndex) => {
@@ -76,14 +75,12 @@ export async function execute(_args: Record<string, any>, _ctx: ToolContext): Pr
             menuText += `Alias: ${aliasStr}\n`;
             menuText += `Desc: ${t.description}`;
 
-            commandCount++;
-
             const isLastCategory = catIndex === categories.length - 1;
             const isLastToolInCategory = tIndex === toolsInCategory.length - 1;
             const isVeryLastCommand = isLastCategory && isLastToolInCategory;
 
             if (!isVeryLastCommand) {
-                if (commandCount % 3 === 0) {
+                if (isLastToolInCategory) {
                     menuText += `\n\n${readmore}\n\n`;
                 } else {
                     menuText += '\n\n';
