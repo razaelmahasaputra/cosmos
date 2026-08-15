@@ -1,6 +1,7 @@
 // writeLog import removed
 import dns from 'dns';
 import dotenv from 'dotenv';
+import express from 'express';
 import toolsHandler from '#/tools/handler.js';
 
 import { startAutoBackup } from '#/utils/backup.js';
@@ -22,6 +23,30 @@ async function startSystem(): Promise<void> {
         console.error('BOT_PHONE_NUMBER is not set in .env');
         process.exit(1);
     }
+
+    // Internal IPC Server to receive commands from API
+    const app = express();
+    app.use(express.json());
+    app.post('/internal/start-subbot', (req, res) => {
+        const { sessionId } = req.body;
+        if (!sessionId) {
+            res.status(400).send('Missing sessionId');
+            return;
+        }
+        console.log(`[System] Received request to start sub-bot: ${sessionId}`);
+        
+        const subbotPhone = sessionId.replace('subbot_', '');
+        connectToWhatsApp({
+            sessionId,
+            phoneNumber: subbotPhone
+        });
+        res.send({ success: true });
+    });
+    
+    const internalPort = process.env.INTERNAL_PORT || 3001;
+    app.listen(internalPort, () => {
+        console.log(`[System] Internal IPC server listening on port ${internalPort}`);
+    });
 
     // Connect default bot
     connectToWhatsApp({

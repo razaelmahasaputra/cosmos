@@ -21,6 +21,7 @@ export interface ConnectOptions {
     onPairingCode?: (code: string) => void;
     onConnected?: () => void;
     onClosed?: (isLoggedOut: boolean) => void;
+    disableReconnect?: boolean;
 }
 
 export const activeConnections = new Map<string, ReturnType<typeof makeWASocket>>();
@@ -124,7 +125,7 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
             const errorCode = lastDisconnectError?.output?.statusCode || lastDisconnectError?.code;
             const errorMessage = lastDisconnectError?.message || 'Unknown Reason';
             const isLoggedOut = errorCode === DisconnectReason.loggedOut;
-            const shouldReconnect = !isLoggedOut || pendingPairing;
+            const shouldReconnect = (!isLoggedOut || pendingPairing) && !options.disableReconnect;
 
             console.log(
                 `[Connection] [${sessionId}] Closed (Reason: ${errorMessage}, Code: ${errorCode}). Reconnecting: ${shouldReconnect}`
