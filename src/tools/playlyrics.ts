@@ -3,9 +3,9 @@ import { ToolDefinition, ToolContext } from './types.js';
 
 export const definition: ToolDefinition = {
     name: 'playlyrics',
-    title: 'Play Synchronized Lyrics',
-    category: 'Music & Lyrics',
-    aliases: ['.playlyrics', '.plyrics'],
+    title: 'Play Music with Lyrics',
+    category: 'Music & Audio',
+    aliases: ['.playlyrics', '.lirik', '.lyrics'],
     description: 'Starts automated lyrics playback for the requested song. Fetches synchronized lyrics online if not found locally.',
     parameters: {
         type: 'object',

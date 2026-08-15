@@ -10,9 +10,9 @@ const execAsync = promisify(exec);
 
 export const definition: ToolDefinition = {
     name: 'play',
-    title: 'Play Audio/Song',
-    category: 'Media',
-    aliases: ['.play', '.song', '.audio', '.ytm'],
+    title: 'YouTube Music Player',
+    category: 'Music & Audio',
+    aliases: ['.play', '.ytplay', '.song', '.audio', '.ytm'],
     description: 'Searches for a song on YouTube and downloads it as an audio file. Supports --lyrics flag.',
     parameters: {
         type: 'object',

@@ -9,9 +9,9 @@ const execAsync = promisify(exec);
 
 export const definition: ToolDefinition = {
     name: 'ytdl',
-    title: 'Video Downloader',
-    category: 'Media',
-    aliases: ['.ytdl', '.downloadvideo', '.dl'],
+    title: 'YouTube Downloader',
+    category: 'Downloaders',
+    aliases: ['.yt', '.ytdl', '.youtube'],
     description: 'Downloads a video from a specified URL using yt-dlp. Currently supports basic video fetching.',
     parameters: {
         type: 'object',

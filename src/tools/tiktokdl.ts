@@ -10,8 +10,8 @@ const execAsync = promisify(exec);
 export const definition: ToolDefinition = {
     name: 'tiktokdl',
     title: 'TikTok Downloader',
-    category: 'Media',
-    aliases: ['.ttdl', '.tiktok', '.tt'],
+    category: 'Downloaders',
+    aliases: ['.tiktok', '.tt', '.tiktokdl', '.ttdl'],
     description: 'Downloads a video from a specified TikTok URL.',
     parameters: {
         type: 'object',

@@ -3,10 +3,10 @@ import { downloadContentFromMessage, jidNormalizedUser } from '@whiskeysockets/b
 import { writeLog } from '#/logger.js';
 
 export const definition: ToolDefinition = {
-    name: 'readviewonce',
-    title: 'Read View-Once',
-    category: 'Media & Stickers',
-    aliases: ['.rvo', '.readviewonce'],
+    name: 'rvo',
+    title: 'Read View Once',
+    category: 'Tools & Utilities',
+    aliases: ['readviewonce', 'openviewonce'],
     description: 'Reveals a view-once media message (image, video, or voice note) and resends it as a normal forwarded message.',
     owner: true,
     parameters: {
