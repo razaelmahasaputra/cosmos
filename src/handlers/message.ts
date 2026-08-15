@@ -192,8 +192,23 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
     }
 
     // Auto sticker processing if enabled for this chat and message contains direct media
-    // Ignore programmatic bot responses (which usually start with ✅, ⏳, or ❌) to prevent loops, but allow owner's manual media
-    const isBotResponse = msg.key.fromMe && text && (text.startsWith('✅') || text.startsWith('⏳') || text.startsWith('❌'));
+    // Ignore programmatic bot responses (which usually start with ✅, ⏳, or ❌, or quote a command) to prevent loops
+    let isQuotingCommand = false;
+    if (msg.key.fromMe && msg.message) {
+        const qMsg = msg.message.videoMessage?.contextInfo?.quotedMessage ||
+                     msg.message.imageMessage?.contextInfo?.quotedMessage ||
+                     msg.message.documentMessage?.contextInfo?.quotedMessage ||
+                     msg.message.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (qMsg) {
+            const qText = qMsg.conversation || qMsg.extendedTextMessage?.text || '';
+            if (qText.trim().startsWith('.')) isQuotingCommand = true;
+        }
+    }
+
+    const isBotResponse = msg.key.fromMe && (
+        (text && (text.startsWith('✅') || text.startsWith('⏳') || text.startsWith('❌'))) ||
+        isQuotingCommand
+    );
     if (!isBotResponse && isAutoStickerEnabled(jid) && hasDirectMedia(msg.message)) {
         if (jid.endsWith('@g.us')) {
             const whitelisted = await isGroupWhitelisted(jid);

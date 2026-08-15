@@ -56,9 +56,14 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         return;
     }
 
+    await ctx.sock.sendMessage(
+        ctx.jid,
+        { react: { text: '⏳', key: ctx.msg.key } }
+    );
+
     if (targetUrl.includes('vt.tiktok.com') || targetUrl.includes('vm.tiktok.com')) {
         try {
-            const res = await fetch(targetUrl, { redirect: 'follow' });
+            const res = await fetch(targetUrl, { redirect: 'follow', signal: AbortSignal.timeout(10000) });
             targetUrl = res.url;
         } catch (e) {
             console.error('[TikTokDL Tool] Failed to resolve shortlink:', e);
@@ -66,11 +71,6 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     }
     
     targetUrl = targetUrl.replace(/\/photo\//g, '/video/');
-
-    await ctx.sock.sendMessage(
-        ctx.jid,
-        { react: { text: '⏳', key: ctx.msg.key } }
-    );
 
     const storagePath = path.resolve(process.cwd(), 'storage');
     
@@ -84,7 +84,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         const downloadedFiles: string[] = [];
 
         const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(targetUrl)}`;
-        const res = await axios.get(apiUrl);
+        const res = await axios.get(apiUrl, { timeout: 15000 });
         if (res.data.code !== 0 || !res.data.data) {
             throw new Error(`tikwm API error: ${res.data.msg || 'Unknown error'}`);
         }
@@ -95,9 +95,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             baseCaption = baseCaption.substring(0, 900) + '...';
         }
 
-        const slideshowCaption = baseCaption ? `✅ ${baseCaption}` : '✅ TikTok Slideshow';
-        const videoCaption = baseCaption ? `✅ ${baseCaption}` : '✅ TikTok Video';
-        const videoCaptionSkipped = baseCaption ? `✅ ${baseCaption}\n(Compression skipped)` : '✅ TikTok Video (compression skipped)';
+        const slideshowCaption = baseCaption ? baseCaption : '';
+        const videoCaption = baseCaption ? baseCaption : '';
+        const videoCaptionSkipped = baseCaption ? `${baseCaption}\n(Compression skipped)` : '(Compression skipped)';
 
         const downloadFile = async (url: string, ext: string, index: string = ''): Promise<string> => {
             const filepath = path.join(storagePath, `tiktok_${timestamp}_${index}${ext}`);
@@ -167,7 +167,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
                     await ctx.sock.sendMessage(
                         ctx.jid,
-                        { video: { url: outputVideo }, caption: slideshowCaption, mentions: senderJid ? [senderJid] : undefined },
+                        { video: { url: outputVideo }, mimetype: 'video/mp4', caption: slideshowCaption, mentions: senderJid ? [senderJid] : undefined },
                         { quoted: ctx.msg }
                     );
                     fs.unlinkSync(outputVideo);
@@ -190,11 +190,11 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 if (['.mp4', '.webm', '.mkv', '.mov'].includes(ext)) {
                     const compressedFile = path.join(storagePath, `compressed_${timestamp}_${processedCount}.mp4`);
                     try {
-                        const ffmpegCommand = `"/usr/bin/ffmpeg" -i "${file}" -vf "scale='min(854,iw)':'min(480,ih)'" -c:v libx264 -preset fast -crf 28 -c:a aac -b:a 128k -y "${compressedFile}"`;
+                        const ffmpegCommand = `"/usr/bin/ffmpeg" -i "${file}" -vf "scale='min(854,iw)':'min(480,ih)'" -c:v libx264 -preset fast -crf 28 -pix_fmt yuv420p -c:a aac -b:a 128k -y "${compressedFile}"`;
                         await execAsync(ffmpegCommand);
                         await ctx.sock.sendMessage(
                             ctx.jid,
-                            { video: { url: compressedFile }, caption: videoCaption, mentions: senderJid ? [senderJid] : undefined },
+                            { video: { url: compressedFile }, mimetype: 'video/mp4', caption: videoCaption, mentions: senderJid ? [senderJid] : undefined },
                             { quoted: ctx.msg }
                         );
                         fs.unlinkSync(file);
@@ -203,7 +203,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                         console.error('[TikTokDL Tool] FFmpeg compression error:', ffmpegErr);
                         await ctx.sock.sendMessage(
                             ctx.jid,
-                            { video: { url: file }, caption: videoCaptionSkipped, mentions: senderJid ? [senderJid] : undefined },
+                            { video: { url: file }, mimetype: 'video/mp4', caption: videoCaptionSkipped, mentions: senderJid ? [senderJid] : undefined },
                             { quoted: ctx.msg }
                         );
                         fs.unlinkSync(file);

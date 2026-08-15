@@ -69,8 +69,8 @@ export async function convertVideoToSticker(buffer: Buffer, format: string): Pro
         for (const q of qualities) {
             const outputPath = path.join(tempDir, `temp_sticker_out_${crypto.randomUUID()}.webp`);
             try {
-                // Convert to animated webp: 512x512 crop/scale, max 5s, 12fps, loop infinitely, set quality
-                const command = `"${ffmpegCmd}" -y -i "${inputPath}" -t 5 -vcodec libwebp -filter_complex "scale=512:512:force_original_aspect_ratio=increase,crop=512:512,fps=12" -loop 0 -preset default -an -vsync 0 -q:v ${q} "${outputPath}"`;
+                // Convert to animated webp: 512x512 crop/scale, max 10s, 12fps, loop infinitely, set quality
+                const command = `"${ffmpegCmd}" -y -i "${inputPath}" -t 10 -vcodec libwebp -filter_complex "scale=512:512:force_original_aspect_ratio=increase,crop=512:512,fps=12" -loop 0 -preset default -an -vsync 0 -q:v ${q} "${outputPath}"`;
                 await execPromise(command);
                 const fileBuffer = await fs.promises.readFile(outputPath);
 
