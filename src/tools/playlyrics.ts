@@ -6,7 +6,7 @@ export const definition: ToolDefinition = {
     title: 'Play Synchronized Lyrics',
     category: 'Music & Lyrics',
     aliases: ['.playlyrics', '.plyrics'],
-    description: 'Starts automated lyrics playback for lyric files (.lrc or .txt) located in the lyrics/ folder.',
+    description: 'Starts automated lyrics playback for the requested song. Fetches synchronized lyrics online if not found locally.',
     parameters: {
         type: 'object',
         properties: {

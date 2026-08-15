@@ -54,17 +54,34 @@ export function parseLyrics(content: string): LyricLine[] {
     return parsed;
 }
 
+export async function fetchLyricsOnline(query: string): Promise<string | null> {
+    try {
+        const url = `https://lrclib.net/api/search?q=${encodeURIComponent(query)}`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (Array.isArray(data)) {
+            const match = data.find((track: any) => track.syncedLyrics);
+            if (match) return match.syncedLyrics;
+        }
+        return null;
+    } catch (err) {
+        console.error('Error fetching lyrics from lrclib:', err);
+        return null;
+    }
+}
+
 /**
  * Starts playing lyrics for a given JID.
  */
 export async function playLyrics(jid: string, sock: WASocket, songName: string, speedMultiplier = 2): Promise<string> {
     // 1. Validation
     if (!songName) {
-        return 'Failed: Lyric filename must be specified. Example: .playlyrics sample';
+        return 'Failed: Lyric filename or song name must be specified. Example: .playlyrics faded';
     }
 
     if (isNaN(speedMultiplier) || speedMultiplier <= 0) {
-        return 'Failed: speedMultiplier must be a positive number.';
+        return 'Failed: Speed multiplier must be a positive number.';
     }
 
     const lyricsDir = path.resolve(process.cwd(), 'lyrics');
@@ -74,28 +91,47 @@ export async function playLyrics(jid: string, sock: WASocket, songName: string, 
 
     // Try exact match first (in case extension is provided), then fallback to auto-appending .lrc and .txt
     let filePath = path.join(lyricsDir, songName);
+    let isLocal = true;
+
     if (!fs.existsSync(filePath)) {
         filePath = path.join(lyricsDir, `${songName}.lrc`);
         if (!fs.existsSync(filePath)) {
             filePath = path.join(lyricsDir, `${songName}.txt`);
+            if (!fs.existsSync(filePath)) {
+                isLocal = false;
+            }
         }
     }
 
-    if (!fs.existsSync(filePath)) {
-        return `Failed: Lyric file "${songName}" was not found in the lyrics/ directory.`;
-    }
-
     let content: string;
-    try {
-        content = fs.readFileSync(filePath, 'utf-8');
-    } catch (err) {
-        console.error('Error reading lyrics file:', err);
-        return `Failed: Unable to read lyric file "${songName}".`;
+
+    if (isLocal) {
+        try {
+            content = fs.readFileSync(filePath, 'utf-8');
+        } catch (err) {
+            console.error('Error reading lyrics file:', err);
+            return `Failed: Unable to read local lyric file "${songName}".`;
+        }
+    } else {
+        // Try fetching online
+        const onlineLyrics = await fetchLyricsOnline(songName);
+        if (onlineLyrics) {
+            content = onlineLyrics;
+            // Save to local cache
+            filePath = path.join(lyricsDir, `${songName}.lrc`);
+            try {
+                fs.writeFileSync(filePath, content, 'utf-8');
+            } catch (err) {
+                console.error('Error saving fetched lyrics to local file:', err);
+            }
+        } else {
+            return `Failed: Synchronized lyrics for "${songName}" were not found locally or online.`;
+        }
     }
 
     const parsed = parseLyrics(content);
     if (parsed.length === 0) {
-        return `Failed: Lyric file "${songName}" contains no lines with valid timestamps.`;
+        return `Failed: Lyric for "${songName}" contains no lines with valid timestamps.`;
     }
 
     // 2. Stop existing session for this JID if running
