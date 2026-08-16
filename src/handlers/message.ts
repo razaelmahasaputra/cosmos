@@ -134,7 +134,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
                 return;
             }
 
-            if (jid.endsWith('@g.us')) {
+            if (jid.endsWith('@g.us') && !isOwner) {
                 const whitelisted = await isGroupWhitelisted(jid);
                 if (!whitelisted) return;
             }
@@ -210,7 +210,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         isQuotingCommand
     );
     if (!isBotResponse && isAutoStickerEnabled(jid) && hasDirectMedia(msg.message)) {
-        if (jid.endsWith('@g.us')) {
+        if (jid.endsWith('@g.us') && !isOwner) {
             const whitelisted = await isGroupWhitelisted(jid);
             if (!whitelisted) return;
         }

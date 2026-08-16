@@ -162,7 +162,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     }
 
                     const audioIdx = targetImages.length;
-                    const ffmpegCommand = `"/usr/bin/ffmpeg" ${inputs} -filter_complex "${filterComplex}" -map "[outv]" -map ${audioIdx}:a -c:v libx264 -preset fast -crf 28 -c:a aac -b:a 128k -shortest -y "${outputVideo}"`;
+                    const ffmpegCommand = `"/usr/bin/ffmpeg" ${inputs} -filter_complex "${filterComplex}" -map "[outv]" -map ${audioIdx}:a -c:v libx264 -profile:v main -preset fast -crf 28 -c:a aac -b:a 128k -shortest -y "${outputVideo}"`;
                     await execAsync(ffmpegCommand);
 
                     await ctx.sock.sendMessage(
@@ -190,7 +190,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 if (['.mp4', '.webm', '.mkv', '.mov'].includes(ext)) {
                     const compressedFile = path.join(storagePath, `compressed_${timestamp}_${processedCount}.mp4`);
                     try {
-                        const ffmpegCommand = `"/usr/bin/ffmpeg" -i "${file}" -vf "scale='min(854,iw)':'min(480,ih)'" -c:v libx264 -preset fast -crf 28 -pix_fmt yuv420p -c:a aac -b:a 128k -y "${compressedFile}"`;
+                        const ffmpegCommand = `"/usr/bin/ffmpeg" -i "${file}" -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1" -c:v libx264 -profile:v main -preset fast -crf 28 -pix_fmt yuv420p -c:a aac -b:a 128k -y "${compressedFile}"`;
                         await execAsync(ffmpegCommand);
                         await ctx.sock.sendMessage(
                             ctx.jid,
