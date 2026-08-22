@@ -10,6 +10,7 @@
     "scripts": {
         "dev": "tsx src/index.ts",
         "pair": "tsx src/pair.ts",
+        "tgpair": "tsx src/tgpair.ts",
         "start": "node dist/index.js",
         "start:bg": "./start.sh",
         "stop:bg": "./stop.sh",
@@ -39,7 +40,8 @@
         "jsonrepair": "^3.15.0",
         "node-cron": "^4.6.0",
         "pino": "^10.3.1",
-        "sharp": "^0.35.3"
+        "sharp": "^0.35.3",
+        "telegram": "^2.26.22"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",

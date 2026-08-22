@@ -4,10 +4,18 @@ import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs';
 import ffmpeg from 'ffmpeg-static';
+import {
+    downloadPrivateMedia,
+    parseTelegramPrivateRef,
+    PrivateMediaFile,
+    TelegramPostRef
+} from '#/utils/telegramClient.js';
+import { isTelegramChatRegistered, findTelegramChatByInviteLink } from '#/db.js';
 
 const execAsync = promisify(exec);
 
 const TELEGRAM_HOSTS = ['t.me', 'telegram.me', 'telegram.dog'];
+const MAX_MEDIA_BYTES = 15 * 1024 * 1024;
 
 function resolveYtDlpPath(): string {
     const candidates = ['/usr/local/bin/yt-dlp', path.resolve(process.cwd(), 'yt-dlp')];
@@ -34,19 +42,110 @@ function extractTelegramUrl(text: string): string | null {
     return null;
 }
 
+function getOwnerJid(): string | null {
+    const ownerNumber = process.env.BOT_PHONE_NUMBER?.trim();
+    return ownerNumber ? `${ownerNumber}@s.whatsapp.net` : null;
+}
+
+/**
+ * Sends the bot owner a notification containing everything required to grant
+ * access to a private Telegram chat using the dummy account.
+ */
+async function notifyOwnerOfPendingChat(
+    ctx: ToolContext,
+    telegramUrl: string,
+    ref: TelegramPostRef
+): Promise<void> {
+    const ownerJid = getOwnerJid();
+    if (!ownerJid || ownerJid === ctx.jid) return;
+
+    let text =
+        '🔒 *Private Telegram Content Request*\n\n' +
+        'A user requested media from a private Telegram chat that has not been added to the database yet.\n\n' +
+        `*Requested Link:* ${telegramUrl}\n`;
+
+    if (ref.chatId && ref.messageId !== null) {
+        text += `*Internal Chat ID:* \`\`\`${ref.chatId}\`\`\`\n*Message ID:* \`\`\`${ref.messageId}\`\`\`\n`;
+    }
+
+    const requesterJid = ctx.msg.key.participant || ctx.msg.key.remoteJid;
+    if (requesterJid) {
+        text += `*Requested By:* @${requesterJid.split('@')[0]}\n`;
+    }
+
+    text +=
+        '\n*Next Steps:*\n' +
+        '1. If an invite link is available, run `.tgadd <invite-link>` so the dummy account joins automatically.\n' +
+        '2. Otherwise, join the group manually using the dummy account, then register it with `.tgadd <link-or-chat-id>`.\n' +
+        '3. The requester may retry the same command afterwards.';
+
+    try {
+        await ctx.sock.sendMessage(ownerJid, {
+            text,
+            mentions: requesterJid ? [requesterJid] : undefined
+        });
+        console.log('[TelegramDL Tool] Owner notified about pending private chat request.');
+    } catch (err) {
+        console.error('[TelegramDL Tool] Failed to notify the owner:', err);
+    }
+}
+
+/** Sends downloaded private media to the requesting chat according to its type. */
+async function sendPrivateMedia(ctx: ToolContext, file: PrivateMediaFile): Promise<void> {
+    const mentions = ctx.msg.key.participant ? [ctx.msg.key.participant] : undefined;
+    const quoted = { quoted: ctx.msg };
+
+    if (file.kind === 'video') {
+        await ctx.sock.sendMessage(
+            ctx.jid,
+            {
+                video: { url: file.filePath },
+                mimetype: file.mimeType,
+                caption: '✅ The Telegram video has been successfully retrieved.',
+                mentions
+            },
+            quoted
+        );
+    } else if (file.kind === 'image') {
+        await ctx.sock.sendMessage(
+            ctx.jid,
+            { image: { url: file.filePath }, caption: '✅ The Telegram photo has been successfully retrieved.', mentions },
+            quoted
+        );
+    } else if (file.kind === 'audio') {
+        await ctx.sock.sendMessage(
+            ctx.jid,
+            { audio: { url: file.filePath }, mimetype: file.mimeType, mentions },
+            quoted
+        );
+    } else {
+        await ctx.sock.sendMessage(
+            ctx.jid,
+            {
+                document: { url: file.filePath },
+                mimetype: file.mimeType,
+                fileName: file.fileName,
+                mentions
+            },
+            quoted
+        );
+    }
+}
+
 export const definition: ToolDefinition = {
     name: 'telegramdl',
     title: 'Telegram Downloader',
     category: 'Downloaders',
     aliases: ['.tg', '.tgdl', '.tele', '.telegram'],
     description:
-        'Downloads a video from a public Telegram post link (t.me) using yt-dlp and sends it as a video.',
+        'Downloads media from a Telegram post link (t.me). Public posts are fetched directly, while posts from registered private groups are proxied through the dummy account.',
     parameters: {
         type: 'object',
         properties: {
             url: {
                 type: 'string',
-                description: 'The URL of the public Telegram video post to download.'
+                description:
+                    'The URL of the Telegram post or invite link to process.'
             }
         },
         required: ['url']
@@ -79,11 +178,78 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     const telegramUrl = extractTelegramUrl(targetText);
     if (!telegramUrl) {
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
-        return 'Error: Please provide a valid public Telegram post link (for example https://t.me/channel/123).';
+        return 'Error: Please provide a valid Telegram post link (for example https://t.me/channel/123).';
     }
 
     await ctx.sock.sendMessage(ctx.jid, { react: { text: '⏳', key: ctx.msg.key } });
 
+    const ref = parseTelegramPrivateRef(targetText);
+
+    // --- Invite link only: nothing to download, route it to the owner for onboarding. ---
+    if (ref.inviteHash) {
+        const knownChat = await findTelegramChatByInviteLink(ref.inviteHash);
+        if (knownChat) {
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
+            return (
+                'That Telegram group has already been added to the database. Please provide the link of the ' +
+                'specific post you wish to download (for example https://t.me/c/' +
+                knownChat.chatId + '/123).'
+            );
+        }
+
+        console.log('[TelegramDL Tool] Unregistered invite link received; notifying the owner.');
+        await notifyOwnerOfPendingChat(ctx, telegramUrl, ref);
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '🔒', key: ctx.msg.key } });
+        return (
+            'The bot has not been added to that Telegram group yet, so its content cannot be accessed at the ' +
+            'moment. The owner has been notified with your request and access will be available once the group ' +
+            'has been joined and registered. Please try again later.'
+        );
+    }
+
+    // --- Private post (t.me/c/<chatId>/<messageId>): proxy through the dummy account when registered. ---
+    if (ref.isPrivatePost && ref.chatId && ref.messageId !== null) {
+        const registered = await isTelegramChatRegistered(ref.chatId);
+        if (!registered) {
+            console.log(
+                `[TelegramDL Tool] Request for unregistered private chat ${ref.chatId}; notifying the owner.`
+            );
+            await notifyOwnerOfPendingChat(ctx, telegramUrl, ref);
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '🔒', key: ctx.msg.key } });
+            return (
+                'The bot has not been added to that Telegram group yet, so its content cannot be accessed at ' +
+                'the moment. The owner has been notified with your request and access will be available once ' +
+                'the group has been joined and registered. Please try again later.'
+            );
+        }
+
+        try {
+            const file = await downloadPrivateMedia(ref.chatId, ref.messageId);
+
+            if (file.sizeBytes > MAX_MEDIA_BYTES) {
+                console.error(
+                    `[TelegramDL Tool] Media ${file.fileName} (${file.sizeBytes} bytes) exceeds the 15MB limit.`
+                );
+                fs.unlinkSync(file.filePath);
+                await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+                return 'Error: This media exceeds the 15MB size limit and cannot be sent via WhatsApp.';
+            }
+
+            await sendPrivateMedia(ctx, file);
+            fs.unlinkSync(file.filePath);
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
+            return;
+        } catch (error: any) {
+            console.error('[TelegramDL Tool] Private media retrieval failed:', error);
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+            return (
+                'Error: The media could not be retrieved from that private group. The dummy account may no ' +
+                'longer have access to it. The owner has been informed through the logs.'
+            );
+        }
+    }
+
+    // --- Public post: fetch directly with yt-dlp. ---
     const storagePath = path.resolve(process.cwd(), 'storage');
     if (!fs.existsSync(storagePath)) {
         fs.mkdirSync(storagePath, { recursive: true });
@@ -104,7 +270,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         const downloadedFile = outputLines.length > 0 ? outputLines[outputLines.length - 1].trim() : '';
 
         if (downloadedFile && fs.existsSync(downloadedFile)) {
-            if (fs.statSync(downloadedFile).size > 15 * 1024 * 1024) {
+            if (fs.statSync(downloadedFile).size > MAX_MEDIA_BYTES) {
                 console.error('[TelegramDL Tool] Downloaded video exceeds the 15MB limit.');
                 fs.unlinkSync(downloadedFile);
                 await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });

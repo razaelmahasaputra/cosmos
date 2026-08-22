@@ -72,3 +72,91 @@ export async function isGroupWhitelisted(jid: string): Promise<boolean> {
         return false;
     }
 }
+
+// --- Telegram Private Chat Registry ---
+
+export interface TelegramPrivateChatInfo {
+    chatId: string;
+    title: string | null;
+    inviteLink: string | null;
+}
+
+/**
+ * Registers a private Telegram chat so the bot is allowed to proxy its media.
+ */
+export async function addTelegramPrivateChat(
+    chatId: string,
+    title?: string | null,
+    inviteLink?: string | null
+): Promise<boolean> {
+    try {
+        await prisma.telegramPrivateChat.upsert({
+            where: { chatId },
+            update: {
+                ...(title !== undefined ? { title } : {}),
+                ...(inviteLink !== undefined ? { inviteLink } : {})
+            },
+            create: { chatId, title: title ?? null, inviteLink: inviteLink ?? null }
+        });
+        return true;
+    } catch (err) {
+        console.error('[DB] Error adding Telegram private chat:', err);
+        return false;
+    }
+}
+
+/**
+ * Checks whether a private Telegram chat (by internal numeric chat id) has been registered.
+ */
+export async function isTelegramChatRegistered(chatId: string): Promise<boolean> {
+    try {
+        const chat = await prisma.telegramPrivateChat.findUnique({ where: { chatId } });
+        return !!chat;
+    } catch {
+        return false;
+    }
+}
+
+export async function getTelegramPrivateChat(chatId: string): Promise<TelegramPrivateChatInfo | null> {
+    try {
+        const chat = await prisma.telegramPrivateChat.findUnique({ where: { chatId } });
+        if (!chat) return null;
+        return { chatId: chat.chatId, title: chat.title, inviteLink: chat.inviteLink };
+    } catch {
+        return null;
+    }
+}
+
+export async function listTelegramPrivateChats(): Promise<TelegramPrivateChatInfo[]> {
+    try {
+        const chats = await prisma.telegramPrivateChat.findMany({ orderBy: { added_at: 'asc' } });
+        return chats.map((c) => ({ chatId: c.chatId, title: c.title, inviteLink: c.inviteLink }));
+    } catch {
+        return [];
+    }
+}
+
+export async function removeTelegramPrivateChat(chatId: string): Promise<boolean> {
+    try {
+        await prisma.telegramPrivateChat.delete({ where: { chatId } });
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Looks up a registered private Telegram chat by an invite hash
+ * (the part after t.me/+ or t.me/joinchat/).
+ */
+export async function findTelegramChatByInviteLink(inviteHash: string): Promise<TelegramPrivateChatInfo | null> {
+    try {
+        const chat = await prisma.telegramPrivateChat.findFirst({
+            where: { inviteLink: { contains: inviteHash } }
+        });
+        if (!chat) return null;
+        return { chatId: chat.chatId, title: chat.title, inviteLink: chat.inviteLink };
+    } catch {
+        return null;
+    }
+}

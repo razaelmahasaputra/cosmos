@@ -4,6 +4,7 @@ import toolsHandler from '#/tools/handler.js';
 
 import { startAutoBackup } from '#/utils/backup.js';
 import { connectToWhatsApp } from '#/utils/connectionManager.js';
+import { getTelegramClient, isTelegramConfigured } from '#/utils/telegramClient.js';
 
 dns.setDefaultResultOrder('ipv4first');
 
@@ -14,6 +15,16 @@ startAutoBackup();
 
 async function startSystem(): Promise<void> {
     await toolsHandler.loadTools();
+
+    // Connect the Telegram dummy account in the background when it has been paired,
+    // so private group content can be proxied.
+    if (isTelegramConfigured()) {
+        getTelegramClient()
+            .then(() => console.log('[System] Telegram dummy account ready for private media proxying.'))
+            .catch((err) => console.error('[System] Telegram dummy account failed to connect:', err));
+    } else {
+        console.log('[System] Telegram dummy account is not configured; private content proxying is disabled.');
+    }
 
     const phoneNumber = process.env.BOT_PHONE_NUMBER;
     if (!phoneNumber) {
