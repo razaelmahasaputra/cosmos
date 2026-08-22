@@ -86,6 +86,10 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 
 - **Formal English Output Strings:** Semua string bertipe output ke pengguna (pesan respon bot, deskripsi tool/command, pesan error, log sistem, dan prompt AI) WAJIB ditulis dalam Bahasa Inggris Formal (_Formal English_), bukan Bahasa Indonesia baku atau tidak baku (rujuk panduan di `.agents/skills/formal-english-output-strings/SKILL.md`).
 
+### I. Manajemen Versi Lokal (Git Local Commits)
+
+- **Wajib Commit Lokal:** Setiap kali menyelesaikan sebuah tugas atau perubahan kode, AI Agent **WAJIB** melakukan commit secara lokal (`git add .` dan `git commit -m "..."`) tanpa perlu melakukan `push`. Hal ini bertujuan agar diff kode selalu tercatat, konteks pekerjaan tidak hilang antar-sesi, dan meminimalisir risiko perubahan dari sesi sebelumnya tertinggal saat sesi berikutnya diinstruksikan untuk melakukan `push`.
+
 ---
 
 ## 4. Workflow Kerja AI Agent
@@ -94,4 +98,5 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 2. **Inspeksi Kode:** Selalu periksa file sumber asli sebelum mengubah logika atau nama fungsi/tipe.
 3. **Eksekusi Perubahan:** Lakukan pengeditan kode secara presisi dan bersih dalam TypeScript.
 4. **Jalankan Verifikasi:** Jalankan `pnpm typecheck` dan `pnpm lint` untuk memastikan tidak ada syntax error atau tipe mismatch.
-5. **Ringkaskan Hasil:** Berikan penjelasan singkat, padat, dan jelas mengenai perubahan yang telah dilakukan beserta bukti verifikasi.
+5. **Lakukan Git Commit:** Lakukan commit lokal atas semua perubahan yang telah selesai dan terverifikasi.
+6. **Ringkaskan Hasil:** Berikan penjelasan singkat, padat, dan jelas mengenai perubahan yang telah dilakukan beserta bukti verifikasi.
