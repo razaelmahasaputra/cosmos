@@ -1,4 +1,3 @@
-import { writeLog } from '#/logger.js';
 import { makeWASocket, DisconnectReason } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import { handleMessage } from '#/handlers/message.js';
@@ -135,7 +134,7 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
             activeConnections.delete(sessionId);
 
             if (lastDisconnect?.error) {
-                writeLog('ERROR', `Connection close details [${sessionId}]: ${errorMessage}`, lastDisconnect.error);
+                console.error(`Connection close details [${sessionId}]: ${errorMessage}`, lastDisconnect.error);
             }
 
             if (onClosed) onClosed(isLoggedOut);

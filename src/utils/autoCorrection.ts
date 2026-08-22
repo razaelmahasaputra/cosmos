@@ -1,6 +1,5 @@
 import { Groq } from 'groq-sdk';
 import dotenv from 'dotenv';
-import { writeLog } from '#/logger.js';
 
 dotenv.config();
 
@@ -141,7 +140,7 @@ STRICT RULES:
         return cleanResult;
     } catch (err: any) {
         console.error('[AutoCorrect Groq Error]', err);
-        writeLog('ERROR', 'AutoCorrect Groq completion failed', { error: err.message });
+        console.error('AutoCorrect Groq completion failed', { error: err.message });
         return null;
     }
 }

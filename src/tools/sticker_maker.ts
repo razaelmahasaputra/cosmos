@@ -1,6 +1,5 @@
 import sharp from 'sharp';
 import { downloadContentFromMessage, WASocket, WAMessage } from '@whiskeysockets/baileys';
-import { writeLog } from '#/logger.js';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -330,7 +329,7 @@ export async function execute(_: Record<string, any>, ctx: ToolContext): Promise
             }
         } catch (err: any) {
             console.error(err);
-            writeLog('ERROR', 'Error in sticker_maker tool execution', err);
+            console.error('Error in sticker_maker tool execution', err);
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
             return null;
         }

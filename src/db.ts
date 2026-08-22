@@ -47,7 +47,6 @@ export const prisma = new Proxy(defaultClient, {
     }
 });
 
-export const supabase = null;
 
 export async function addGroup(jid: string): Promise<boolean> {
     try {

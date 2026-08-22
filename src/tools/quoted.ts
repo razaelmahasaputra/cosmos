@@ -1,5 +1,4 @@
 import { ToolDefinition, ToolContext } from './types.js';
-import { writeLog } from '#/logger.js';
 
 export const definition: ToolDefinition = {
     name: 'quoted',
@@ -103,10 +102,10 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         await sock.sendMessage(jid, { forward: fakeWaMessage });
         
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
-        writeLog('INFO', 'Forwarded quoted message', { jid });
+        console.log('Forwarded quoted message', { jid });
     } catch (err: any) {
         console.error('[Quoted Error]', err);
-        writeLog('ERROR', 'Failed to forward quoted message', { error: err.message });
+        console.error('Failed to forward quoted message', { error: err.message });
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
         return 'Failed to forward message.';
     }

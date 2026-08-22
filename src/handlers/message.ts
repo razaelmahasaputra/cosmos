@@ -1,6 +1,5 @@
 import { jidNormalizedUser, WASocket, WAMessage } from '@whiskeysockets/baileys';
 import { addGroup, isGroupWhitelisted } from '#/db.js';
-import { writeLog } from '#/logger.js';
 import toolsHandler from '#/tools/handler.js';
 import { isAutoStickerEnabled } from '#/utils/autoSticker.js';
 import {
@@ -111,7 +110,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
                 await sock.sendMessage(jid, { text: 'This command can only be used by the bot owner.' }, { quoted: msg });
                 return;
             }
-            writeLog('INFO', 'Command executed', { command: '.addgroup', jid });
+            console.log('Command executed', { command: '.addgroup', jid });
             if (!jid.endsWith('@g.us')) {
                 await sock.sendMessage(jid, { text: 'This command can only be executed within a group.' });
                 return;
@@ -139,7 +138,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
                 if (!whitelisted) return;
             }
 
-            writeLog('INFO', 'Command executed', { command: commandName, jid });
+            console.log('Command executed', { command: commandName, jid });
             console.log('[Message Handler] Command:', commandName, 'key details:', JSON.stringify(msg.key));
 
             let args: Record<string, any> = {};
@@ -180,13 +179,13 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
             try {
                 const corrected = await analyzeAndCorrectText(trimmedText);
                 if (corrected && corrected !== trimmedText) {
-                    writeLog('INFO', 'Auto-correct executed', { jid, original: trimmedText, corrected });
+                    console.log('Auto-correct executed', { jid, original: trimmedText, corrected });
                     console.log(`[Auto-Correct] Editing message in ${jid}: "${trimmedText}" -> "${corrected}"`);
                     await sock.sendMessage(jid, { text: corrected, edit: msg.key });
                 }
             } catch (err: any) {
                 console.error('[Auto-Correct Error]', err);
-                writeLog('ERROR', 'Auto-correct handler failed', { error: err.message });
+                console.error('Auto-correct handler failed', { error: err.message });
             }
         }
     }
@@ -215,7 +214,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
             if (!whitelisted) return;
         }
 
-        writeLog('INFO', 'Auto sticker executed', { jid });
+        console.log('Auto sticker executed', { jid });
         console.log('[Message Handler] Auto sticker executing for jid:', jid);
 
         await sock.sendPresenceUpdate('composing', jid);

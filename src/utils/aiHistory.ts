@@ -1,5 +1,4 @@
 import { Groq } from 'groq-sdk';
-import { writeLog } from '#/logger.js';
 import axios from 'axios';
 import { prisma } from '#/db.js';
 
@@ -106,11 +105,11 @@ Return ONLY the updated summary text. Do not add any conversational filler.`;
                 ]);
                 session.summary = newSummary;
                 sessionMessages = remainingMessages;
-                writeLog('INFO', 'AI History summarized', { jid, newSummaryLength: newSummary.length });
+                console.log('AI History summarized', { jid, newSummaryLength: newSummary.length });
             }
         } catch (err: any) {
             console.error('[AI History Summarization Error]', err);
-            writeLog('ERROR', 'AI History Summarization failed', { error: err.message });
+            console.error('AI History Summarization failed', { error: err.message });
             // If summarization fails, we proceed without modifying the array to not lose data,
             // though it might use more quota this round.
         }

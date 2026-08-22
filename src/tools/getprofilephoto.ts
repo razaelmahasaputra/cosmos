@@ -1,6 +1,5 @@
 import { ToolDefinition, ToolContext } from './types.js';
 import { jidNormalizedUser } from '@whiskeysockets/baileys';
-import { writeLog } from '#/logger.js';
 
 export const definition: ToolDefinition = {
     name: 'getprofilephoto',
@@ -105,11 +104,11 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
             fs.unlinkSync(tempFilePath);
         }
 
-        writeLog('INFO', 'Profile photo fetched successfully', { jid, targetJid });
+        console.log('Profile photo fetched successfully', { jid, targetJid });
         return;
     } catch (err: any) {
         console.error('[Get Profile Photo Error]', err);
-        writeLog('ERROR', 'Failed to fetch profile photo', { error: err.message, targetJid });
+        console.error('Failed to fetch profile photo', { error: err.message, targetJid });
         await sock.sendMessage(jid, { react: { text: '❌', key: safeMsgKey } });
         
         if (tempFilePath) {

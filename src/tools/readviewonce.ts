@@ -1,6 +1,5 @@
 import { ToolDefinition, ToolContext } from './types.js';
 import { downloadContentFromMessage, jidNormalizedUser } from '@whiskeysockets/baileys';
-import { writeLog } from '#/logger.js';
 
 export const definition: ToolDefinition = {
     name: 'rvo',
@@ -130,11 +129,11 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
             }, 10000);
         }
 
-        writeLog('INFO', 'Revealed view-once message', { jid, type });
+        console.log('Revealed view-once message', { jid, type });
         return;
     } catch (err: any) {
         console.error('[Read View Once Error]', err);
-        writeLog('ERROR', 'Failed to reveal view-once message', { error: err.message });
+        console.error('Failed to reveal view-once message', { error: err.message });
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
         return;
     }

@@ -1,7 +1,6 @@
 import { downloadContentFromMessage, WAMessage } from '@whiskeysockets/baileys';
 import { Groq, toFile } from 'groq-sdk';
 import dotenv from 'dotenv';
-import { writeLog } from '#/logger.js';
 import { ToolDefinition, ToolContext } from './types.js';
 
 dotenv.config();
@@ -60,7 +59,7 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
             return 'Failed: No text detected from this voice note.';
         }
 
-        writeLog('INFO', 'STT transcription success', { jid: ctx.jid, length: text.length });
+        console.log('STT transcription success', { jid: ctx.jid, length: text.length });
 
         // Accurately detect if quoted voice note is from bot number (supports JID & LID)
         const cleanId = (idStr?: string | null) => (idStr ? idStr.split(':')[0].split('@')[0] : null);
@@ -90,7 +89,7 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         return null;
     } catch (err: any) {
         console.error('[STT Tool Error]', err);
-        writeLog('ERROR', 'STT transcription failed', { jid: ctx.jid, error: err.message });
+        console.error('STT transcription failed', { jid: ctx.jid, error: err.message });
         return 'Failed: An error occurred while transcribing the voice note.';
     }
 }
