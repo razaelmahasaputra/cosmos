@@ -21,6 +21,7 @@ export interface ConnectOptions {
     onConnected?: () => void;
     onClosed?: (isLoggedOut: boolean) => void;
     disableReconnect?: boolean;
+    isPairingMode?: boolean;
 }
 
 export const activeConnections = new Map<string, ReturnType<typeof makeWASocket>>();
@@ -71,6 +72,10 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
     let pairingRequested = false;
 
     if (pendingPairing) {
+        if (!options.isPairingMode) {
+            console.error(`[Error] Session '${sessionId}' is not paired. Please run 'pnpm pair' first.`);
+            process.exit(1);
+        }
         if (!phoneNumber) {
             console.error(`[Pairing] [${sessionId}] No phone number provided for pairing`);
         } else {

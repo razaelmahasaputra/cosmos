@@ -9,6 +9,7 @@
     },
     "scripts": {
         "dev": "tsx src/index.ts",
+        "pair": "tsx src/pair.ts",
         "start": "node dist/index.js",
         "start:bg": "./start.sh",
         "stop:bg": "./stop.sh",

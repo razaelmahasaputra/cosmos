@@ -3,8 +3,7 @@ module.exports = {
   apps: [
     {
       name: "waf-bot",
-      script: "pnpm",
-      args: "run start",
+      script: "dist/index.js",
       watch: false,
       env: {
         NODE_ENV: "production",
