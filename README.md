@@ -98,7 +98,18 @@ pnpm build
 
 ## ⚙️ Running the Bot
 
-### 🟢 Development Mode (Local Testing)
+### 🔗 1. Pair your WhatsApp Account (Required)
+
+Before starting the bot, you must pair your WhatsApp account to generate the authentication state. 
+Run the pairing script and enter the pairing code in your WhatsApp app (Linked Devices > Pair a device):
+
+```bash
+pnpm pair
+```
+
+Once successfully connected, the script will exit and you can start the bot using one of the methods below.
+
+### 🟢 2. Development Mode (Local Testing)
 
 Runs the bot using `tsx`:
 
@@ -106,7 +117,7 @@ Runs the bot using `tsx`:
 pnpm dev
 ```
 
-### 🔵 Production Mode (Static Build)
+### 🔵 3. Production Mode (Static Build)
 
 Runs the compiled JavaScript build (`dist/index.js`):
 
@@ -115,7 +126,7 @@ pnpm build
 pnpm start
 ```
 
-### 🟣 Background Daemon Mode (No Auto-Restart)
+### 🟣 4. Background Daemon Mode (No Auto-Restart)
 
 Runs the bot in the background using `nohup` without restarting automatically when code changes:
 
@@ -133,7 +144,7 @@ pnpm stop:bg    # or ./stop.sh
 tail -f bot_output.log
 ```
 
-### 🐧 Linux Systemd Daemon Service
+### 🐧 5. Linux Systemd Daemon Service
 
 To run the bot as a system service on Linux (Ubuntu/Debian):
 
@@ -185,6 +196,7 @@ waf/
 | Command          | Function                                             |
 | :--------------- | :--------------------------------------------------- |
 | `pnpm dev`       | Runs the bot in development mode using `tsx`         |
+| `pnpm pair`      | Requests pairing code to link a new WhatsApp session |
 | `pnpm build`     | Compiles TypeScript (`src/`) to JavaScript (`dist/`) |
 | `pnpm start`     | Runs the production build (`dist/index.js`)          |
 | `pnpm start:bg`  | Starts the bot as a background daemon process        |
