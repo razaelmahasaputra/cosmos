@@ -1,18 +1,18 @@
 import { ToolDefinition, ToolContext } from './types.js';
-import { setAutoDl } from '#/utils/autodl.js';
+import { setAutoDl, isAutoDlEnabled } from '#/utils/autodl.js';
 
 export const definition: ToolDefinition = {
     name: 'autodl',
     title: 'Auto Downloader Settings',
     category: 'Settings',
     aliases: ['.autodl'],
-    description: 'Toggle automatic downloading of links for this group. E.g. .autodl tiktok on, .autodl ig off',
+    description: 'Toggle automatic downloading of links for this group. E.g. .autodl tiktok on, .autodl ig off, .autodl list',
     parameters: {
         type: 'object',
         properties: {
             platform: {
                 type: 'string',
-                description: 'The platform to configure (e.g., tiktok, ig, pin, yt, tg, all)'
+                description: 'The platform to configure (e.g., tiktok, ig, pin, yt, tg, all, list)'
             },
             state: {
                 type: 'string',
@@ -23,7 +23,7 @@ export const definition: ToolDefinition = {
     }
 };
 
-const VALID_PLATFORMS = ['tiktok', 'tt', 'ig', 'instagram', 'pin', 'pinterest', 'yt', 'youtube', 'tg', 'telegram', 'all'];
+const VALID_PLATFORMS = ['tiktok', 'tt', 'ig', 'instagram', 'pin', 'pinterest', 'yt', 'youtube', 'tg', 'telegram', 'all', 'list'];
 
 export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string | void> {
     let { platform, state } = args;
@@ -85,7 +85,16 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
     await ctx.sock.sendMessage(ctx.jid, { react: { text: '⏳', key: ctx.msg.key } });
 
-    if (platTarget === 'all') {
+    if (platTarget === 'list') {
+        const platformsToCheck = ['tiktok', 'ig', 'pin', 'yt', 'tg'];
+        let msg = '*📋 Auto-Downloader Status*\n\n';
+        for (const p of platformsToCheck) {
+            const status = isAutoDlEnabled(jid, p) ? '✅ ON' : '❌ OFF';
+            msg += `- ${p.toUpperCase()}: ${status}\n`;
+        }
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
+        return msg.trim();
+    } else if (platTarget === 'all') {
         const platformsToSet = ['tiktok', 'ig', 'pin', 'yt', 'tg'];
         let success = true;
         for (const p of platformsToSet) {
