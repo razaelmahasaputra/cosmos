@@ -145,14 +145,28 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 const musicPath = await downloadFile(data.music, '.mp3', 'music');
                 downloadedFiles.push(musicPath);
             }
-        } else if (data.play) {
-            const vidPath = await downloadFile(data.play, '.mp4', 'vid');
-            downloadedFiles.push(vidPath);
+        } else {
+            if (data.play) {
+                try {
+                    const vidPath = await downloadFile(data.play, '.mp4', 'vid');
+                    downloadedFiles.push(vidPath);
+                } catch (e) {
+                    console.error('[TikTokDL Tool] Video download failed:', e);
+                }
+            }
+            if (data.music) {
+                try {
+                    const musicPath = await downloadFile(data.music, '.mp3', 'music');
+                    downloadedFiles.push(musicPath);
+                } catch (e) {
+                    console.error('[TikTokDL Tool] Music download failed:', e);
+                }
+            }
         }
 
         if (downloadedFiles.length > 0) {
             let images = downloadedFiles.filter(f => ['.jpg', '.jpeg', '.png', '.webp'].includes(path.extname(f).toLowerCase()));
-            let audios = downloadedFiles.filter(f => ['.mp3', '.m4a', '.aac', '.wav'].includes(path.extname(f).toLowerCase()));
+            const audios = downloadedFiles.filter(f => ['.mp3', '.m4a', '.aac', '.wav'].includes(path.extname(f).toLowerCase()));
             const videos = downloadedFiles.filter(f => ['.mp4', '.webm', '.mkv', '.mov'].includes(path.extname(f).toLowerCase()));
             const others = downloadedFiles.filter(f => !images.includes(f) && !audios.includes(f) && !videos.includes(f));
 
@@ -195,10 +209,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     );
                     fs.unlinkSync(outputVideo);
                     images.forEach(img => fs.existsSync(img) && fs.unlinkSync(img));
-                    audios.forEach(aud => fs.existsSync(aud) && fs.unlinkSync(aud));
+                    // Keep audios to be sent separately!
                     
                     images = [];
-                    audios = [];
                 } catch (ffmpegErr) {
                     console.error('[TikTokDL Tool] Slideshow combine error:', ffmpegErr);
                 }

@@ -3,6 +3,11 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import axios from 'axios';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import ffmpeg from 'ffmpeg-static';
+
+const execAsync = promisify(exec);
 
 const TEMP_MEDIA_DIR = path.join(os.tmpdir(), 'waf-pinterest');
 
@@ -251,6 +256,22 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     { video: { url: filepath }, mimetype: 'video/mp4', caption: caption, mentions: senderJid ? [senderJid] : undefined },
                     { quoted: ctx.msg }
                 );
+
+                const audioOut = path.join(tempDir, `pinterest_${timestamp}_${i}_audio.mp3`);
+                try {
+                    const ffmpegCmd = ffmpeg ? `"${ffmpeg}"` : 'ffmpeg';
+                    await execAsync(`${ffmpegCmd} -i "${filepath}" -q:a 0 -map a "${audioOut}" -y`);
+                    if (fs.existsSync(audioOut)) {
+                        downloadedFiles.push(audioOut);
+                        await ctx.sock.sendMessage(
+                            ctx.jid,
+                            { audio: { url: audioOut }, mimetype: 'audio/mpeg', mentions: senderJid ? [senderJid] : undefined },
+                            { quoted: ctx.msg }
+                        );
+                    }
+                } catch (e) {
+                    console.error('[PinterestDL Tool] Audio extraction failed:', e);
+                }
             } else {
                 await ctx.sock.sendMessage(
                     ctx.jid,

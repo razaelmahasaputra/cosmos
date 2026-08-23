@@ -178,6 +178,22 @@ async function sendPrivateMedia(ctx: ToolContext, file: PrivateMediaFile): Promi
             },
             quoted
         );
+
+        const audioOut = path.join(os.tmpdir(), `tgdl_audio_${Date.now()}.mp3`);
+        try {
+            const ffmpegCmd = ffmpeg ? `"${ffmpeg}"` : 'ffmpeg';
+            await execAsync(`${ffmpegCmd} -i "${file.filePath}" -q:a 0 -map a "${audioOut}" -y`);
+            if (fs.existsSync(audioOut)) {
+                await ctx.sock.sendMessage(
+                    ctx.jid,
+                    { audio: { url: audioOut }, mimetype: 'audio/mpeg', mentions },
+                    quoted
+                );
+                fs.unlinkSync(audioOut);
+            }
+        } catch (e) {
+            console.error('[TelegramDL Tool] Audio extraction failed:', e);
+        }
     } else if (file.kind === 'image') {
         await ctx.sock.sendMessage(
             ctx.jid,
@@ -333,12 +349,28 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         // Telegram media is exposed as a single format without size metadata, so the
         // 15MB WhatsApp limit is enforced by checking the downloaded file afterwards.
         const ffmpegLoc = ffmpeg ? `--ffmpeg-location "${ffmpeg}"` : '';
-        const command = `"${resolveYtDlpPath()}" ${ffmpegLoc} -f "best" --merge-output-format mp4 -o "${outTemplate}" "${telegramUrl}" --print after_move:filepath`;
+        let downloadedFile = '';
+        try {
+            const command = `"${resolveYtDlpPath()}" ${ffmpegLoc} -f "best" --merge-output-format mp4 -o "${outTemplate}" "${telegramUrl}" --print after_move:filepath`;
+            const { stdout } = await execAsync(command);
+            const outputLines = stdout.trim().split('\n').filter((line) => line.trim() !== '');
+            if (outputLines.length > 0) downloadedFile = outputLines[outputLines.length - 1].trim();
+        } catch (e) {
+            console.error('[TelegramDL Tool] Video download failed:', e);
+        }
 
-        const { stdout, stderr } = await execAsync(command);
-        // yt-dlp might print multiple lines if multiple files are downloaded, we take the last non-empty line.
-        const outputLines = stdout.trim().split('\n').filter((line) => line.trim() !== '');
-        const downloadedFile = outputLines.length > 0 ? outputLines[outputLines.length - 1].trim() : '';
+        let downloadedAudioOnly = '';
+        if (!downloadedFile || !fs.existsSync(downloadedFile)) {
+            // Fallback to audio download
+            try {
+                const commandAudio = `"${resolveYtDlpPath()}" ${ffmpegLoc} -f "bestaudio/best" --extract-audio --audio-format mp3 -o "${outTemplate}" "${telegramUrl}" --print after_move:filepath`;
+                const { stdout } = await execAsync(commandAudio);
+                const outputLines = stdout.trim().split('\n').filter((line) => line.trim() !== '');
+                if (outputLines.length > 0) downloadedAudioOnly = outputLines[outputLines.length - 1].trim();
+            } catch (e) {
+                console.error('[TelegramDL Tool] Fallback audio download failed:', e);
+            }
+        }
 
         if (downloadedFile && fs.existsSync(downloadedFile)) {
             if (fs.statSync(downloadedFile).size > MAX_MEDIA_BYTES) {
@@ -357,11 +389,49 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 { quoted: ctx.msg }
             );
 
+            const audioOut = path.join(tempDir, `tgdl_audio_${Date.now()}.mp3`);
+            try {
+                const ffmpegCmd = ffmpeg ? `"${ffmpeg}"` : 'ffmpeg';
+                await execAsync(`${ffmpegCmd} -i "${downloadedFile}" -q:a 0 -map a "${audioOut}" -y`);
+                if (fs.existsSync(audioOut)) {
+                    await ctx.sock.sendMessage(
+                        ctx.jid,
+                        { audio: { url: audioOut }, mimetype: 'audio/mpeg', mentions: senderJid ? [senderJid] : undefined },
+                        { quoted: ctx.msg }
+                    );
+                    // Add it to be cleaned up
+                    // Actually, filePrefix cleanup handles it if it matches the prefix, but our prefix is different here.
+                    // We can just unlink it.
+                    fs.unlinkSync(audioOut);
+                }
+            } catch (e) {
+                console.error('[TelegramDL Tool] Audio extraction failed:', e);
+            }
+
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
+            return;
+        } else if (downloadedAudioOnly && fs.existsSync(downloadedAudioOnly)) {
+            if (fs.statSync(downloadedAudioOnly).size > MAX_MEDIA_BYTES) {
+                console.error('[TelegramDL Tool] Downloaded audio exceeds the 15MB limit.');
+                await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+                return 'Error: The Telegram audio exceeds the 15MB size limit and cannot be sent via WhatsApp.';
+            }
+
+            await ctx.sock.sendMessage(
+                ctx.jid,
+                {
+                    audio: { url: downloadedAudioOnly },
+                    mimetype: 'audio/mpeg',
+                    mentions: senderJid ? [senderJid] : undefined
+                },
+                { quoted: ctx.msg }
+            );
+
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
             return;
         }
 
-        console.error('[TelegramDL Tool] File not found after download.', { stdout, stderr });
+        console.error('[TelegramDL Tool] File not found after download.');
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
         return 'Error: The media could not be retrieved. Please ensure the Telegram post contains a supported video.';
     } catch (error: any) {
