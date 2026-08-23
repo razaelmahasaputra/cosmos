@@ -165,10 +165,47 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             }
         }
 
+        const rawMediaUrls = [...Array.from(media.videos), ...Array.from(media.images)];
+        
+        const mediaGroups = new Map<string, string[]>();
+        for (const url of rawMediaUrls) {
+            let mediaId = 'unknown';
+            try {
+                const pathname = new URL(url).pathname;
+                const match = pathname.match(/([a-f0-9]{24,})/i);
+                mediaId = match ? match[1] : (pathname.split('/').pop()?.split('.')[0] || 'unknown');
+            } catch {
+                // Ignore invalid URLs
+            }
+            if (mediaId.includes('_')) mediaId = mediaId.split('_')[0];
+            
+            if (!mediaGroups.has(mediaId)) {
+                mediaGroups.set(mediaId, []);
+            }
+            mediaGroups.get(mediaId)!.push(url);
+        }
+
+        const dedupedUrls: string[] = [];
+        for (const variants of mediaGroups.values()) {
+            const videos = variants.filter(u => u.includes('.mp4'));
+            const images = variants.filter(u => u.match(/\.(jpg|png|jpeg)$/i));
+            
+            if (videos.length > 0) {
+                let bestVideo = videos[0];
+                for (const v of videos) {
+                    if (v.includes('720p') || v.includes('1080p') || v.includes('V_720P') || v.includes('V_ORIGINAL')) {
+                        bestVideo = v;
+                        break;
+                    }
+                }
+                dedupedUrls.push(bestVideo);
+            } else if (images.length > 0) {
+                dedupedUrls.push(images[0]);
+            }
+        }
+
         // Limit to 10 items max to avoid spam
-        const imagesArray = Array.from(media.images).slice(0, 10);
-        const videosArray = Array.from(media.videos).slice(0, 10);
-        const allMediaUrls = [...videosArray, ...imagesArray].slice(0, 10);
+        const allMediaUrls = dedupedUrls.slice(0, 10);
 
         if (allMediaUrls.length === 0) {
             console.error('[PinterestDL Tool] No media found on the page.');
