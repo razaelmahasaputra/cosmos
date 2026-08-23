@@ -1,0 +1,224 @@
+import { ToolDefinition, ToolContext } from './types.js';
+import path from 'path';
+import fs from 'fs';
+import os from 'os';
+import axios from 'axios';
+
+const TEMP_MEDIA_DIR = path.join(os.tmpdir(), 'waf-pinterest');
+
+function ensureTempMediaDir(): string {
+    if (!fs.existsSync(TEMP_MEDIA_DIR)) {
+        fs.mkdirSync(TEMP_MEDIA_DIR, { recursive: true });
+    }
+    return TEMP_MEDIA_DIR;
+}
+
+function safeUnlink(filePath: string | null | undefined): void {
+    if (!filePath) return;
+    try {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    } catch (err) {
+        console.error(`[PinterestDL Tool] Failed to remove temporary file ${filePath}:`, err);
+    }
+}
+
+export const definition: ToolDefinition = {
+    name: 'pinterestdl',
+    title: 'Pinterest Downloader',
+    category: 'Downloaders',
+    aliases: ['.pinterest', '.pin', '.pindl'],
+    description: 'Downloads a video, image, or carousel from a specified Pinterest URL.',
+    parameters: {
+        type: 'object',
+        properties: {
+            url: {
+                type: 'string',
+                description: 'The URL of the Pinterest post (pin.it or pinterest.com).'
+            }
+        },
+        required: ['url']
+    }
+};
+
+export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string | void> {
+    let targetUrl = args.url;
+    const senderJid = ctx.msg.key.participant || ctx.msg.key.remoteJid;
+
+    if (!targetUrl || targetUrl.trim() === '') {
+        const quotedMsg = ctx.msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (quotedMsg) {
+            const extText = quotedMsg.extendedTextMessage;
+            targetUrl = quotedMsg.conversation || 
+                        extText?.text || 
+                        extText?.matchedText || 
+                        quotedMsg.videoMessage?.caption ||
+                        quotedMsg.imageMessage?.caption ||
+                        '';
+        }
+    }
+
+    if (!targetUrl) {
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+        return;
+    }
+
+    const urlRegex = /(https?:\/\/[^\s]+)/;
+    const match = targetUrl.match(urlRegex);
+    if (match) {
+        targetUrl = match[1];
+    } else {
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+        return;
+    }
+
+    await ctx.sock.sendMessage(
+        ctx.jid,
+        { react: { text: '⏳', key: ctx.msg.key } }
+    );
+
+    const downloadedFiles: string[] = [];
+    const tempDir = ensureTempMediaDir();
+    const timestamp = Date.now();
+
+    try {
+        // Resolve redirect for shortlinks like pin.it
+        if (targetUrl.includes('pin.it')) {
+            try {
+                const resRedirect = await fetch(targetUrl, { redirect: 'follow', signal: AbortSignal.timeout(10000) });
+                targetUrl = resRedirect.url;
+            } catch (e) {
+                console.error('[PinterestDL Tool] Failed to resolve shortlink:', e);
+            }
+        }
+
+        const res = await axios.get(targetUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+            },
+            timeout: 15000
+        });
+
+        const html = res.data;
+        const relayMatch = html.match(/window\.__PWS_RELAY_REGISTER_COMPLETED_REQUEST__\([^,]+,\s*(\{.*?\})\);/);
+        
+        const media = { images: new Set<string>(), videos: new Set<string>(), title: '' };
+
+        if (relayMatch) {
+            const data = JSON.parse(relayMatch[1]);
+            
+            function findMedia(obj: any) {
+                if (typeof obj === 'string') {
+                    if (obj.includes('.mp4')) {
+                        media.videos.add(obj.replace(/\\/g, ''));
+                    } else if (obj.match(/\.(jpg|png|jpeg)$/i) && obj.includes('/originals/')) {
+                        media.images.add(obj.replace(/\\/g, ''));
+                    }
+                } else if (Array.isArray(obj)) {
+                    obj.forEach(findMedia);
+                } else if (obj !== null && typeof obj === 'object') {
+                    if (obj.seoTitle && typeof obj.seoTitle === 'string' && !media.title) media.title = obj.seoTitle;
+                    if (obj.title && typeof obj.title === 'string' && !media.title) media.title = obj.title;
+                    Object.values(obj).forEach(findMedia);
+                }
+            }
+            findMedia(data);
+        } else {
+            // Fallback for older PWS_DATA structure if Relay isn't found
+            const dataMatch = html.match(/<script id="__PWS_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
+            if (dataMatch) {
+                const data = JSON.parse(dataMatch[1]);
+                function findMediaFallback(obj: any) {
+                    if (typeof obj === 'string') {
+                        if (obj.includes('.mp4')) {
+                            media.videos.add(obj.replace(/\\/g, ''));
+                        } else if (obj.match(/\.(jpg|png|jpeg)$/i) && obj.includes('/originals/')) {
+                            media.images.add(obj.replace(/\\/g, ''));
+                        }
+                    } else if (Array.isArray(obj)) {
+                        obj.forEach(findMediaFallback);
+                    } else if (obj !== null && typeof obj === 'object') {
+                        if (obj.title && typeof obj.title === 'string' && !media.title) media.title = obj.title;
+                        Object.values(obj).forEach(findMediaFallback);
+                    }
+                }
+                findMediaFallback(data);
+            }
+        }
+
+        const imagesArray = Array.from(media.images);
+        const videosArray = Array.from(media.videos);
+        const allMediaUrls = [...videosArray, ...imagesArray];
+
+        if (allMediaUrls.length === 0) {
+            console.error('[PinterestDL Tool] No media found on the page.');
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+            return;
+        }
+
+        const downloadFile = async (url: string, ext: string, index: string | number = ''): Promise<string> => {
+            const filepath = path.join(tempDir, `pinterest_${timestamp}_${index}${ext}`);
+            const writer = fs.createWriteStream(filepath);
+            const response = await axios({
+                url,
+                method: 'GET',
+                responseType: 'stream',
+                timeout: 20000
+            });
+            response.data.pipe(writer);
+            return new Promise((resolve, reject) => {
+                writer.on('finish', () => resolve(filepath));
+                writer.on('error', reject);
+            });
+        };
+
+        const caption = media.title ? media.title.substring(0, 900) : '';
+
+        // Download and send each item
+        for (let i = 0; i < allMediaUrls.length; i++) {
+            const url = allMediaUrls[i];
+            const ext = url.includes('.mp4') ? '.mp4' : path.extname(new URL(url).pathname) || '.jpg';
+            const filepath = await downloadFile(url, ext, i);
+            downloadedFiles.push(filepath);
+
+            const isVideo = ext === '.mp4';
+            
+            // Send as Media
+            if (isVideo) {
+                await ctx.sock.sendMessage(
+                    ctx.jid,
+                    { video: { url: filepath }, mimetype: 'video/mp4', caption: caption, mentions: senderJid ? [senderJid] : undefined },
+                    { quoted: ctx.msg }
+                );
+            } else {
+                await ctx.sock.sendMessage(
+                    ctx.jid,
+                    { image: { url: filepath }, caption: caption, mentions: senderJid ? [senderJid] : undefined },
+                    { quoted: ctx.msg }
+                );
+            }
+
+            // Send as Document (requested by user)
+            await ctx.sock.sendMessage(
+                ctx.jid,
+                { 
+                    document: { url: filepath }, 
+                    mimetype: isVideo ? 'video/mp4' : 'image/jpeg', 
+                    fileName: `Pinterest_${timestamp}_${i}${ext}`, 
+                    caption: `Document version`, 
+                    mentions: senderJid ? [senderJid] : undefined 
+                },
+                { quoted: ctx.msg }
+            );
+        }
+
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
+        return;
+
+    } catch (error: any) {
+        console.error('[PinterestDL Tool] Execution error:', error);
+        await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
+        return;
+    } finally {
+        for (const file of downloadedFiles) safeUnlink(file);
+    }
+}
