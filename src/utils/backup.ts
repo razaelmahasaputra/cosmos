@@ -38,6 +38,33 @@ export async function sendBackupToTelegram(): Promise<void> {
     }
 }
 
+/**
+ * Sends a text notification through the same Telegram bot used for database
+ * backups. Returns true only when the message was delivered successfully.
+ */
+export async function sendTelegramBotNotification(text: string): Promise<boolean> {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+
+    if (!token || !chatId) {
+        console.warn('[Backup] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is missing. Skipping Telegram notification.');
+        return false;
+    }
+
+    try {
+        await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
+            chat_id: chatId,
+            text,
+            parse_mode: 'HTML',
+            disable_web_page_preview: true,
+        });
+        return true;
+    } catch (err: any) {
+        console.error('[Backup] Failed to send Telegram notification:', err.response?.data || err.message);
+        return false;
+    }
+}
+
 export function startAutoBackup(): void {
     // Jalankan backup sekali saat bot baru mulai
     sendBackupToTelegram();

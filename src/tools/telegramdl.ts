@@ -11,6 +11,7 @@ import {
     TelegramPostRef
 } from '#/utils/telegramClient.js';
 import { isTelegramChatRegistered, findTelegramChatByInviteLink } from '#/db.js';
+import { sendTelegramBotNotification } from '#/utils/backup.js';
 
 const execAsync = promisify(exec);
 
@@ -47,15 +48,59 @@ function getOwnerJid(): string | null {
     return ownerNumber ? `${ownerNumber}@s.whatsapp.net` : null;
 }
 
+/** Escapes text so it can be embedded safely in an HTML parse-mode Telegram message. */
+function escapeHtml(text: string): string {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Strips device suffixes and JID/LID domains, leaving only the base identifier. */
+function cleanJidNumber(jid: string | null | undefined): string | null {
+    return jid ? jid.split(':')[0].split('@')[0] || null : null;
+}
+
 /**
- * Sends the bot owner a notification containing everything required to grant
- * access to a private Telegram chat using the dummy account.
+ * Sends the pending private-chat request through the backup Telegram bot as a
+ * rich message containing the requester's WhatsApp number and username along
+ * with the group link required for the dummy account to join. Falls back to a
+ * direct WhatsApp notification when the Telegram bot is unavailable.
  */
 async function notifyOwnerOfPendingChat(
     ctx: ToolContext,
     telegramUrl: string,
     ref: TelegramPostRef
 ): Promise<void> {
+    const requesterJid = ctx.msg.key.participant || ctx.msg.key.remoteJid;
+    const requesterNumber = cleanJidNumber(requesterJid);
+    const requesterName = ctx.msg.pushName?.trim() || requesterNumber || 'Unknown';
+
+    let html =
+        '🔒 <b>Private Telegram Content Request</b>\n\n' +
+        'A user requested media from a private Telegram chat that has not been added to the database yet.\n\n' +
+        `<b>Group Link:</b> ${escapeHtml(telegramUrl)}\n`;
+
+    if (ref.chatId && ref.messageId !== null) {
+        html += `<b>Internal Chat ID:</b> <code>-100${ref.chatId}</code>\n`;
+        html += `<b>Message ID:</b> <code>${ref.messageId}</code>\n`;
+    }
+
+    html += `<b>Requester Username:</b> ${escapeHtml(requesterName)}\n`;
+    if (requesterNumber) {
+        html += `<b>WhatsApp Number:</b> <code>${requesterNumber}</code>\n`;
+    }
+
+    html +=
+        '\n<b>Next Steps:</b>\n' +
+        `1. Join the group above using the dummy account (invite links can be joined automatically via <code>.tgadd ${escapeHtml(
+            ref.inviteHash ? telegramUrl : '<invite-link>'
+        )}</code>).\n` +
+        '2. Register the chat with <code>.tgadd &lt;link-or-chat-id&gt;</code>.\n' +
+        '3. The requester may retry the same command afterwards.';
+
+    console.log('[TelegramDL Tool] Forwarding private chat request to the backup Telegram bot.');
+    const sentToTelegram = await sendTelegramBotNotification(html);
+    if (sentToTelegram) return;
+
+    // Fallback: notify the owner on WhatsApp when the Telegram route is unavailable.
     const ownerJid = getOwnerJid();
     if (!ownerJid || ownerJid === ctx.jid) return;
 
@@ -68,23 +113,17 @@ async function notifyOwnerOfPendingChat(
         text += `*Internal Chat ID:* \`\`\`${ref.chatId}\`\`\`\n*Message ID:* \`\`\`${ref.messageId}\`\`\`\n`;
     }
 
-    const requesterJid = ctx.msg.key.participant || ctx.msg.key.remoteJid;
-    if (requesterJid) {
-        text += `*Requested By:* @${requesterJid.split('@')[0]}\n`;
-    }
-
     text +=
+        `*Requester Username:* ${requesterName}\n` +
+        (requesterNumber ? `*WhatsApp Number:* ${requesterNumber}\n` : '') +
         '\n*Next Steps:*\n' +
         '1. If an invite link is available, run `.tgadd <invite-link>` so the dummy account joins automatically.\n' +
         '2. Otherwise, join the group manually using the dummy account, then register it with `.tgadd <link-or-chat-id>`.\n' +
         '3. The requester may retry the same command afterwards.';
 
     try {
-        await ctx.sock.sendMessage(ownerJid, {
-            text,
-            mentions: requesterJid ? [requesterJid] : undefined
-        });
-        console.log('[TelegramDL Tool] Owner notified about pending private chat request.');
+        await ctx.sock.sendMessage(ownerJid, { text });
+        console.log('[TelegramDL Tool] Owner notified about pending private chat request via WhatsApp fallback.');
     } catch (err) {
         console.error('[TelegramDL Tool] Failed to notify the owner:', err);
     }
