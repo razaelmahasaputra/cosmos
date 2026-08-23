@@ -4,7 +4,7 @@ module.exports = {
     {
       name: "waf-bot",
       script: "dist/index.js",
-      watch: false,
+      watch: ["dist"],
       out_file: "./storage/logs/waf-bot-out.log",
       error_file: "./storage/logs/waf-bot-error.log",
       merge_logs: true,
