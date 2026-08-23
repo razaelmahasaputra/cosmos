@@ -103,8 +103,12 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         
         const media = { images: new Set<string>(), videos: new Set<string>(), title: '' };
 
+        const pinIdMatch = targetUrl.match(/\/pin\/(\d+)/);
+        const targetPinId = pinIdMatch ? pinIdMatch[1] : null;
+
         if (relayMatch) {
             const data = JSON.parse(relayMatch[1]);
+            const mainPinData = data?.data?.v3GetPinQueryv2?.data || data;
             
             function findMedia(obj: any) {
                 if (typeof obj === 'string') {
@@ -116,17 +120,29 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 } else if (Array.isArray(obj)) {
                     obj.forEach(findMedia);
                 } else if (obj !== null && typeof obj === 'object') {
+                    // Prevent traversing into unrelated pins or recommendations
+                    if (obj.__typename === 'Pin' && obj.id && mainPinData.id && obj.id !== mainPinData.id) return;
                     if (obj.seoTitle && typeof obj.seoTitle === 'string' && !media.title) media.title = obj.seoTitle;
                     if (obj.title && typeof obj.title === 'string' && !media.title) media.title = obj.title;
-                    Object.values(obj).forEach(findMedia);
+                    
+                    Object.keys(obj).forEach(k => {
+                        if (['relatedPins', 'recommendations', 'morePins'].includes(k)) return;
+                        findMedia(obj[k]);
+                    });
                 }
             }
-            findMedia(data);
+            findMedia(mainPinData);
         } else {
             // Fallback for older PWS_DATA structure if Relay isn't found
             const dataMatch = html.match(/<script id="__PWS_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
             if (dataMatch) {
                 const data = JSON.parse(dataMatch[1]);
+                
+                let rootData = data;
+                if (targetPinId && data?.props?.initialReduxState?.pins?.[targetPinId]) {
+                    rootData = data.props.initialReduxState.pins[targetPinId];
+                }
+
                 function findMediaFallback(obj: any) {
                     if (typeof obj === 'string') {
                         if (obj.includes('.mp4')) {
@@ -138,16 +154,21 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                         obj.forEach(findMediaFallback);
                     } else if (obj !== null && typeof obj === 'object') {
                         if (obj.title && typeof obj.title === 'string' && !media.title) media.title = obj.title;
-                        Object.values(obj).forEach(findMediaFallback);
+                        
+                        Object.keys(obj).forEach(k => {
+                            if (['relatedPins', 'recommendations', 'morePins'].includes(k)) return;
+                            findMediaFallback(obj[k]);
+                        });
                     }
                 }
-                findMediaFallback(data);
+                findMediaFallback(rootData);
             }
         }
 
-        const imagesArray = Array.from(media.images);
-        const videosArray = Array.from(media.videos);
-        const allMediaUrls = [...videosArray, ...imagesArray];
+        // Limit to 10 items max to avoid spam
+        const imagesArray = Array.from(media.images).slice(0, 10);
+        const videosArray = Array.from(media.videos).slice(0, 10);
+        const allMediaUrls = [...videosArray, ...imagesArray].slice(0, 10);
 
         if (allMediaUrls.length === 0) {
             console.error('[PinterestDL Tool] No media found on the page.');
