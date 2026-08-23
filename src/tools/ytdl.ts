@@ -61,7 +61,14 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         { react: { text: '⏳', key: ctx.msg.key } }
     );
 
-    const ytdlpPath = '/usr/local/bin/yt-dlp';
+    const candidates = ['/usr/local/bin/yt-dlp', path.resolve(process.cwd(), 'yt-dlp')];
+    let ytdlpPath = 'yt-dlp';
+    for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+            ytdlpPath = candidate;
+            break;
+        }
+    }
     const storagePath = path.resolve(process.cwd(), 'storage');
     
     if (!fs.existsSync(storagePath)) {
