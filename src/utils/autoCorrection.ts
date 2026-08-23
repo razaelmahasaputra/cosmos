@@ -83,7 +83,8 @@ STRICT RULES:
 3. Do NOT rephrase sentences, add context, or standardize casual informal speech into formal language.
 4. If the message is intended casual slang, abbreviation, or has no clear typo, respond ONLY with: NO_CHANGE
 5. Preserve original slang, abbreviations, emojis, and informal formatting.
-6. Use Native Function Calling API if needed. STRICTLY FORBIDDEN to type XML tags like <function=...> manually!`;
+6. STRICTLY IGNORE and DO NOT CORRECT silly, slang, nonsensical, random, weird language, and Gen-Z internet slogans (e.g., "Gweh", "my mine"). Leave them EXACTLY as they are and return NO_CHANGE!
+7. Use Native Function Calling API if needed. STRICTLY FORBIDDEN to type XML tags like <function=...> manually!`;
 
     const openRouterKey = process.env.OPENROUTER_API_KEY;
     if (!openRouterKey) {
