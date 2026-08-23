@@ -90,3 +90,6 @@ storage/*.sqlite-journal
 
 # Telegram dummy-account session (credentials - never commit)
 storage/telegram_session.txt
+
+# PM2 log files
+storage/logs/
