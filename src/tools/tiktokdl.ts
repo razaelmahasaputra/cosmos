@@ -1,11 +1,39 @@
 import { ToolDefinition, ToolContext } from './types.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import os from 'os';
 import path from 'path';
 import fs from 'fs';
 import axios from 'axios';
 
 const execAsync = promisify(exec);
+
+/** Transient directory for TikTok downloads; files are removed after delivery. */
+const TEMP_MEDIA_DIR = path.join(os.tmpdir(), 'waf-tiktok');
+
+function ensureTempMediaDir(): string {
+    if (!fs.existsSync(TEMP_MEDIA_DIR)) {
+        fs.mkdirSync(TEMP_MEDIA_DIR, { recursive: true });
+    }
+    return TEMP_MEDIA_DIR;
+}
+
+/** Safely removes a temporary file, ignoring missing-path errors. */
+function safeUnlink(filePath: string | null | undefined): void {
+    if (!filePath) return;
+    try {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    } catch (err) {
+        console.error(`[TikTokDL Tool] Failed to remove temporary file ${filePath}:`, err);
+    }
+}
+
+const AUDIO_MIME_TYPES: Record<string, string> = {
+    '.mp3': 'audio/mpeg',
+    '.m4a': 'audio/mp4',
+    '.aac': 'audio/aac',
+    '.wav': 'audio/wav'
+};
 
 export const definition: ToolDefinition = {
     name: 'tiktokdl',
@@ -72,17 +100,12 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     
     targetUrl = targetUrl.replace(/\/photo\//g, '/video/');
 
-    const storagePath = path.resolve(process.cwd(), 'storage');
-    
-    if (!fs.existsSync(storagePath)) {
-        fs.mkdirSync(storagePath, { recursive: true });
-    }
-
+    const tempDir = ensureTempMediaDir();
     const timestamp = Date.now();
+    const downloadedFiles: string[] = [];
+    let slideshowOutput: string | null = null;
 
     try {
-        const downloadedFiles: string[] = [];
-
         const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(targetUrl)}`;
         const res = await axios.get(apiUrl, { timeout: 15000 });
         if (res.data.code !== 0 || !res.data.data) {
@@ -96,11 +119,10 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         }
 
         const slideshowCaption = baseCaption ? baseCaption : '';
-        const videoCaption = baseCaption ? baseCaption : '';
-        const videoCaptionSkipped = baseCaption ? `${baseCaption}\n(Compression skipped)` : '(Compression skipped)';
+        const mediaCaption = baseCaption ? baseCaption : '';
 
         const downloadFile = async (url: string, ext: string, index: string = ''): Promise<string> => {
-            const filepath = path.join(storagePath, `tiktok_${timestamp}_${index}${ext}`);
+            const filepath = path.join(tempDir, `tiktok_${timestamp}_${index}${ext}`);
             const writer = fs.createWriteStream(filepath);
             const response = await axios({
                 url,
@@ -136,7 +158,8 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
             if (images.length > 0 && audios.length > 0) {
                 const audioFile = audios[0];
-                const outputVideo = path.join(storagePath, `slideshow_${timestamp}.mp4`);
+                const outputVideo = path.join(tempDir, `slideshow_${timestamp}.mp4`);
+                slideshowOutput = outputVideo;
                 try {
                     let filterComplex = '';
                     let inputs = '';
@@ -182,44 +205,30 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             }
 
             const remainingFiles = [...videos, ...images, ...audios, ...others];
-            let processedCount = 0;
             for (const file of remainingFiles) {
                 if (!fs.existsSync(file)) continue;
                 const ext = path.extname(file).toLowerCase();
-                
+
                 if (['.mp4', '.webm', '.mkv', '.mov'].includes(ext)) {
-                    const compressedFile = path.join(storagePath, `compressed_${timestamp}_${processedCount}.mp4`);
-                    try {
-                        const ffmpegCommand = `"/usr/bin/ffmpeg" -i "${file}" -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1" -c:v libx264 -profile:v main -preset fast -crf 28 -pix_fmt yuv420p -c:a aac -b:a 128k -y "${compressedFile}"`;
-                        await execAsync(ffmpegCommand);
-                        await ctx.sock.sendMessage(
-                            ctx.jid,
-                            { video: { url: compressedFile }, mimetype: 'video/mp4', caption: videoCaption, mentions: senderJid ? [senderJid] : undefined },
-                            { quoted: ctx.msg }
-                        );
-                        fs.unlinkSync(file);
-                        if (fs.existsSync(compressedFile)) fs.unlinkSync(compressedFile);
-                    } catch (ffmpegErr: any) {
-                        console.error('[TikTokDL Tool] FFmpeg compression error:', ffmpegErr);
-                        await ctx.sock.sendMessage(
-                            ctx.jid,
-                            { video: { url: file }, mimetype: 'video/mp4', caption: videoCaptionSkipped, mentions: senderJid ? [senderJid] : undefined },
-                            { quoted: ctx.msg }
-                        );
-                        fs.unlinkSync(file);
-                        if (fs.existsSync(compressedFile)) fs.unlinkSync(compressedFile);
-                    }
+                    // Send the original media untouched; re-encoding produced files
+                    // that recipients could not download.
+                    await ctx.sock.sendMessage(
+                        ctx.jid,
+                        { video: { url: file }, mimetype: 'video/mp4', caption: mediaCaption, mentions: senderJid ? [senderJid] : undefined },
+                        { quoted: ctx.msg }
+                    );
+                    fs.unlinkSync(file);
                 } else if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
                     await ctx.sock.sendMessage(
                         ctx.jid,
-                        { image: { url: file }, caption: videoCaption, mentions: senderJid ? [senderJid] : undefined },
+                        { image: { url: file }, caption: mediaCaption, mentions: senderJid ? [senderJid] : undefined },
                         { quoted: ctx.msg }
                     );
                     fs.unlinkSync(file);
                 } else if (['.mp3', '.m4a', '.aac', '.wav'].includes(ext)) {
                     await ctx.sock.sendMessage(
                         ctx.jid,
-                        { audio: { url: file }, mimetype: 'audio/mp4', mentions: senderJid ? [senderJid] : undefined },
+                        { audio: { url: file }, mimetype: AUDIO_MIME_TYPES[ext] || 'audio/mpeg', mentions: senderJid ? [senderJid] : undefined },
                         { quoted: ctx.msg }
                     );
                     fs.unlinkSync(file);
@@ -231,7 +240,6 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     );
                     fs.unlinkSync(file);
                 }
-                processedCount++;
             }
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
             return;
@@ -244,5 +252,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         console.error('[TikTokDL Tool] Execution error:', error);
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
         return;
+    } finally {
+        // Guarantee no temporary artifacts survive the request, even on failure.
+        safeUnlink(slideshowOutput);
+        for (const file of downloadedFiles) safeUnlink(file);
     }
 }
