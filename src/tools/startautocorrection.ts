@@ -11,7 +11,7 @@ export const definition: ToolDefinition = {
         '.enableautocorrect',
         '.enableautocorrection'
     ],
-    description: 'Enables automated AI message auto-correction via Groq for this chat.',
+    description: 'Enables automated AI message auto-correction via OpenRouter for this chat.',
     owner: true,
     parameters: {
         type: 'object',
@@ -25,5 +25,5 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         return '⚠️ *Warning:* Auto-Correction is already ACTIVE in this chat! If you want to disable it, type *.stopautocorrection*.';
     }
     await enableAutoCorrection(ctx.jid);
-    return '✨ *Auto-Correction ACTIVATED* for this chat.\n\nSent messages will automatically be analyzed and corrected by Groq AI (temp: 0.5) if typos or misspoken words are detected.\n\nType *.stopautocorrection* (or *.autocorrect*) to disable.';
+    return '✨ *Auto-Correction ACTIVATED* for this chat.\n\nSent messages will automatically be analyzed and corrected by OpenRouter AI if typos or misspoken words are detected.\n\nType *.stopautocorrection* (or *.autocorrect*) to disable.';
 }

@@ -11,7 +11,7 @@ export const definition: ToolDefinition = {
         '.disableautocorrect',
         '.disableautocorrection'
     ],
-    description: 'Disables automated AI message auto-correction via Groq for this chat.',
+    description: 'Disables automated AI message auto-correction via OpenRouter for this chat.',
     owner: true,
     parameters: {
         type: 'object',

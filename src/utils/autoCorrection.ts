@@ -1,4 +1,3 @@
-import { Groq } from 'groq-sdk';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -55,16 +54,8 @@ export function markMessageProcessed(msgId: string): void {
     }
 }
 
-let groqClient: Groq | null = null;
-function getGroqClient(): Groq {
-    if (!groqClient) {
-        groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY });
-    }
-    return groqClient;
-}
-
 /**
- * Analyzes and corrects message text using Groq AI.
+ * Analyzes and corrects message text using OpenRouter AI.
  * Returns the corrected text if a typo/misspelled word is found,
  * or null if no changes or an error occurs.
  */
@@ -94,31 +85,36 @@ STRICT RULES:
 5. Preserve original slang, abbreviations, emojis, and informal formatting.
 6. Use Native Function Calling API if needed. STRICTLY FORBIDDEN to type XML tags like <function=...> manually!`;
 
+    const openRouterKey = process.env.OPENROUTER_API_KEY;
+    if (!openRouterKey) {
+        console.error('[AutoCorrect Error] OPENROUTER_API_KEY is missing');
+        return null;
+    }
+
     try {
-        const groq = getGroqClient();
-        let response;
-        try {
-            response = await groq.chat.completions.create({
-                model: 'openai/gpt-oss-120b',
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${openRouterKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'stealth/ox-alpha',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: trimmed }
                 ],
                 temperature: 0.1
-            });
-        } catch (modelErr: any) {
-            console.warn('[AutoCorrect] openai/gpt-oss-120b failed, retrying with openai/gpt-oss-20b...', modelErr?.message);
-            response = await groq.chat.completions.create({
-                model: 'openai/gpt-oss-20b',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: trimmed }
-                ],
-                temperature: 0.1
-            });
+            })
+        });
+
+        if (!response.ok) {
+            console.error(`[AutoCorrect OpenRouter Error] Status: ${response.status} ${response.statusText}`);
+            return null;
         }
 
-        const resultText = response.choices[0]?.message?.content?.trim();
+        const data = await response.json();
+        const resultText = data.choices?.[0]?.message?.content?.trim();
 
         if (!resultText || resultText === 'NO_CHANGE' || resultText === trimmed) {
             return null;
@@ -139,8 +135,8 @@ STRICT RULES:
 
         return cleanResult;
     } catch (err: any) {
-        console.error('[AutoCorrect Groq Error]', err);
-        console.error('AutoCorrect Groq completion failed', { error: err.message });
+        console.error('[AutoCorrect OpenRouter Error]', err);
+        console.error('AutoCorrect OpenRouter completion failed', { error: err.message });
         return null;
     }
 }
