@@ -8,6 +8,7 @@ import {
     markMessageProcessed,
     analyzeAndCorrectText
 } from '#/utils/autoCorrection.js';
+import { processAutoDl } from '#/utils/autodl.js';
 import { handleOfflineAiResponder } from '#/utils/offlineAi.js';
 
 function getUnwrappedMessage(m: any): any {
@@ -187,6 +188,23 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
                 console.error('[Auto-Correct Error]', err);
                 console.error('Auto-correct handler failed', { error: err.message });
             }
+        }
+    }
+
+    // Auto-DL Processing
+    const isBotResponseStr = msg.key.fromMe && (
+        (text && (text.startsWith('✅') || text.startsWith('⏳') || text.startsWith('❌'))) ||
+        false // we will evaluate isQuotingCommand properly below
+    );
+    
+    if (!isBotResponseStr && trimmedText && !trimmedText.startsWith('.')) {
+        if (jid.endsWith('@g.us') && !isOwner) {
+            const whitelisted = await isGroupWhitelisted(jid);
+            if (whitelisted) {
+                await processAutoDl(sock, msg, jid, trimmedText);
+            }
+        } else {
+            await processAutoDl(sock, msg, jid, trimmedText);
         }
     }
 

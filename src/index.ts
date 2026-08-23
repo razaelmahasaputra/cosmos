@@ -1,5 +1,6 @@
 import dns from 'dns';
 import dotenv from 'dotenv';
+import { loadAutoDlSettings } from '#/utils/autodl.js';
 import toolsHandler from '#/tools/handler.js';
 
 import { startAutoBackup } from '#/utils/backup.js';
@@ -15,6 +16,7 @@ startAutoBackup();
 
 async function startSystem(): Promise<void> {
     await toolsHandler.loadTools();
+    await loadAutoDlSettings();
 
     // Connect the Telegram dummy account in the background when it has been paired,
     // so private group content can be proxied.

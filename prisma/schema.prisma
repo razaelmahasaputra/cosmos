@@ -56,3 +56,12 @@ model AiChatMessage {
   content    String
   timestamp  DateTime @default(now())
 }
+
+model AutoDlSetting {
+  jid       String
+  platform  String
+  enabled   Boolean @default(true)
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@id([jid, platform])
+}

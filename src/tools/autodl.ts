@@ -1,0 +1,110 @@
+import { ToolDefinition, ToolContext } from './types.js';
+import { setAutoDl } from '#/utils/autodl.js';
+
+export const definition: ToolDefinition = {
+    name: 'autodl',
+    title: 'Auto Downloader Settings',
+    category: 'Settings',
+    aliases: ['.autodl'],
+    description: 'Toggle automatic downloading of links for this group. E.g. .autodl tiktok on, .autodl ig off',
+    parameters: {
+        type: 'object',
+        properties: {
+            platform: {
+                type: 'string',
+                description: 'The platform to configure (e.g., tiktok, ig, pin, yt, tg, all)'
+            },
+            state: {
+                type: 'string',
+                description: 'The state to set (on/off)'
+            }
+        },
+        required: ['platform']
+    }
+};
+
+const VALID_PLATFORMS = ['tiktok', 'tt', 'ig', 'instagram', 'pin', 'pinterest', 'yt', 'youtube', 'tg', 'telegram', 'all'];
+
+export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string | void> {
+    let { platform, state } = args;
+
+    if (platform && typeof platform === 'string' && platform.includes(' ') && !state) {
+        const parts = platform.split(' ');
+        platform = parts[0];
+        state = parts[1];
+    }
+    const jid = ctx.jid;
+
+    // Check permissions
+    if (jid.endsWith('@g.us')) {
+        // Group: Admin or Owner
+        const groupMetadata = await ctx.sock.groupMetadata(jid);
+        const senderJid = ctx.msg.key.participant || ctx.msg.key.remoteJid;
+        
+        let isAdmin = false;
+        if (senderJid) {
+            const participant = groupMetadata.participants.find(p => p.id === senderJid);
+            if (participant && (participant.admin === 'admin' || participant.admin === 'superadmin')) {
+                isAdmin = true;
+            }
+        }
+        
+        const ownerNumber = process.env.BOT_PHONE_NUMBER ? process.env.BOT_PHONE_NUMBER.split(':')[0].split('@')[0] : null;
+        const senderRaw = senderJid ? senderJid.split(':')[0].split('@')[0] : null;
+        const isOwner = Boolean(ctx.msg.key.fromMe) || (ownerNumber !== null && senderRaw === ownerNumber);
+
+        if (!isAdmin && !isOwner) {
+            return '❌ This command can only be used by group admins or the bot owner.';
+        }
+    } else {
+        // Private chat: only owner can toggle (or maybe anyone for their own chat, but let's restrict to owner as per requirements)
+        const ownerNumber = process.env.BOT_PHONE_NUMBER ? process.env.BOT_PHONE_NUMBER.split(':')[0].split('@')[0] : null;
+        const senderRaw = jid.split(':')[0].split('@')[0];
+        const isOwner = Boolean(ctx.msg.key.fromMe) || (ownerNumber !== null && senderRaw === ownerNumber);
+        if (!isOwner) {
+            return '❌ This command can only be used by the bot owner in private chats.';
+        }
+    }
+
+    if (!platform || typeof platform !== 'string') {
+        return '❌ Invalid platform. Supported: tiktok, ig, pin, yt, tg, all.';
+    }
+
+    const platRaw = platform.toLowerCase().trim();
+    const platTarget = platRaw === 'tt' ? 'tiktok' :
+                       platRaw === 'instagram' ? 'ig' :
+                       platRaw === 'pinterest' ? 'pin' :
+                       platRaw === 'youtube' ? 'yt' :
+                       platRaw === 'telegram' ? 'tg' : platRaw;
+
+    if (!VALID_PLATFORMS.includes(platTarget)) {
+        return '❌ Invalid platform. Supported: tiktok, ig, pin, yt, tg, all.';
+    }
+
+    const enabled = state ? state.toLowerCase() === 'on' || state === 'true' || state === '1' : true;
+
+    await ctx.sock.sendMessage(ctx.jid, { react: { text: '⏳', key: ctx.msg.key } });
+
+    if (platTarget === 'all') {
+        const platformsToSet = ['tiktok', 'ig', 'pin', 'yt', 'tg'];
+        let success = true;
+        for (const p of platformsToSet) {
+            const res = await setAutoDl(jid, p, enabled);
+            if (!res) success = false;
+        }
+        if (success) {
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
+            return `✅ Auto-download for all platforms has been turned ${enabled ? 'ON' : 'OFF'}.`;
+        } else {
+            return '❌ Failed to save auto-download settings.';
+        }
+    } else {
+        const success = await setAutoDl(jid, platTarget, enabled);
+        if (success) {
+            await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
+            return `✅ Auto-download for ${platTarget.toUpperCase()} has been turned ${enabled ? 'ON' : 'OFF'}.`;
+        } else {
+            return '❌ Failed to save auto-download settings.';
+        }
+    }
+}
