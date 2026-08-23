@@ -1,9 +1,13 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { Api, TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions/index.js';
 
 const SESSION_FILE = path.resolve(process.cwd(), 'storage', 'telegram_session.txt');
+
+/** Transient directory for downloaded private media; files are removed after delivery. */
+const TEMP_MEDIA_DIR = path.join(os.tmpdir(), 'waf-tgdl');
 
 export interface TelegramPostRef {
     /** Numeric internal chat id as it appears in t.me/c/<id>/ links (positive digits only). */
@@ -167,8 +171,8 @@ function extensionForMime(mimeType: string): string {
 }
 
 /**
- * Downloads one media message from a registered private chat into storage/
- * and returns its metadata. Enforces the 15MB WhatsApp size limit.
+ * Downloads one media message from a registered private chat into a temporary
+ * directory and returns its metadata. Enforces the 15MB WhatsApp size limit.
  */
 export async function downloadPrivateMedia(chatId: string, messageId: number): Promise<PrivateMediaFile> {
     const client = await getTelegramClient();
@@ -197,9 +201,8 @@ export async function downloadPrivateMedia(chatId: string, messageId: number): P
 
     const kind = classifyMedia(mimeType);
     const ext = path.extname(fileName) || extensionForMime(mimeType) || '.bin';
-    const storagePath = path.resolve(process.cwd(), 'storage');
-    if (!fs.existsSync(storagePath)) fs.mkdirSync(storagePath, { recursive: true });
-    const filePath = path.join(storagePath, `tgdl_${Date.now()}_${chatId}_${messageId}${ext}`);
+    if (!fs.existsSync(TEMP_MEDIA_DIR)) fs.mkdirSync(TEMP_MEDIA_DIR, { recursive: true });
+    const filePath = path.join(TEMP_MEDIA_DIR, `tgdl_${Date.now()}_${chatId}_${messageId}${ext}`);
 
     await client.downloadMedia(message, { outputFile: filePath });
 

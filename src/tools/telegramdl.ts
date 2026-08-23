@@ -1,6 +1,7 @@
 import { ToolDefinition, ToolContext } from './types.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import os from 'os';
 import path from 'path';
 import fs from 'fs';
 import ffmpeg from 'ffmpeg-static';
@@ -56,6 +57,38 @@ function escapeHtml(text: string): string {
 /** Strips device suffixes and JID/LID domains, leaving only the base identifier. */
 function cleanJidNumber(jid: string | null | undefined): string | null {
     return jid ? jid.split(':')[0].split('@')[0] || null : null;
+}
+
+/** Directory used for all transient Telegram downloads (never persisted). */
+const TEMP_MEDIA_DIR = path.join(os.tmpdir(), 'waf-tgdl');
+
+function ensureTempMediaDir(): string {
+    if (!fs.existsSync(TEMP_MEDIA_DIR)) {
+        fs.mkdirSync(TEMP_MEDIA_DIR, { recursive: true });
+    }
+    return TEMP_MEDIA_DIR;
+}
+
+/** Safely removes a temporary file, ignoring missing-path errors. */
+function safeUnlink(filePath: string | null | undefined): void {
+    if (!filePath) return;
+    try {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    } catch (err) {
+        console.error(`[TelegramDL Tool] Failed to remove temporary file ${filePath}:`, err);
+    }
+}
+
+/** Removes every leftover artifact (including partial .part files) for a download stem. */
+function cleanupTempArtifacts(prefix: string): void {
+    try {
+        if (!fs.existsSync(TEMP_MEDIA_DIR)) return;
+        for (const entry of fs.readdirSync(TEMP_MEDIA_DIR)) {
+            if (entry.startsWith(prefix)) safeUnlink(path.join(TEMP_MEDIA_DIR, entry));
+        }
+    } catch (err) {
+        console.error('[TelegramDL Tool] Failed to clean temporary artifacts:', err);
+    }
 }
 
 /**
@@ -262,20 +295,19 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             );
         }
 
+        let file: PrivateMediaFile | null = null;
         try {
-            const file = await downloadPrivateMedia(ref.chatId, ref.messageId);
+            file = await downloadPrivateMedia(ref.chatId, ref.messageId);
 
             if (file.sizeBytes > MAX_MEDIA_BYTES) {
                 console.error(
                     `[TelegramDL Tool] Media ${file.fileName} (${file.sizeBytes} bytes) exceeds the 15MB limit.`
                 );
-                fs.unlinkSync(file.filePath);
                 await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
                 return 'Error: This media exceeds the 15MB size limit and cannot be sent via WhatsApp.';
             }
 
             await sendPrivateMedia(ctx, file);
-            fs.unlinkSync(file.filePath);
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
             return;
         } catch (error: any) {
@@ -285,17 +317,17 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 'Error: The media could not be retrieved from that private group. The dummy account may no ' +
                 'longer have access to it. The owner has been informed through the logs.'
             );
+        } finally {
+            // The downloaded file is always transient; remove it regardless of outcome.
+            safeUnlink(file?.filePath);
         }
     }
 
-    // --- Public post: fetch directly with yt-dlp. ---
-    const storagePath = path.resolve(process.cwd(), 'storage');
-    if (!fs.existsSync(storagePath)) {
-        fs.mkdirSync(storagePath, { recursive: true });
-    }
-
+    // --- Public post: fetch directly with yt-dlp into the OS temporary directory. ---
+    const tempDir = ensureTempMediaDir();
     const timestamp = Date.now();
-    const outTemplate = path.join(storagePath, `telegramdl_${timestamp}_%(id)s.%(ext)s`);
+    const filePrefix = `telegramdl_${timestamp}_`;
+    const outTemplate = path.join(tempDir, `${filePrefix}%(id)s.%(ext)s`);
 
     try {
         // Telegram media is exposed as a single format without size metadata, so the
@@ -311,7 +343,6 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         if (downloadedFile && fs.existsSync(downloadedFile)) {
             if (fs.statSync(downloadedFile).size > MAX_MEDIA_BYTES) {
                 console.error('[TelegramDL Tool] Downloaded video exceeds the 15MB limit.');
-                fs.unlinkSync(downloadedFile);
                 await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
                 return 'Error: The Telegram video exceeds the 15MB size limit and cannot be sent via WhatsApp.';
             }
@@ -326,7 +357,6 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 { quoted: ctx.msg }
             );
 
-            fs.unlinkSync(downloadedFile);
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
             return;
         }
@@ -338,5 +368,8 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         console.error('[TelegramDL Tool] Execution error:', error);
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
         return 'Error: An unexpected issue occurred while downloading the Telegram video.';
+    } finally {
+        // Guarantee no temporary artifacts survive the request, even on failure.
+        cleanupTempArtifacts(filePrefix);
     }
 }
