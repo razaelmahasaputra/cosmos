@@ -109,6 +109,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         if (relayMatch) {
             const data = JSON.parse(relayMatch[1]);
             const mainPinData = data?.data?.v3GetPinQueryv2?.data || data;
+            const hasVideo = !!mainPinData.videos || !!mainPinData.storyPinData || mainPinData.isVideo;
             
             function findMedia(obj: any) {
                 if (typeof obj === 'string') {
@@ -127,6 +128,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     
                     Object.keys(obj).forEach(k => {
                         if (['relatedPins', 'recommendations', 'morePins'].includes(k)) return;
+                        if (obj === mainPinData && hasVideo && (k.startsWith('images_') || k.startsWith('image'))) return;
                         findMedia(obj[k]);
                     });
                 }
@@ -142,6 +144,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 if (targetPinId && data?.props?.initialReduxState?.pins?.[targetPinId]) {
                     rootData = data.props.initialReduxState.pins[targetPinId];
                 }
+                const hasVideo = !!rootData.videos || !!rootData.story_pin_data || rootData.is_video;
 
                 function findMediaFallback(obj: any) {
                     if (typeof obj === 'string') {
@@ -157,6 +160,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                         
                         Object.keys(obj).forEach(k => {
                             if (['relatedPins', 'recommendations', 'morePins'].includes(k)) return;
+                            if (obj === rootData && hasVideo && (k.startsWith('images_') || k.startsWith('image'))) return;
                             findMediaFallback(obj[k]);
                         });
                     }
