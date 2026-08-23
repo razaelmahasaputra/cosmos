@@ -88,7 +88,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         
         let downloadedVideo = '';
         try {
-            const vidCommand = `${baseCommand} -f "best[filesize<15M]/bestvideo[filesize<10M]+bestaudio/best[filesize<15M]" --merge-output-format mp4 -o "${outTemplate}" "${targetUrl}" --print after_move:filepath`;
+            const vidCommand = `${baseCommand} -S "vcodec:h264,acodec:m4a" -f "bestvideo[filesize<10M]+bestaudio/best[filesize<15M]" --merge-output-format mp4 -o "${outTemplate}" "${targetUrl}" --print after_move:filepath`;
             const { stdout } = await execAsync(vidCommand);
             const outputLines = stdout.trim().split('\n').filter(line => line.trim() !== '');
             downloadedVideo = outputLines.length > 0 ? outputLines[outputLines.length - 1].trim() : '';
