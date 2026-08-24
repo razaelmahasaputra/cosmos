@@ -65,3 +65,14 @@ model AutoDlSetting {
 
   @@id([jid, platform])
 }
+
+model ScheduledDeletion {
+  id         Int      @id @default(autoincrement())
+  jid        String
+  msgId      String
+  fromMe     Boolean
+  deleteAt   DateTime
+  created_at DateTime @default(now())
+
+  @@unique([jid, msgId])
+}

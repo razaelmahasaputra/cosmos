@@ -1,17 +1,20 @@
 import { WASocket, proto } from '@whiskeysockets/baileys';
 import { isAutoDlEnabled } from './autodl.js';
+import { prisma } from '#/db.js';
 
-interface DeletionTask {
-    sock: WASocket;
-    jid: string;
-    msgKey: proto.IMessageKey;
-    deleteAt: number;
+let cleanupInterval: NodeJS.Timeout | null = null;
+let currentSock: WASocket | null = null;
+
+export function initAutoDelete(sock: WASocket) {
+    currentSock = sock;
+    if (cleanupInterval) clearInterval(cleanupInterval);
+    
+    // Check database every 30 seconds for expired messages
+    cleanupInterval = setInterval(processDeletionQueue, 30 * 1000);
+    processDeletionQueue(); // run immediately on startup
 }
 
-const deletionQueue: DeletionTask[] = [];
-let timer: NodeJS.Timeout | null = null;
-
-export function scheduleMediaAutoDelete(
+export async function scheduleMediaAutoDelete(
     sock: WASocket,
     jid: string,
     sentMsg: any,
@@ -19,7 +22,6 @@ export function scheduleMediaAutoDelete(
 ) {
     if (!sentMsg || !sentMsg.key) return;
 
-    // Check if autodelete is enabled for this chat
     if (!isAutoDlEnabled(jid, 'autodelete')) return;
 
     let delayMs = 0;
@@ -29,59 +31,78 @@ export function scheduleMediaAutoDelete(
 
     if (delayMs === 0) return;
 
-    const deleteAt = Date.now() + delayMs;
-    deletionQueue.push({ sock, jid, msgKey: sentMsg.key, deleteAt });
-
-    // Sort queue so the soonest deletion is first
-    deletionQueue.sort((a, b) => a.deleteAt - b.deleteAt);
-
-    processDeletionQueue();
-}
-
-function processDeletionQueue() {
-    if (timer) {
-        clearTimeout(timer);
-        timer = null;
-    }
-
-    if (deletionQueue.length === 0) return;
-
-    const now = Date.now();
-    const nextTask = deletionQueue[0];
-
-    if (nextTask.deleteAt <= now) {
-        executeDelete(nextTask);
-    } else {
-        timer = setTimeout(() => {
-            executeDelete(deletionQueue[0]);
-        }, nextTask.deleteAt - now);
+    const deleteAt = new Date(Date.now() + delayMs);
+    
+    try {
+        await prisma.scheduledDeletion.upsert({
+            where: {
+                jid_msgId: {
+                    jid: jid,
+                    msgId: sentMsg.key.id!
+                }
+            },
+            update: {
+                deleteAt,
+                fromMe: sentMsg.key.fromMe ?? true
+            },
+            create: {
+                jid,
+                msgId: sentMsg.key.id!,
+                fromMe: sentMsg.key.fromMe ?? true,
+                deleteAt
+            }
+        });
+        console.log(`[AutoDelete] Scheduled ${mediaType} deletion for ${sentMsg.key.id} at ${deleteAt.toISOString()}`);
+    } catch (err) {
+        console.error('[AutoDelete] Failed to schedule deletion:', err);
     }
 }
 
-async function executeDelete(task: DeletionTask) {
-    deletionQueue.shift(); // Remove the task
+async function processDeletionQueue() {
+    if (!currentSock) return;
 
     try {
-        await task.sock.sendMessage(task.jid, { delete: task.msgKey });
-        console.log(`[AutoDelete] Deleted media message ${task.msgKey.id} in ${task.jid}`);
-    } catch (err) {
-        console.error(`[AutoDelete] Failed to delete media message ${task.msgKey.id}`, err);
-    }
+        const now = new Date();
+        const pending = await prisma.scheduledDeletion.findMany({
+            where: {
+                deleteAt: {
+                    lte: now
+                }
+            }
+        });
 
-    processDeletionQueue(); // Process next in queue
+        for (const task of pending) {
+            try {
+                await currentSock.sendMessage(task.jid, { 
+                    delete: { remoteJid: task.jid, fromMe: task.fromMe, id: task.msgId } 
+                });
+                console.log(`[AutoDelete] Deleted media message ${task.msgId} in ${task.jid}`);
+                
+                await prisma.scheduledDeletion.delete({
+                    where: { id: task.id }
+                });
+            } catch (err) {
+                console.error(`[AutoDelete] Failed to delete media message ${task.msgId}`, err);
+                // Optionally delete it from DB if it fails repeatedly, but for now we just keep trying or let it be.
+                // Wait, if it fails, we should delete it from DB to avoid infinite loops
+                await prisma.scheduledDeletion.delete({
+                    where: { id: task.id }
+                }).catch(() => {});
+            }
+        }
+    } catch (err) {
+        console.error('[AutoDelete] Error processing queue:', err);
+    }
 }
 
 export async function deleteSenderLink(sock: WASocket, jid: string, msgKey: proto.IMessageKey) {
-    // Check if autodelete is enabled for this chat
     if (!isAutoDlEnabled(jid, 'autodelete')) return;
 
     try {
         if (msgKey.fromMe) {
-            // Self-triggered, delete for everyone
             await sock.sendMessage(jid, { delete: msgKey });
         } else {
             if (jid.endsWith('@g.us')) {
-                // If it's a group, check if bot is admin
                 const groupMetadata = await sock.groupMetadata(jid);
                 const botJid = sock.user?.id?.split(':')[0] + '@s.whatsapp.net';
                 const botParticipant = groupMetadata.participants.find((p) => p.id === botJid);
@@ -89,9 +110,8 @@ export async function deleteSenderLink(sock: WASocket, jid: string, msgKey: prot
                 const isBotAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
 
                 if (isBotAdmin) {
-                    await sock.sendMessage(jid, { delete: msgKey }); // for everyone
+                    await sock.sendMessage(jid, { delete: msgKey });
                 } else {
-                    // Not admin, delete for me only via chatModify
                     await sock.chatModify(
                         {
                             deleteForMe: {
@@ -104,7 +124,6 @@ export async function deleteSenderLink(sock: WASocket, jid: string, msgKey: prot
                     );
                 }
             } else {
-                // Private chat, delete for me (can't delete other's messages for everyone in private)
                 await sock.chatModify(
                     {
                         deleteForMe: {

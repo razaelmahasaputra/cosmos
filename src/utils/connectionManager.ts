@@ -94,6 +94,9 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
             connectionOpenTimeSec = Math.floor(Date.now() / 1000);
             if (sessionId === 'default') {
                 await initActiveSessions();
+                
+                const { initAutoDelete } = await import('./autoDelete.js');
+                initAutoDelete(sock);
             }
             if (onConnected) onConnected();
         }
