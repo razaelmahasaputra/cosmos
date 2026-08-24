@@ -5,7 +5,8 @@ export const definition: ToolDefinition = {
     title: 'Forward Quoted Message',
     category: 'Tools & Utilities',
     aliases: ['q'],
-    description: 'Forwards the message quoted by another user. Reply to a message that quotes another message with .q to forward the original message.',
+    description:
+        'Forwards the message quoted by another user. Reply to a message that quotes another message with .q to forward the original message.',
     parameters: {
         type: 'object',
         properties: {},
@@ -18,14 +19,14 @@ const getMessageAndContext = (m: any): { msg: any; contextInfo: any } => {
     if (m.viewOnceMessage?.message) return getMessageAndContext(m.viewOnceMessage.message);
     if (m.viewOnceMessageV2?.message) return getMessageAndContext(m.viewOnceMessageV2.message);
     if (m.viewOnceMessageV2Extension?.message) return getMessageAndContext(m.viewOnceMessageV2Extension.message);
-    
+
     let contextInfo = null;
     if (m.extendedTextMessage?.contextInfo) contextInfo = m.extendedTextMessage.contextInfo;
     else if (m.imageMessage?.contextInfo) contextInfo = m.imageMessage.contextInfo;
     else if (m.videoMessage?.contextInfo) contextInfo = m.videoMessage.contextInfo;
     else if (m.documentMessage?.contextInfo) contextInfo = m.documentMessage.contextInfo;
     else if (m.audioMessage?.contextInfo) contextInfo = m.audioMessage.contextInfo;
-    
+
     return { msg: m, contextInfo };
 };
 
@@ -41,12 +42,12 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     }
 
     const { getCachedMessage } = await import('#/utils/messageCache.js');
-    
+
     // Attempt to get the unstripped Message A from the cache
     const fullMessageA = getCachedMessage(messageAId) || quotedMsgRaw;
 
     const { contextInfo: messageAContextInfo } = getMessageAndContext(fullMessageA);
-    
+
     let targetMsg: any;
     let targetStanzaId: string | undefined;
     let targetParticipant: string | undefined;
@@ -55,7 +56,7 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         // Message A is a reply to OM (Original Message). We want to forward OM.
         targetStanzaId = messageAContextInfo.stanzaId;
         targetParticipant = messageAContextInfo.participant;
-        
+
         if (messageAContextInfo.quotedMessage) {
             targetMsg = messageAContextInfo.quotedMessage;
         } else {
@@ -100,7 +101,7 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         };
 
         await sock.sendMessage(jid, { forward: fakeWaMessage });
-        
+
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
         console.log('Forwarded quoted message', { jid });
     } catch (err: any) {

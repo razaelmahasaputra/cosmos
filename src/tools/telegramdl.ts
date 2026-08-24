@@ -97,11 +97,7 @@ function cleanupTempArtifacts(prefix: string): void {
  * with the group link required for the dummy account to join. Falls back to a
  * direct WhatsApp notification when the Telegram bot is unavailable.
  */
-async function notifyOwnerOfPendingChat(
-    ctx: ToolContext,
-    telegramUrl: string,
-    ref: TelegramPostRef
-): Promise<void> {
+async function notifyOwnerOfPendingChat(ctx: ToolContext, telegramUrl: string, ref: TelegramPostRef): Promise<void> {
     const requesterJid = ctx.msg.key.participant || ctx.msg.key.remoteJid;
     const requesterNumber = cleanJidNumber(requesterJid);
     const requesterName = ctx.msg.pushName?.trim() || requesterNumber || 'Unknown';
@@ -205,7 +201,11 @@ async function sendPrivateMedia(ctx: ToolContext, file: PrivateMediaFile): Promi
     } else if (file.kind === 'image') {
         const sentMsg = await ctx.sock.sendMessage(
             ctx.jid,
-            { image: { url: file.filePath }, caption: '✅ The Telegram photo has been successfully retrieved.', mentions },
+            {
+                image: { url: file.filePath },
+                caption: '✅ The Telegram photo has been successfully retrieved.',
+                mentions
+            },
             quoted
         );
         if (sentMsg) {
@@ -251,8 +251,7 @@ export const definition: ToolDefinition = {
         properties: {
             url: {
                 type: 'string',
-                description:
-                    'The URL of the Telegram post or invite link to process.'
+                description: 'The URL of the Telegram post or invite link to process.'
             }
         },
         required: ['url']
@@ -300,7 +299,8 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             return (
                 'That Telegram group has already been added to the database. Please provide the link of the ' +
                 'specific post you wish to download (for example https://t.me/c/' +
-                knownChat.chatId + '/123).'
+                knownChat.chatId +
+                '/123).'
             );
         }
 
@@ -318,9 +318,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     if (ref.isPrivatePost && ref.chatId && ref.messageId !== null) {
         const registered = await isTelegramChatRegistered(ref.chatId);
         if (!registered) {
-            console.log(
-                `[TelegramDL Tool] Request for unregistered private chat ${ref.chatId}; notifying the owner.`
-            );
+            console.log(`[TelegramDL Tool] Request for unregistered private chat ${ref.chatId}; notifying the owner.`);
             await notifyOwnerOfPendingChat(ctx, telegramUrl, ref);
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '🔒', key: ctx.msg.key } });
             return (
@@ -372,7 +370,10 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         try {
             const command = `"${resolveYtDlpPath()}" ${ffmpegLoc} -f "best" --merge-output-format mp4 -o "${outTemplate}" "${telegramUrl}" --print after_move:filepath`;
             const { stdout } = await execAsync(command);
-            const outputLines = stdout.trim().split('\n').filter((line) => line.trim() !== '');
+            const outputLines = stdout
+                .trim()
+                .split('\n')
+                .filter((line) => line.trim() !== '');
             if (outputLines.length > 0) downloadedFile = outputLines[outputLines.length - 1].trim();
         } catch (e) {
             console.error('[TelegramDL Tool] Video download failed:', e);
@@ -384,7 +385,10 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             try {
                 const commandAudio = `"${resolveYtDlpPath()}" ${ffmpegLoc} -f "bestaudio/best" --extract-audio --audio-format mp3 -o "${outTemplate}" "${telegramUrl}" --print after_move:filepath`;
                 const { stdout } = await execAsync(commandAudio);
-                const outputLines = stdout.trim().split('\n').filter((line) => line.trim() !== '');
+                const outputLines = stdout
+                    .trim()
+                    .split('\n')
+                    .filter((line) => line.trim() !== '');
                 if (outputLines.length > 0) downloadedAudioOnly = outputLines[outputLines.length - 1].trim();
             } catch (e) {
                 console.error('[TelegramDL Tool] Fallback audio download failed:', e);
@@ -403,7 +407,8 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 {
                     video: { url: downloadedFile },
                     caption: '✅ The Telegram video has been successfully downloaded.',
-                    mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 }
+                    mentions: senderJid ? [senderJid] : undefined,
+                    contextInfo: { isForwarded: true, forwardingScore: 1 }
                 },
                 { quoted: ctx.msg }
             );
@@ -419,7 +424,12 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 if (fs.existsSync(audioOut)) {
                     const sentMsg4 = await ctx.sock.sendMessage(
                         ctx.jid,
-                        { audio: { url: audioOut }, mimetype: 'audio/mpeg', mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
+                        {
+                            audio: { url: audioOut },
+                            mimetype: 'audio/mpeg',
+                            mentions: senderJid ? [senderJid] : undefined,
+                            contextInfo: { isForwarded: true, forwardingScore: 1 }
+                        },
                         { quoted: ctx.msg }
                     );
                     if (sentMsg4) {
@@ -449,7 +459,8 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 {
                     audio: { url: downloadedAudioOnly },
                     mimetype: 'audio/mpeg',
-                    mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 }
+                    mentions: senderJid ? [senderJid] : undefined,
+                    contextInfo: { isForwarded: true, forwardingScore: 1 }
                 },
                 { quoted: ctx.msg }
             );
@@ -462,7 +473,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             return;
         }
 
-        console.error('[TelegramDL Tool] No media found in post after yt-dlp execution (or extraction failed silently).');
+        console.error(
+            '[TelegramDL Tool] No media found in post after yt-dlp execution (or extraction failed silently).'
+        );
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
         return 'Error: The media could not be retrieved. Please ensure the Telegram post contains a supported video.';
     } catch (error: any) {

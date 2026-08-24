@@ -79,7 +79,9 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
         if (!phoneNumber) {
             console.error(`[Pairing] [${sessionId}] No phone number provided for pairing`);
         } else {
-            console.log(`[Pairing] [${sessionId}] Will request pairing code for ${phoneNumber} after WebSocket connects...`);
+            console.log(
+                `[Pairing] [${sessionId}] Will request pairing code for ${phoneNumber} after WebSocket connects...`
+            );
         }
     }
 
@@ -153,7 +155,9 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
                 await delay(reconnectDelay);
                 connectToWhatsApp(options);
             } else if (shouldReconnect) {
-                console.error(`[Connection] [${sessionId}] Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached. Giving up.`);
+                console.error(
+                    `[Connection] [${sessionId}] Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached. Giving up.`
+                );
             }
         }
     });
@@ -182,7 +186,7 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
                         })
                     );
                 }
-                
+
                 let msgTime: any = msg.messageTimestamp;
                 if (msgTime && typeof msgTime === 'object' && typeof msgTime.toNumber === 'function') {
                     msgTime = msgTime.toNumber();

@@ -53,12 +53,13 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         const quotedMsg = ctx.msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         if (quotedMsg) {
             const extText = quotedMsg.extendedTextMessage;
-            targetUrl = quotedMsg.conversation || 
-                        extText?.text || 
-                        extText?.matchedText || 
-                        quotedMsg.videoMessage?.caption ||
-                        quotedMsg.imageMessage?.caption ||
-                        '';
+            targetUrl =
+                quotedMsg.conversation ||
+                extText?.text ||
+                extText?.matchedText ||
+                quotedMsg.videoMessage?.caption ||
+                quotedMsg.imageMessage?.caption ||
+                '';
         }
     }
 
@@ -76,10 +77,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         return;
     }
 
-    await ctx.sock.sendMessage(
-        ctx.jid,
-        { react: { text: '⏳', key: ctx.msg.key } }
-    );
+    await ctx.sock.sendMessage(ctx.jid, { react: { text: '⏳', key: ctx.msg.key } });
 
     const downloadedFiles: string[] = [];
     const tempDir = ensureTempMediaDir();
@@ -98,14 +96,15 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
         const res = await axios.get(targetUrl, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+                'User-Agent':
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
             },
             timeout: 15000
         });
 
         const html = res.data;
         const relayMatch = html.match(/window\.__PWS_RELAY_REGISTER_COMPLETED_REQUEST__\([^,]+,\s*(\{.*?\})\);/);
-        
+
         const media = { images: new Set<string>(), videos: new Set<string>(), title: '' };
 
         const pinIdMatch = targetUrl.match(/\/pin\/(\d+)/);
@@ -115,7 +114,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             const data = JSON.parse(relayMatch[1]);
             const mainPinData = data?.data?.v3GetPinQueryv2?.data || data;
             const hasVideo = !!mainPinData.videos || !!mainPinData.storyPinData || mainPinData.isVideo;
-            
+
             function findMedia(obj: any) {
                 if (typeof obj === 'string') {
                     if (obj.includes('.mp4')) {
@@ -130,10 +129,11 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     if (obj.__typename === 'Pin' && obj.id && mainPinData.id && obj.id !== mainPinData.id) return;
                     if (obj.seoTitle && typeof obj.seoTitle === 'string' && !media.title) media.title = obj.seoTitle;
                     if (obj.title && typeof obj.title === 'string' && !media.title) media.title = obj.title;
-                    
-                    Object.keys(obj).forEach(k => {
+
+                    Object.keys(obj).forEach((k) => {
                         if (['relatedPins', 'recommendations', 'morePins'].includes(k)) return;
-                        if (obj === mainPinData && hasVideo && (k.startsWith('images_') || k.startsWith('image'))) return;
+                        if (obj === mainPinData && hasVideo && (k.startsWith('images_') || k.startsWith('image')))
+                            return;
                         findMedia(obj[k]);
                     });
                 }
@@ -144,7 +144,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             const dataMatch = html.match(/<script id="__PWS_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
             if (dataMatch) {
                 const data = JSON.parse(dataMatch[1]);
-                
+
                 let rootData = data;
                 if (targetPinId && data?.props?.initialReduxState?.pins?.[targetPinId]) {
                     rootData = data.props.initialReduxState.pins[targetPinId];
@@ -162,10 +162,11 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                         obj.forEach(findMediaFallback);
                     } else if (obj !== null && typeof obj === 'object') {
                         if (obj.title && typeof obj.title === 'string' && !media.title) media.title = obj.title;
-                        
-                        Object.keys(obj).forEach(k => {
+
+                        Object.keys(obj).forEach((k) => {
                             if (['relatedPins', 'recommendations', 'morePins'].includes(k)) return;
-                            if (obj === rootData && hasVideo && (k.startsWith('images_') || k.startsWith('image'))) return;
+                            if (obj === rootData && hasVideo && (k.startsWith('images_') || k.startsWith('image')))
+                                return;
                             findMediaFallback(obj[k]);
                         });
                     }
@@ -175,19 +176,19 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         }
 
         const rawMediaUrls = [...Array.from(media.videos), ...Array.from(media.images)];
-        
+
         const mediaGroups = new Map<string, string[]>();
         for (const url of rawMediaUrls) {
             let mediaId = 'unknown';
             try {
                 const pathname = new URL(url).pathname;
                 const match = pathname.match(/([a-f0-9]{24,})/i);
-                mediaId = match ? match[1] : (pathname.split('/').pop()?.split('.')[0] || 'unknown');
+                mediaId = match ? match[1] : pathname.split('/').pop()?.split('.')[0] || 'unknown';
             } catch {
                 // Ignore invalid URLs
             }
             if (mediaId.includes('_')) mediaId = mediaId.split('_')[0];
-            
+
             if (!mediaGroups.has(mediaId)) {
                 mediaGroups.set(mediaId, []);
             }
@@ -196,9 +197,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
         const dedupedUrls: string[] = [];
         for (const variants of mediaGroups.values()) {
-            const videos = variants.filter(u => u.includes('.mp4'));
-            const images = variants.filter(u => u.match(/\.(jpg|png|jpeg)$/i));
-            
+            const videos = variants.filter((u) => u.includes('.mp4'));
+            const images = variants.filter((u) => u.match(/\.(jpg|png|jpeg)$/i));
+
             if (videos.length > 0) {
                 let bestVideo = videos[0];
                 for (const v of videos) {
@@ -248,12 +249,18 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             downloadedFiles.push(filepath);
 
             const isVideo = ext === '.mp4';
-            
+
             // Send as Media
             if (isVideo) {
                 const sentMsg = await ctx.sock.sendMessage(
                     ctx.jid,
-                    { video: { url: filepath }, mimetype: 'video/mp4', caption: caption, mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
+                    {
+                        video: { url: filepath },
+                        mimetype: 'video/mp4',
+                        caption: caption,
+                        mentions: senderJid ? [senderJid] : undefined,
+                        contextInfo: { isForwarded: true, forwardingScore: 1 }
+                    },
                     { quoted: ctx.msg }
                 );
                 if (sentMsg) {
@@ -269,7 +276,12 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                         downloadedFiles.push(audioOut);
                         const sentMsg2 = await ctx.sock.sendMessage(
                             ctx.jid,
-                            { audio: { url: audioOut }, mimetype: 'audio/mpeg', mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
+                            {
+                                audio: { url: audioOut },
+                                mimetype: 'audio/mpeg',
+                                mentions: senderJid ? [senderJid] : undefined,
+                                contextInfo: { isForwarded: true, forwardingScore: 1 }
+                            },
                             { quoted: ctx.msg }
                         );
                         if (sentMsg2) {
@@ -283,7 +295,12 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             } else {
                 const sentMsg = await ctx.sock.sendMessage(
                     ctx.jid,
-                    { image: { url: filepath }, caption: caption, mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
+                    {
+                        image: { url: filepath },
+                        caption: caption,
+                        mentions: senderJid ? [senderJid] : undefined,
+                        contextInfo: { isForwarded: true, forwardingScore: 1 }
+                    },
                     { quoted: ctx.msg }
                 );
                 if (sentMsg) {
@@ -295,12 +312,13 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             // Send as Document (requested by user)
             await ctx.sock.sendMessage(
                 ctx.jid,
-                { 
-                    document: { url: filepath }, 
-                    mimetype: isVideo ? 'video/mp4' : 'image/jpeg', 
-                    fileName: `Pinterest_${timestamp}_${i}${ext}`, 
-                    caption: `Document version`, 
-                    mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } 
+                {
+                    document: { url: filepath },
+                    mimetype: isVideo ? 'video/mp4' : 'image/jpeg',
+                    fileName: `Pinterest_${timestamp}_${i}${ext}`,
+                    caption: `Document version`,
+                    mentions: senderJid ? [senderJid] : undefined,
+                    contextInfo: { isForwarded: true, forwardingScore: 1 }
                 },
                 { quoted: ctx.msg }
             );
@@ -308,7 +326,6 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
         return;
-
     } catch (error: any) {
         console.error('[PinterestDL Tool] Execution error:', error);
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });

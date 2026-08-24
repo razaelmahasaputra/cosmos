@@ -50,9 +50,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
         const rawAliases = def.aliases || [];
         const formattedAliases = Array.from(
-            new Set(
-                rawAliases.map((a) => (a.startsWith('.') ? a : `.${a}`)).map((a) => a.toLowerCase())
-            )
+            new Set(rawAliases.map((a) => (a.startsWith('.') ? a : `.${a}`)).map((a) => a.toLowerCase()))
         );
 
         categorizedTools[category].push({
@@ -68,8 +66,10 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     const requestedCategory = typeof args.category === 'string' ? args.category.trim().toLowerCase() : '';
 
     if (requestedCategory) {
-        const matchedCategory = categories.find((c) => c.toLowerCase() === requestedCategory || c.toLowerCase().includes(requestedCategory));
-        
+        const matchedCategory = categories.find(
+            (c) => c.toLowerCase() === requestedCategory || c.toLowerCase().includes(requestedCategory)
+        );
+
         if (matchedCategory) {
             let menuText = `*WAF - ${matchedCategory.toUpperCase()} MENU*\n\n`;
             const toolsInCategory = categorizedTools[matchedCategory];
@@ -78,7 +78,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 const primaryCommand = t.aliases.length > 0 ? t.aliases[0] : `.${t.name}`;
                 const ownerBadge = t.owner ? ' *(Owner)*' : '';
                 const aliasStr =
-                    t.aliases.length > 0 ? t.aliases.map(a => `\`\`\`${a}\`\`\``).join(', ') : `\`\`\`.${t.name}\`\`\``;
+                    t.aliases.length > 0
+                        ? t.aliases.map((a) => `\`\`\`${a}\`\`\``).join(', ')
+                        : `\`\`\`.${t.name}\`\`\``;
 
                 menuText += `\`\`\`${primaryCommand}\`\`\`${ownerBadge}\n`;
                 menuText += `Alias: ${aliasStr}\n`;
@@ -92,7 +94,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             menuText += `\n\n*Tip:* Use \`\`\`${cmdPrefix}\`\`\` to see all available categories.`;
             return menuText.trim();
         } else {
-            return `*Error:* Category '${args.category}' not found.\n\n*Available Categories:*\n${categories.map(c => `- ${c}`).join('\n')}`;
+            return `*Error:* Category '${args.category}' not found.\n\n*Available Categories:*\n${categories.map((c) => `- ${c}`).join('\n')}`;
         }
     }
 
@@ -100,7 +102,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     categories.forEach((cat) => {
         menuText += `\`\`\`${cmdPrefix} ${cat}\`\`\`\n`;
     });
-    
+
     menuText += `\n*Tip:* Type \`\`\`${cmdPrefix} <category>\`\`\` to view the commands in that category (e.g. \`\`\`${cmdPrefix} media\`\`\`).`;
 
     return menuText.trim();

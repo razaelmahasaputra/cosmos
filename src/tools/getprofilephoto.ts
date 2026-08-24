@@ -6,7 +6,8 @@ export const definition: ToolDefinition = {
     title: 'Get Profile Photo',
     category: 'Tools & Utilities',
     aliases: ['getpp', 'pp'],
-    description: 'Fetches the profile photo of a user. The photo will be auto-deleted after 10 seconds. You can mention the user, quote their message, or just use the command to get your own profile photo.',
+    description:
+        'Fetches the profile photo of a user. The photo will be auto-deleted after 10 seconds. You can mention the user, quote their message, or just use the command to get your own profile photo.',
     owner: false,
     parameters: {
         type: 'object',
@@ -19,19 +20,21 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     const { sock, msg, jid } = ctx;
 
     let targetJid: string | null;
-    
+
     // Check if the command replied to a message
     const quotedMsgInfo = msg.message?.extendedTextMessage?.contextInfo;
     if (quotedMsgInfo?.participant) {
         targetJid = quotedMsgInfo.participant;
-    } 
+    }
     // Check if there are mentions
     else if (quotedMsgInfo?.mentionedJid && quotedMsgInfo.mentionedJid.length > 0) {
         targetJid = quotedMsgInfo.mentionedJid[0];
     }
     // If no mentions or quotes, get the sender's own profile photo
     else {
-        const senderRaw = msg.key.fromMe ? sock.user?.id || (sock.user as any)?.lid : msg.key.participant || msg.key.remoteJid;
+        const senderRaw = msg.key.fromMe
+            ? sock.user?.id || (sock.user as any)?.lid
+            : msg.key.participant || msg.key.remoteJid;
         targetJid = senderRaw ? jidNormalizedUser(senderRaw) : null;
     }
 
@@ -60,7 +63,9 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
 
         if (!ppUrl) {
             await sock.sendMessage(jid, { react: { text: '❌', key: safeMsgKey } });
-            await sock.sendMessage(jid, { text: 'Failed to fetch the profile photo. The user might have hidden it or does not have one.' });
+            await sock.sendMessage(jid, {
+                text: 'Failed to fetch the profile photo. The user might have hidden it or does not have one.'
+            });
             return;
         }
 
@@ -87,10 +92,10 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
 
         // Send image and auto-delete after 10 seconds.
         // We do this for ALL requests because WhatsApp has officially blocked sending "View Once" messages from Web/Linked Devices.
-        const sentMsg = await sock.sendMessage(
-            jid, 
-            { image: { url: tempFilePath }, caption: 'Profile photo (Auto-delete in 10s)' }
-        );
+        const sentMsg = await sock.sendMessage(jid, {
+            image: { url: tempFilePath },
+            caption: 'Profile photo (Auto-delete in 10s)'
+        });
 
         await sock.sendMessage(jid, { react: { text: '✅', key: safeMsgKey } });
 
@@ -110,19 +115,19 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         console.error('[Get Profile Photo Error]', err);
         console.error('Failed to fetch profile photo', { error: err.message, targetJid });
         await sock.sendMessage(jid, { react: { text: '❌', key: safeMsgKey } });
-        
+
         if (tempFilePath) {
             const fs = await import('fs');
             if (fs.existsSync(tempFilePath)) {
                 fs.unlinkSync(tempFilePath);
             }
         }
-        
+
         // Handle specific Baileys error where no profile picture is available (usually returns 401 or 404)
         if (err.message && (err.message.includes('not-authorized') || err.message.includes('Item not found'))) {
             return 'The profile photo is hidden or does not exist.';
         }
-        
+
         return 'An error occurred while attempting to fetch the profile photo.';
     }
 }

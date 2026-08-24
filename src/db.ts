@@ -47,7 +47,6 @@ export const prisma = new Proxy(defaultClient, {
     }
 });
 
-
 export async function addGroup(jid: string): Promise<boolean> {
     try {
         await prisma.whitelistedGroup.upsert({

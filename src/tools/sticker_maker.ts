@@ -141,7 +141,11 @@ export async function sendStickerFromBuffer(
     console.log(`[Sticker] WebP buffer valid, size: ${webpBuffer.length} bytes`);
 
     // Send sticker
-    const sentMsg = await sock.sendMessage(jid, { sticker: webpBuffer, mentions }, quotedMsg ? { quoted: quotedMsg } : undefined);
+    const sentMsg = await sock.sendMessage(
+        jid,
+        { sticker: webpBuffer, mentions },
+        quotedMsg ? { quoted: quotedMsg } : undefined
+    );
 
     console.log('[Sticker] sendMessage result key:', JSON.stringify(sentMsg?.key));
     if (sentMsg?.message?.stickerMessage) {
@@ -279,7 +283,13 @@ export async function execute(_: Record<string, any>, ctx: ToolContext): Promise
                         .toBuffer();
                 }
 
-                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg, senderJid ? [senderJid] : undefined);
+                await sendStickerFromBuffer(
+                    ctx.sock,
+                    ctx.jid,
+                    webpBuffer,
+                    ctx.msg,
+                    senderJid ? [senderJid] : undefined
+                );
                 await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
                 return null;
             }
@@ -315,12 +325,24 @@ export async function execute(_: Record<string, any>, ctx: ToolContext): Promise
             const ffmpegCmd = await getFFmpegPath();
             if (ffmpegCmd) {
                 const webpBuffer = await convertVideoToSticker(buffer, ext);
-                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg, senderJid ? [senderJid] : undefined);
+                await sendStickerFromBuffer(
+                    ctx.sock,
+                    ctx.jid,
+                    webpBuffer,
+                    ctx.msg,
+                    senderJid ? [senderJid] : undefined
+                );
                 await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
                 return null;
             } else if (mimeType === 'image/gif' || ext === 'gif') {
                 const webpBuffer = await convertGifToStickerSharp(buffer);
-                await sendStickerFromBuffer(ctx.sock, ctx.jid, webpBuffer, ctx.msg, senderJid ? [senderJid] : undefined);
+                await sendStickerFromBuffer(
+                    ctx.sock,
+                    ctx.jid,
+                    webpBuffer,
+                    ctx.msg,
+                    senderJid ? [senderJid] : undefined
+                );
                 await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
                 return null;
             } else {

@@ -166,7 +166,11 @@ export async function deactivateSession(feature: string, jid: string): Promise<b
  * Toggles a feature session for a JID.
  * Returns true if activated, false if deactivated.
  */
-export async function toggleSession(feature: string, jid: string, metadata: Record<string, any> = {}): Promise<boolean> {
+export async function toggleSession(
+    feature: string,
+    jid: string,
+    metadata: Record<string, any> = {}
+): Promise<boolean> {
     if (isSessionActive(feature, jid)) {
         await deactivateSession(feature, jid);
         return false;

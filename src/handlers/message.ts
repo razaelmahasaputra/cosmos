@@ -108,7 +108,11 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
 
         if (commandName === '.addgroup' || commandName === '.addwhitelist') {
             if (!isOwner) {
-                await sock.sendMessage(jid, { text: 'This command can only be used by the bot owner.' }, { quoted: msg });
+                await sock.sendMessage(
+                    jid,
+                    { text: 'This command can only be used by the bot owner.' },
+                    { quoted: msg }
+                );
                 return;
             }
             console.log('Command executed', { command: '.addgroup', jid });
@@ -130,7 +134,11 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
             // Check owner permission constraints
             const isOwnerOnly = tool.definition?.owner === true;
             if (isOwnerOnly && !isOwner) {
-                await sock.sendMessage(jid, { text: 'This command can only be used by the bot owner.' }, { quoted: msg });
+                await sock.sendMessage(
+                    jid,
+                    { text: 'This command can only be used by the bot owner.' },
+                    { quoted: msg }
+                );
                 return;
             }
 
@@ -192,11 +200,10 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
     }
 
     // Auto-DL Processing
-    const isBotResponseStr = msg.key.fromMe && (
-        (text && (text.startsWith('✅') || text.startsWith('⏳') || text.startsWith('❌'))) ||
-        false // we will evaluate isQuotingCommand properly below
-    );
-    
+    const isBotResponseStr =
+        msg.key.fromMe &&
+        ((text && (text.startsWith('✅') || text.startsWith('⏳') || text.startsWith('❌'))) || false); // we will evaluate isQuotingCommand properly below
+
     if (!isBotResponseStr && trimmedText && !trimmedText.startsWith('.')) {
         if (jid.endsWith('@g.us') && !isOwner) {
             const whitelisted = await isGroupWhitelisted(jid);
@@ -212,20 +219,20 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
     // Ignore programmatic bot responses (which usually start with ✅, ⏳, or ❌, or quote a command) to prevent loops
     let isQuotingCommand = false;
     if (msg.key.fromMe && msg.message) {
-        const qMsg = msg.message.videoMessage?.contextInfo?.quotedMessage ||
-                     msg.message.imageMessage?.contextInfo?.quotedMessage ||
-                     msg.message.documentMessage?.contextInfo?.quotedMessage ||
-                     msg.message.extendedTextMessage?.contextInfo?.quotedMessage;
+        const qMsg =
+            msg.message.videoMessage?.contextInfo?.quotedMessage ||
+            msg.message.imageMessage?.contextInfo?.quotedMessage ||
+            msg.message.documentMessage?.contextInfo?.quotedMessage ||
+            msg.message.extendedTextMessage?.contextInfo?.quotedMessage;
         if (qMsg) {
             const qText = qMsg.conversation || qMsg.extendedTextMessage?.text || '';
             if (qText.trim().startsWith('.')) isQuotingCommand = true;
         }
     }
 
-    const isBotResponse = msg.key.fromMe && (
-        (text && (text.startsWith('✅') || text.startsWith('⏳') || text.startsWith('❌'))) ||
-        isQuotingCommand
-    );
+    const isBotResponse =
+        msg.key.fromMe &&
+        ((text && (text.startsWith('✅') || text.startsWith('⏳') || text.startsWith('❌'))) || isQuotingCommand);
     if (!isBotResponse && isAutoStickerEnabled(jid) && hasDirectMedia(msg.message)) {
         if (jid.endsWith('@g.us') && !isOwner) {
             const whitelisted = await isGroupWhitelisted(jid);

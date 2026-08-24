@@ -6,7 +6,8 @@ export const definition: ToolDefinition = {
     title: 'Read View Once',
     category: 'Tools & Utilities',
     aliases: ['readviewonce', 'openviewonce'],
-    description: 'Reveals a view-once media message (image, video, or voice note) and resends it as a normal forwarded message.',
+    description:
+        'Reveals a view-once media message (image, video, or voice note) and resends it as a normal forwarded message.',
     owner: true,
     parameters: {
         type: 'object',
@@ -85,7 +86,9 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         }
         const buffer = Buffer.concat(chunks);
 
-        const senderRaw = msg.key.fromMe ? sock.user?.id || msg.key.participant || msg.key.remoteJid : msg.key.participant || msg.key.remoteJid;
+        const senderRaw = msg.key.fromMe
+            ? sock.user?.id || msg.key.participant || msg.key.remoteJid
+            : msg.key.participant || msg.key.remoteJid;
         const normalizedSender = senderRaw ? jidNormalizedUser(senderRaw) : '';
 
         const contextInfo = {

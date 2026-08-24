@@ -32,12 +32,12 @@ export async function getConversationContext(jid: string, groqClient: Groq): Pro
     });
 
     if (!session) return [];
-    
+
     const now = Date.now();
-    
+
     // Filter messages strictly within the last 2 hours to avoid stale context
-    let sessionMessages = session.messages.filter(m => now - m.timestamp.getTime() < TWO_HOURS);
-    
+    let sessionMessages = session.messages.filter((m) => now - m.timestamp.getTime() < TWO_HOURS);
+
     // If the history is getting too long, summarize the older parts to save AI quota
     if (sessionMessages.length > MAX_MESSAGES_BEFORE_SUMMARY) {
         // Keep the last 2 messages intact for immediate context, summarize the rest
@@ -45,10 +45,12 @@ export async function getConversationContext(jid: string, groqClient: Groq): Pro
         const summarizeCount = sessionMessages.length - keepCount;
         const messagesToSummarize = sessionMessages.slice(0, summarizeCount);
         const remainingMessages = sessionMessages.slice(summarizeCount);
-        
-        const truncate = (str: string, len: number) => str.length > len ? str.substring(0, len) + '...' : str;
-        const transcript = messagesToSummarize.map(m => `${m.role === 'user' ? 'User' : 'AI'}: ${truncate(m.content, 1000)}`).join('\n');
-        
+
+        const truncate = (str: string, len: number) => (str.length > len ? str.substring(0, len) + '...' : str);
+        const transcript = messagesToSummarize
+            .map((m) => `${m.role === 'user' ? 'User' : 'AI'}: ${truncate(m.content, 1000)}`)
+            .join('\n');
+
         const summaryPrompt = `You are an AI tasked with maintaining a concise running summary of a conversation.
 Update the previous summary with the new chat history provided below.
 Be extremely concise. Retain important facts, context, and the user's intent.
@@ -60,7 +62,7 @@ ${truncate(session.summary || 'No previous summary.', 2000)}
 ${truncate(transcript, 4000)}
 
 Return ONLY the updated summary text. Do not add any conversational filler.`;
-        
+
         try {
             const openRouterKey = process.env.OPENROUTER_API_KEY;
             let newSummary = '';
@@ -75,7 +77,7 @@ Return ONLY the updated summary text. Do not add any conversational filler.`;
                     },
                     {
                         headers: {
-                            'Authorization': `Bearer ${openRouterKey}`,
+                            Authorization: `Bearer ${openRouterKey}`,
                             'Content-Type': 'application/json'
                         }
                     }
@@ -90,7 +92,7 @@ Return ONLY the updated summary text. Do not add any conversational filler.`;
                 });
                 newSummary = response.choices[0]?.message?.content?.trim() || '';
             }
-            
+
             if (newSummary) {
                 await prisma.$transaction([
                     prisma.aiChatSession.update({
@@ -99,7 +101,7 @@ Return ONLY the updated summary text. Do not add any conversational filler.`;
                     }),
                     prisma.aiChatMessage.deleteMany({
                         where: {
-                            id: { in: messagesToSummarize.map(m => m.id) }
+                            id: { in: messagesToSummarize.map((m) => m.id) }
                         }
                     })
                 ]);
@@ -116,19 +118,19 @@ Return ONLY the updated summary text. Do not add any conversational filler.`;
     }
 
     const contextMessages: any[] = [];
-    
-    const truncateContext = (str: string, len: number) => str.length > len ? str.substring(0, len) + '...' : str;
-    
+
+    const truncateContext = (str: string, len: number) => (str.length > len ? str.substring(0, len) + '...' : str);
+
     if (session.summary) {
-        contextMessages.push({ 
-            role: 'system', 
-            content: `[Previous Conversation Context/Summary]\n${truncateContext(session.summary, 1500)}` 
+        contextMessages.push({
+            role: 'system',
+            content: `[Previous Conversation Context/Summary]\n${truncateContext(session.summary, 1500)}`
         });
     }
-    
+
     for (const m of sessionMessages) {
         contextMessages.push({ role: m.role as any, content: truncateContext(m.content, 1000) });
     }
-    
+
     return contextMessages;
 }

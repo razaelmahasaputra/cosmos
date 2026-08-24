@@ -5,12 +5,7 @@ export const definition: ToolDefinition = {
     name: 'startautocorrection',
     title: 'Start AI Auto-Correction',
     category: 'AI & Correction',
-    aliases: [
-        '.startautocorrection',
-        '.startautocorrect',
-        '.enableautocorrect',
-        '.enableautocorrection'
-    ],
+    aliases: ['.startautocorrection', '.startautocorrect', '.enableautocorrect', '.enableautocorrection'],
     description: 'Enables automated AI message auto-correction via OpenRouter for this chat.',
     owner: true,
     parameters: {

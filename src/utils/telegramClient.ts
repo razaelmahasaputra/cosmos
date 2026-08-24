@@ -227,11 +227,7 @@ export async function joinChatViaInvite(inviteHash: string): Promise<JoinedChatI
 
     // The response is an updates collection; only these variants carry the chat list.
     const chats =
-        result instanceof Api.Updates
-            ? result.chats
-            : result instanceof Api.UpdatesCombined
-              ? result.chats
-              : [];
+        result instanceof Api.Updates ? result.chats : result instanceof Api.UpdatesCombined ? result.chats : [];
 
     for (const chat of chats) {
         if (chat instanceof Api.Channel) {

@@ -6,7 +6,8 @@ export const definition: ToolDefinition = {
     title: 'Auto Downloader Settings',
     category: 'Settings',
     aliases: ['.autodl'],
-    description: 'Toggle automatic downloading of links for this group. E.g. .autodl tiktok on, .autodl ig off, .autodl list',
+    description:
+        'Toggle automatic downloading of links for this group. E.g. .autodl tiktok on, .autodl ig off, .autodl list',
     parameters: {
         type: 'object',
         properties: {
@@ -23,7 +24,26 @@ export const definition: ToolDefinition = {
     }
 };
 
-const VALID_PLATFORMS = ['tiktok', 'tt', 'ig', 'instagram', 'pin', 'pinterest', 'yt', 'youtube', 'tg', 'telegram', 'twitter', 'x', 'fb', 'facebook', 'threads', 'autodelete', 'all', 'list'];
+const VALID_PLATFORMS = [
+    'tiktok',
+    'tt',
+    'ig',
+    'instagram',
+    'pin',
+    'pinterest',
+    'yt',
+    'youtube',
+    'tg',
+    'telegram',
+    'twitter',
+    'x',
+    'fb',
+    'facebook',
+    'threads',
+    'autodelete',
+    'all',
+    'list'
+];
 
 export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string | void> {
     let { platform, state } = args;
@@ -40,16 +60,18 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         // Group: Admin or Owner
         const groupMetadata = await ctx.sock.groupMetadata(jid);
         const senderJid = ctx.msg.key.participant || ctx.msg.key.remoteJid;
-        
+
         let isAdmin = false;
         if (senderJid) {
-            const participant = groupMetadata.participants.find(p => p.id === senderJid);
+            const participant = groupMetadata.participants.find((p) => p.id === senderJid);
             if (participant && (participant.admin === 'admin' || participant.admin === 'superadmin')) {
                 isAdmin = true;
             }
         }
-        
-        const ownerNumber = process.env.BOT_PHONE_NUMBER ? process.env.BOT_PHONE_NUMBER.split(':')[0].split('@')[0] : null;
+
+        const ownerNumber = process.env.BOT_PHONE_NUMBER
+            ? process.env.BOT_PHONE_NUMBER.split(':')[0].split('@')[0]
+            : null;
         const senderRaw = senderJid ? senderJid.split(':')[0].split('@')[0] : null;
         const isOwner = Boolean(ctx.msg.key.fromMe) || (ownerNumber !== null && senderRaw === ownerNumber);
 
@@ -58,7 +80,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         }
     } else {
         // Private chat: only owner can toggle
-        const ownerNumber = process.env.BOT_PHONE_NUMBER ? process.env.BOT_PHONE_NUMBER.split(':')[0].split('@')[0] : null;
+        const ownerNumber = process.env.BOT_PHONE_NUMBER
+            ? process.env.BOT_PHONE_NUMBER.split(':')[0].split('@')[0]
+            : null;
         const senderRaw = jid.split(':')[0].split('@')[0];
         const isOwner = Boolean(ctx.msg.key.fromMe) || (ownerNumber !== null && senderRaw === ownerNumber);
         if (!isOwner) {
@@ -71,13 +95,22 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     }
 
     const platRaw = platform.toLowerCase().trim();
-    const platTarget = platRaw === 'tt' ? 'tiktok' :
-                       platRaw === 'instagram' ? 'ig' :
-                       platRaw === 'pinterest' ? 'pin' :
-                       platRaw === 'youtube' ? 'yt' :
-                       platRaw === 'telegram' ? 'tg' : 
-                       platRaw === 'x' ? 'twitter' :
-                       platRaw === 'facebook' ? 'fb' : platRaw;
+    const platTarget =
+        platRaw === 'tt'
+            ? 'tiktok'
+            : platRaw === 'instagram'
+              ? 'ig'
+              : platRaw === 'pinterest'
+                ? 'pin'
+                : platRaw === 'youtube'
+                  ? 'yt'
+                  : platRaw === 'telegram'
+                    ? 'tg'
+                    : platRaw === 'x'
+                      ? 'twitter'
+                      : platRaw === 'facebook'
+                        ? 'fb'
+                        : platRaw;
 
     if (!VALID_PLATFORMS.includes(platTarget)) {
         return '❌ Invalid platform. Supported: tiktok, ig, pin, yt, tg, twitter, fb, threads, autodelete, all.';
@@ -94,7 +127,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             const status = isAutoDlEnabled(jid, p) ? '✅ ON' : '❌ OFF';
             msg += `- ${p.toUpperCase()}: ${status}\n`;
         }
-        
+
         msg += '\n*⚙️ Settings*\n';
         const adStatus = isAutoDlEnabled(jid, 'autodelete') ? '✅ ON' : '❌ OFF';
         msg += `- AUTODELETE: ${adStatus}\n`;

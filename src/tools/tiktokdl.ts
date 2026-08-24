@@ -61,12 +61,13 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         const quotedMsg = ctx.msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         if (quotedMsg) {
             const extText = quotedMsg.extendedTextMessage;
-            targetUrl = quotedMsg.conversation || 
-                        extText?.text || 
-                        extText?.matchedText || 
-                        quotedMsg.videoMessage?.caption ||
-                        quotedMsg.imageMessage?.caption ||
-                        '';
+            targetUrl =
+                quotedMsg.conversation ||
+                extText?.text ||
+                extText?.matchedText ||
+                quotedMsg.videoMessage?.caption ||
+                quotedMsg.imageMessage?.caption ||
+                '';
         }
     }
 
@@ -84,10 +85,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         return;
     }
 
-    await ctx.sock.sendMessage(
-        ctx.jid,
-        { react: { text: '⏳', key: ctx.msg.key } }
-    );
+    await ctx.sock.sendMessage(ctx.jid, { react: { text: '⏳', key: ctx.msg.key } });
 
     if (targetUrl.includes('vt.tiktok.com') || targetUrl.includes('vm.tiktok.com')) {
         try {
@@ -97,7 +95,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             console.error('[TikTokDL Tool] Failed to resolve shortlink:', e);
         }
     }
-    
+
     targetUrl = targetUrl.replace(/\/photo\//g, '/video/');
 
     const tempDir = ensureTempMediaDir();
@@ -165,10 +163,18 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         }
 
         if (downloadedFiles.length > 0) {
-            let images = downloadedFiles.filter(f => ['.jpg', '.jpeg', '.png', '.webp'].includes(path.extname(f).toLowerCase()));
-            const audios = downloadedFiles.filter(f => ['.mp3', '.m4a', '.aac', '.wav'].includes(path.extname(f).toLowerCase()));
-            const videos = downloadedFiles.filter(f => ['.mp4', '.webm', '.mkv', '.mov'].includes(path.extname(f).toLowerCase()));
-            const others = downloadedFiles.filter(f => !images.includes(f) && !audios.includes(f) && !videos.includes(f));
+            let images = downloadedFiles.filter((f) =>
+                ['.jpg', '.jpeg', '.png', '.webp'].includes(path.extname(f).toLowerCase())
+            );
+            const audios = downloadedFiles.filter((f) =>
+                ['.mp3', '.m4a', '.aac', '.wav'].includes(path.extname(f).toLowerCase())
+            );
+            const videos = downloadedFiles.filter((f) =>
+                ['.mp4', '.webm', '.mkv', '.mov'].includes(path.extname(f).toLowerCase())
+            );
+            const others = downloadedFiles.filter(
+                (f) => !images.includes(f) && !audios.includes(f) && !videos.includes(f)
+            );
 
             if (images.length > 0 && audios.length > 0) {
                 const audioFile = audios[0];
@@ -204,7 +210,13 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
                     const sentMsg = await ctx.sock.sendMessage(
                         ctx.jid,
-                        { video: { url: outputVideo }, mimetype: 'video/mp4', caption: slideshowCaption, mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
+                        {
+                            video: { url: outputVideo },
+                            mimetype: 'video/mp4',
+                            caption: slideshowCaption,
+                            mentions: senderJid ? [senderJid] : undefined,
+                            contextInfo: { isForwarded: true, forwardingScore: 1 }
+                        },
                         { quoted: ctx.msg }
                     );
                     if (sentMsg) {
@@ -212,9 +224,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                         scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg, 'video');
                     }
                     fs.unlinkSync(outputVideo);
-                    images.forEach(img => fs.existsSync(img) && fs.unlinkSync(img));
+                    images.forEach((img) => fs.existsSync(img) && fs.unlinkSync(img));
                     // Keep audios to be sent separately!
-                    
+
                     images = [];
                 } catch (ffmpegErr) {
                     console.error('[TikTokDL Tool] Slideshow combine error:', ffmpegErr);
@@ -232,7 +244,13 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     // that recipients could not download.
                     sentMsg = await ctx.sock.sendMessage(
                         ctx.jid,
-                        { video: { url: file }, mimetype: 'video/mp4', caption: mediaCaption, mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
+                        {
+                            video: { url: file },
+                            mimetype: 'video/mp4',
+                            caption: mediaCaption,
+                            mentions: senderJid ? [senderJid] : undefined,
+                            contextInfo: { isForwarded: true, forwardingScore: 1 }
+                        },
                         { quoted: ctx.msg }
                     );
                     if (sentMsg) {
@@ -243,7 +261,12 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 } else if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
                     sentMsg = await ctx.sock.sendMessage(
                         ctx.jid,
-                        { image: { url: file }, caption: mediaCaption, mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
+                        {
+                            image: { url: file },
+                            caption: mediaCaption,
+                            mentions: senderJid ? [senderJid] : undefined,
+                            contextInfo: { isForwarded: true, forwardingScore: 1 }
+                        },
                         { quoted: ctx.msg }
                     );
                     if (sentMsg) {
@@ -254,7 +277,12 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 } else if (['.mp3', '.m4a', '.aac', '.wav'].includes(ext)) {
                     sentMsg = await ctx.sock.sendMessage(
                         ctx.jid,
-                        { audio: { url: file }, mimetype: AUDIO_MIME_TYPES[ext] || 'audio/mpeg', mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
+                        {
+                            audio: { url: file },
+                            mimetype: AUDIO_MIME_TYPES[ext] || 'audio/mpeg',
+                            mentions: senderJid ? [senderJid] : undefined,
+                            contextInfo: { isForwarded: true, forwardingScore: 1 }
+                        },
                         { quoted: ctx.msg }
                     );
                     if (sentMsg) {
@@ -265,7 +293,13 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 } else {
                     await ctx.sock.sendMessage(
                         ctx.jid,
-                        { document: { url: file }, mimetype: 'application/octet-stream', fileName: path.basename(file), mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
+                        {
+                            document: { url: file },
+                            mimetype: 'application/octet-stream',
+                            fileName: path.basename(file),
+                            mentions: senderJid ? [senderJid] : undefined,
+                            contextInfo: { isForwarded: true, forwardingScore: 1 }
+                        },
                         { quoted: ctx.msg }
                     );
                     fs.unlinkSync(file);

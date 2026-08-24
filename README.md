@@ -87,7 +87,7 @@ pnpm build
 
 ### 🔗 1. Pair your WhatsApp Account (Required)
 
-Before starting the bot, you must pair your WhatsApp account to generate the authentication state. 
+Before starting the bot, you must pair your WhatsApp account to generate the authentication state.
 Run the pairing script and enter the pairing code in your WhatsApp app (Linked Devices > Pair a device):
 
 ```bash

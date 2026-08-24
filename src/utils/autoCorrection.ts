@@ -2,12 +2,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-import {
-    isSessionActive,
-    activateSession,
-    deactivateSession,
-    toggleSession
-} from '#/utils/sessionStore.js';
+import { isSessionActive, activateSession, deactivateSession, toggleSession } from '#/utils/sessionStore.js';
 
 const FEATURE_NAME = 'autocorrection';
 let isGlobalAutoCorrectionEnabled = false;
@@ -96,7 +91,7 @@ STRICT RULES:
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${openRouterKey}`,
+                Authorization: `Bearer ${openRouterKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({

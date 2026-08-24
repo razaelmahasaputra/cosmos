@@ -11,9 +11,14 @@ interface DeletionTask {
 const deletionQueue: DeletionTask[] = [];
 let timer: NodeJS.Timeout | null = null;
 
-export function scheduleMediaAutoDelete(sock: WASocket, jid: string, sentMsg: any, mediaType: 'image' | 'video' | 'audio') {
+export function scheduleMediaAutoDelete(
+    sock: WASocket,
+    jid: string,
+    sentMsg: any,
+    mediaType: 'image' | 'video' | 'audio'
+) {
     if (!sentMsg || !sentMsg.key) return;
-    
+
     // Check if autodelete is enabled for this chat
     if (!isAutoDlEnabled(jid, 'autodelete')) return;
 
@@ -26,10 +31,10 @@ export function scheduleMediaAutoDelete(sock: WASocket, jid: string, sentMsg: an
 
     const deleteAt = Date.now() + delayMs;
     deletionQueue.push({ sock, jid, msgKey: sentMsg.key, deleteAt });
-    
+
     // Sort queue so the soonest deletion is first
     deletionQueue.sort((a, b) => a.deleteAt - b.deleteAt);
-    
+
     processDeletionQueue();
 }
 
@@ -55,14 +60,14 @@ function processDeletionQueue() {
 
 async function executeDelete(task: DeletionTask) {
     deletionQueue.shift(); // Remove the task
-    
+
     try {
         await task.sock.sendMessage(task.jid, { delete: task.msgKey });
         console.log(`[AutoDelete] Deleted media message ${task.msgKey.id} in ${task.jid}`);
     } catch (err) {
         console.error(`[AutoDelete] Failed to delete media message ${task.msgKey.id}`, err);
     }
-    
+
     processDeletionQueue(); // Process next in queue
 }
 
@@ -79,31 +84,37 @@ export async function deleteSenderLink(sock: WASocket, jid: string, msgKey: prot
                 // If it's a group, check if bot is admin
                 const groupMetadata = await sock.groupMetadata(jid);
                 const botJid = sock.user?.id?.split(':')[0] + '@s.whatsapp.net';
-                const botParticipant = groupMetadata.participants.find(p => p.id === botJid);
-                
+                const botParticipant = groupMetadata.participants.find((p) => p.id === botJid);
+
                 const isBotAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
-                
+
                 if (isBotAdmin) {
                     await sock.sendMessage(jid, { delete: msgKey }); // for everyone
                 } else {
                     // Not admin, delete for me only via chatModify
-                    await sock.chatModify({
+                    await sock.chatModify(
+                        {
+                            deleteForMe: {
+                                deleteMedia: false,
+                                key: msgKey,
+                                timestamp: Date.now()
+                            }
+                        },
+                        jid
+                    );
+                }
+            } else {
+                // Private chat, delete for me (can't delete other's messages for everyone in private)
+                await sock.chatModify(
+                    {
                         deleteForMe: {
                             deleteMedia: false,
                             key: msgKey,
                             timestamp: Date.now()
                         }
-                    }, jid);
-                }
-            } else {
-                // Private chat, delete for me (can't delete other's messages for everyone in private)
-                await sock.chatModify({
-                    deleteForMe: {
-                        deleteMedia: false,
-                        key: msgKey,
-                        timestamp: Date.now()
-                    }
-                }, jid);
+                    },
+                    jid
+                );
             }
         }
         console.log(`[AutoDelete] Deleted sender link message ${msgKey.id} in ${jid}`);

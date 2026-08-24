@@ -5,12 +5,9 @@ export const definition: ToolDefinition = {
     name: 'toggleofflineai',
     title: 'Toggle Offline AI Responder',
     category: 'AI & Correction',
-    aliases: [
-        '.toggleofflineai',
-        '.offlineai',
-        '.airesponder'
-    ],
-    description: 'Toggles the automated offline AI responder. When enabled, the AI will casually reply to messages while you are offline.',
+    aliases: ['.toggleofflineai', '.offlineai', '.airesponder'],
+    description:
+        'Toggles the automated offline AI responder. When enabled, the AI will casually reply to messages while you are offline.',
     owner: true,
     parameters: {
         type: 'object',

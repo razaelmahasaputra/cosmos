@@ -6,7 +6,8 @@ export const definition: ToolDefinition = {
     title: 'Play Music with Lyrics',
     category: 'Music & Audio',
     aliases: ['.playlyrics', '.lirik', '.lyrics'],
-    description: 'Starts automated lyrics playback for the requested song. Fetches synchronized lyrics online if not found locally.',
+    description:
+        'Starts automated lyrics playback for the requested song. Fetches synchronized lyrics online if not found locally.',
     parameters: {
         type: 'object',
         properties: {

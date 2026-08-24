@@ -1,9 +1,4 @@
-import {
-    isSessionActive,
-    activateSession,
-    deactivateSession,
-    toggleSession
-} from '#/utils/sessionStore.js';
+import { isSessionActive, activateSession, deactivateSession, toggleSession } from '#/utils/sessionStore.js';
 
 const FEATURE_NAME = 'autosticker';
 
@@ -22,4 +17,3 @@ export async function toggleAutoSticker(jid: string): Promise<boolean> {
 export function isAutoStickerEnabled(jid: string): boolean {
     return isSessionActive(FEATURE_NAME, jid);
 }
-

@@ -34,14 +34,20 @@ function getGroqClient(): Groq {
     return groqClient;
 }
 
-export async function handleOfflineAiResponder(sock: WASocket, msg: WAMessage, jid: string, text: string): Promise<boolean> {
+export async function handleOfflineAiResponder(
+    sock: WASocket,
+    msg: WAMessage,
+    jid: string,
+    text: string
+): Promise<boolean> {
     if (!isGlobalOfflineAiEnabled) return false;
 
     // Do not respond to commands
     if (text.trim().startsWith('.')) return false;
-    
+
     const m = msg.message;
-    const unwrapped = m?.viewOnceMessage?.message || m?.viewOnceMessageV2?.message || m?.viewOnceMessageV2Extension?.message || m;
+    const unwrapped =
+        m?.viewOnceMessage?.message || m?.viewOnceMessageV2?.message || m?.viewOnceMessageV2Extension?.message || m;
     const imageMsg = unwrapped?.imageMessage;
 
     // Ignore if no text and no image
@@ -56,10 +62,13 @@ export async function handleOfflineAiResponder(sock: WASocket, msg: WAMessage, j
         const botRawJid = cleanId(sock.user?.id);
         const botRawLid = cleanId((sock.user as any)?.lid);
 
-        const contextInfo = unwrapped?.extendedTextMessage?.contextInfo || unwrapped?.imageMessage?.contextInfo || unwrapped?.videoMessage?.contextInfo;
-        
+        const contextInfo =
+            unwrapped?.extendedTextMessage?.contextInfo ||
+            unwrapped?.imageMessage?.contextInfo ||
+            unwrapped?.videoMessage?.contextInfo;
+
         const mentionedJids: string[] = contextInfo?.mentionedJid || [];
-        const isMentioned = mentionedJids.some(j => {
+        const isMentioned = mentionedJids.some((j) => {
             const raw = cleanId(j);
             return (botRawJid && raw === botRawJid) || (botRawLid && raw === botRawLid);
         });
@@ -100,7 +109,7 @@ export async function handleOfflineAiResponder(sock: WASocket, msg: WAMessage, j
     // Anti-spam system: check if already processing a message from this JID
     if (processingJids.has(jid)) {
         console.log(`[Offline AI] Queued additional message bubble for ${jid}`);
-        return true; 
+        return true;
     }
 
     processingJids.add(jid);
@@ -108,16 +117,16 @@ export async function handleOfflineAiResponder(sock: WASocket, msg: WAMessage, j
     try {
         // Delay 3 seconds with "composing" status
         await sock.sendPresenceUpdate('composing', jid);
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+
         // Re-update presence as it might expire or we just want to ensure it's still composing
         await sock.sendPresenceUpdate('composing', jid);
-        
+
         // After 3 seconds, gather all buffered messages and clear buffer
         const finalMessages = messageBuffer.get(jid) || [];
         messageBuffer.delete(jid);
         const combinedText = finalMessages.join('\n\n');
-        
+
         const finalImages = imageBuffer.get(jid) || [];
         imageBuffer.delete(jid);
 
@@ -131,7 +140,7 @@ export async function handleOfflineAiResponder(sock: WASocket, msg: WAMessage, j
         if (!ownerContextStr && sock.user?.id) {
             try {
                 const ownerJid = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-                const status = await sock.fetchStatus(ownerJid) as any;
+                const status = (await sock.fetchStatus(ownerJid)) as any;
                 const ownerName = sock.user.name || 'Razael';
                 ownerContextStr = `Owner Name: ${ownerName}\nOwner Status/Bio: ${status?.status || 'Not set'}`;
             } catch {
@@ -151,7 +160,7 @@ CRITICAL INSTRUCTION: Always reply in the exact same language that the contact i
 Important: Gunakan Native Function Calling API. DILARANG KERAS mengetik tag XML seperti <function=...> secara manual di dalam teks balasan Anda! Return ONLY the text you want to send when not calling a tool.`;
 
         const groq = getGroqClient();
-        
+
         // Retrieve the conversation context (includes summary and recent messages)
         const chatContext = await getConversationContext(jid, groq);
 
@@ -173,15 +182,12 @@ Important: Gunakan Native Function Calling API. DILARANG KERAS mengetik tag XML 
 
         const response = await groq.chat.completions.create({
             model: modelToUse,
-            messages: [
-                { role: 'system', content: systemPrompt },
-                ...chatContext
-            ],
+            messages: [{ role: 'system', content: systemPrompt }, ...chatContext],
             temperature: hasTools ? 0.1 : 0.7,
             tools: hasTools ? groqTools : undefined,
             tool_choice: hasTools ? 'auto' : undefined
         });
-        
+
         const message = response.choices[0]?.message;
 
         if (message?.tool_calls && message.tool_calls.length > 0) {
@@ -189,18 +195,22 @@ Important: Gunakan Native Function Calling API. DILARANG KERAS mengetik tag XML 
             for (const toolCall of message.tool_calls) {
                 const funcName = toolCall.function.name;
                 const args = JSON.parse(toolCall.function.arguments || '{}');
-                
+
                 try {
                     const ctx = { sock, msg, jid };
                     console.log('Offline AI executing tool', { jid, funcName, args });
                     const result = await toolsHandler.execute(funcName, args, ctx);
-                    
+
                     if (result && typeof result === 'string') {
                         await sock.sendMessage(jid, { text: result }, { quoted: msg });
                     }
                 } catch (err: any) {
                     console.error(`[Offline AI Tool Error] ${funcName}:`, err);
-                    await sock.sendMessage(jid, { text: `Sorry, there was an error executing ${funcName}.` }, { quoted: msg });
+                    await sock.sendMessage(
+                        jid,
+                        { text: `Sorry, there was an error executing ${funcName}.` },
+                        { quoted: msg }
+                    );
                 }
             }
             return true;

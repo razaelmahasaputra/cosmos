@@ -98,7 +98,7 @@ export async function processAutoDl(sock: WASocket, msg: WAMessage, jid: string,
     if (!matches) return;
 
     // Deduplicate and sanitize trailing punctuation
-    const rawUrls = matches.map(url => url.replace(/[.,!?)>"']+$/, ''));
+    const rawUrls = matches.map((url) => url.replace(/[.,!?)>"']+$/, ''));
     const uniqueUrls = [...new Set(rawUrls)];
 
     for (const url of uniqueUrls) {
@@ -140,7 +140,7 @@ export async function processAutoDl(sock: WASocket, msg: WAMessage, jid: string,
 
         if (platform && isAutoDlEnabled(jid, platform)) {
             const queue = getChatQueue(jid);
-            
+
             queue.add(async () => {
                 console.log(`[AutoDl] Triggered for platform ${platform} with URL ${url}`);
                 try {

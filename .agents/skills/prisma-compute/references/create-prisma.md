@@ -87,9 +87,9 @@ When the deploy flow is selected, `create-prisma` can add:
 
 ```json
 {
-  "scripts": {
-    "compute:deploy": "bunx @prisma/cli@latest app deploy --prod --yes ..."
-  }
+    "scripts": {
+        "compute:deploy": "bunx @prisma/cli@latest app deploy --prod --yes ..."
+    }
 }
 ```
 

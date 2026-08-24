@@ -30,7 +30,7 @@ export async function sendBackupToTelegram(): Promise<void> {
         await axios.post(url, form, {
             headers: form.getHeaders(),
             maxContentLength: Infinity,
-            maxBodyLength: Infinity,
+            maxBodyLength: Infinity
         });
         console.log('[Backup] Database backup sent successfully to Telegram.');
     } catch (err: any) {
@@ -56,7 +56,7 @@ export async function sendTelegramBotNotification(text: string): Promise<boolean
             chat_id: chatId,
             text,
             parse_mode: 'HTML',
-            disable_web_page_preview: true,
+            disable_web_page_preview: true
         });
         return true;
     } catch (err: any) {
@@ -68,13 +68,17 @@ export async function sendTelegramBotNotification(text: string): Promise<boolean
 export function startAutoBackup(): void {
     // Jalankan backup sekali saat bot baru mulai
     sendBackupToTelegram();
-    
+
     // Jadwalkan backup setiap jam 00:00 WIB (Asia/Jakarta)
-    cron.schedule('0 0 * * *', () => {
-        sendBackupToTelegram();
-    }, {
-        timezone: "Asia/Jakarta"
-    });
-    
+    cron.schedule(
+        '0 0 * * *',
+        () => {
+            sendBackupToTelegram();
+        },
+        {
+            timezone: 'Asia/Jakarta'
+        }
+    );
+
     console.log(`[Backup] Auto-backup started on startup and scheduled at 00:00 WIB daily.`);
 }

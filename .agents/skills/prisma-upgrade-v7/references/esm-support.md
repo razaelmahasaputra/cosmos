@@ -8,26 +8,26 @@ Add `"type": "module"` to `package.json` and use an ESM-compatible `tsconfig.jso
 
 ```json
 {
-  "type": "module",
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js"
-  }
+    "type": "module",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/index.js"
+    }
 }
 ```
 
 ```json
 {
-  "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "target": "ES2023",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "outDir": "dist"
-  },
-  "include": ["src/**/*", "prisma/**/*"]
+    "compilerOptions": {
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "target": "ES2023",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "outDir": "dist"
+    },
+    "include": ["src/**/*", "prisma/**/*"]
 }
 ```
 
@@ -37,12 +37,12 @@ If the rest of your app is still CommonJS, keep that setup and make the generate
 
 ```json
 {
-  "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "node",
-    "target": "ES2022",
-    "esModuleInterop": true
-  }
+    "compilerOptions": {
+        "module": "CommonJS",
+        "moduleResolution": "node",
+        "target": "ES2022",
+        "esModuleInterop": true
+    }
 }
 ```
 
@@ -79,15 +79,15 @@ generator client {
 ### Server Code
 
 ```typescript
-import { PrismaClient } from '../generated/prisma/client'
+import { PrismaClient } from '../generated/prisma/client';
 ```
 
 ### Browser-Safe Types
 
 ```typescript
-import { Prisma } from '../generated/prisma/browser'
-import { Role } from '../generated/prisma/enums'
-import type { UserModel } from '../generated/prisma/models/User'
+import { Prisma } from '../generated/prisma/browser';
+import { Role } from '../generated/prisma/enums';
+import type { UserModel } from '../generated/prisma/models/User';
 ```
 
 ## File Extensions
@@ -99,9 +99,9 @@ With `moduleResolution: "bundler"`, bare relative imports are usually fine.
 ## Minimum Versions
 
 | Requirement | Minimum Version |
-|-------------|-----------------|
-| Node.js | 20.19.0 |
-| TypeScript | 5.4.0 |
+| ----------- | --------------- |
+| Node.js     | 20.19.0         |
+| TypeScript  | 5.4.0           |
 
 ## Framework Considerations
 

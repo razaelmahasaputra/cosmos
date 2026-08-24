@@ -14,20 +14,20 @@ No request body. Returns available Prisma Postgres regions.
 
 ```json
 {
-  "data": [
-    {
-      "id": "us-east-1",
-      "type": "region",
-      "name": "US East (N. Virginia)",
-      "status": "available"
-    },
-    {
-      "id": "eu-west-1",
-      "type": "region",
-      "name": "EU West (Ireland)",
-      "status": "available"
-    }
-  ]
+    "data": [
+        {
+            "id": "us-east-1",
+            "type": "region",
+            "name": "US East (N. Virginia)",
+            "status": "available"
+        },
+        {
+            "id": "eu-west-1",
+            "type": "region",
+            "name": "EU West (Ireland)",
+            "status": "available"
+        }
+    ]
 }
 ```
 
@@ -43,66 +43,66 @@ POST /v1/projects
 
 ```json
 {
-  "name": "my-project",
-  "region": "us-east-1",
-  "createDatabase": true
+    "name": "my-project",
+    "region": "us-east-1",
+    "createDatabase": true
 }
 ```
 
-| Field | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `name` | string | No | Auto-generated | Project display name |
-| `region` | string | No | `us-east-1` | Region for the database |
-| `createDatabase` | boolean | No | `true` | Create a default database with the project |
+| Field            | Type    | Required | Default        | Description                                |
+| ---------------- | ------- | -------- | -------------- | ------------------------------------------ |
+| `name`           | string  | No       | Auto-generated | Project display name                       |
+| `region`         | string  | No       | `us-east-1`    | Region for the database                    |
+| `createDatabase` | boolean | No       | `true`         | Create a default database with the project |
 
 **Response** (with `createDatabase: true`):
 
 ```json
 {
-  "data": {
-    "id": "proj_clx7abc123",
-    "type": "project",
-    "url": "https://api.prisma.io/v1/projects/proj_clx7abc123",
-    "name": "my-project",
-    "createdAt": "2025-06-15T10:30:00.000Z",
-    "defaultRegion": "us-east-1",
-    "workspace": {
-      "id": "wksp_xyz789",
-      "url": "https://api.prisma.io/v1/workspaces/wksp_xyz789",
-      "name": "My Workspace"
-    },
-    "database": {
-      "id": "db_def456",
-      "type": "database",
-      "url": "https://api.prisma.io/v1/databases/db_def456",
-      "name": "my-project",
-      "status": "ready",
-      "createdAt": "2025-06-15T10:30:00.000Z",
-      "isDefault": true,
-      "defaultConnectionId": "con_ghi789",
-      "connections": [
-        {
-          "id": "con_ghi789",
-          "type": "connection",
-          "url": "https://api.prisma.io/v1/connections/con_ghi789",
-          "name": "Default",
-          "createdAt": "2025-06-15T10:30:00.000Z",
-          "kind": "postgres",
-          "endpoints": {
-            "direct": {
-              "host": "db.prisma.io",
-              "port": 5432,
-              "connectionString": "postgres://user:pass@db.prisma.io:5432/postgres?sslmode=require"
+    "data": {
+        "id": "proj_clx7abc123",
+        "type": "project",
+        "url": "https://api.prisma.io/v1/projects/proj_clx7abc123",
+        "name": "my-project",
+        "createdAt": "2025-06-15T10:30:00.000Z",
+        "defaultRegion": "us-east-1",
+        "workspace": {
+            "id": "wksp_xyz789",
+            "url": "https://api.prisma.io/v1/workspaces/wksp_xyz789",
+            "name": "My Workspace"
+        },
+        "database": {
+            "id": "db_def456",
+            "type": "database",
+            "url": "https://api.prisma.io/v1/databases/db_def456",
+            "name": "my-project",
+            "status": "ready",
+            "createdAt": "2025-06-15T10:30:00.000Z",
+            "isDefault": true,
+            "defaultConnectionId": "con_ghi789",
+            "connections": [
+                {
+                    "id": "con_ghi789",
+                    "type": "connection",
+                    "url": "https://api.prisma.io/v1/connections/con_ghi789",
+                    "name": "Default",
+                    "createdAt": "2025-06-15T10:30:00.000Z",
+                    "kind": "postgres",
+                    "endpoints": {
+                        "direct": {
+                            "host": "db.prisma.io",
+                            "port": 5432,
+                            "connectionString": "postgres://user:pass@db.prisma.io:5432/postgres?sslmode=require"
+                        }
+                    }
+                }
+            ],
+            "region": {
+                "id": "us-east-1",
+                "name": "US East (N. Virginia)"
             }
-          }
         }
-      ],
-      "region": {
-        "id": "us-east-1",
-        "name": "US East (N. Virginia)"
-      }
     }
-  }
 }
 ```
 
@@ -126,26 +126,26 @@ Use to check database status after creation or to retrieve database details.
 
 ```json
 {
-  "data": {
-    "id": "db_def456",
-    "type": "database",
-    "url": "https://api.prisma.io/v1/databases/db_def456",
-    "name": "my-project",
-    "status": "ready",
-    "createdAt": "2025-06-15T10:30:00.000Z",
-    "isDefault": true,
-    "defaultConnectionId": "con_ghi789",
-    "connections": [],
-    "project": {
-      "id": "proj_clx7abc123",
-      "url": "https://api.prisma.io/v1/projects/proj_clx7abc123",
-      "name": "my-project"
-    },
-    "region": {
-      "id": "us-east-1",
-      "name": "US East (N. Virginia)"
+    "data": {
+        "id": "db_def456",
+        "type": "database",
+        "url": "https://api.prisma.io/v1/databases/db_def456",
+        "name": "my-project",
+        "status": "ready",
+        "createdAt": "2025-06-15T10:30:00.000Z",
+        "isDefault": true,
+        "defaultConnectionId": "con_ghi789",
+        "connections": [],
+        "project": {
+            "id": "proj_clx7abc123",
+            "url": "https://api.prisma.io/v1/projects/proj_clx7abc123",
+            "name": "my-project"
+        },
+        "region": {
+            "id": "us-east-1",
+            "name": "US East (N. Virginia)"
+        }
     }
-  }
 }
 ```
 
@@ -161,38 +161,38 @@ Creates a new named connection string for a database. Use for per-developer or p
 
 ```json
 {
-  "name": "dev"
+    "name": "dev"
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `name` | string | Yes | Display name for the connection |
+| Field  | Type   | Required | Description                     |
+| ------ | ------ | -------- | ------------------------------- |
+| `name` | string | Yes      | Display name for the connection |
 
 **Response:**
 
 ```json
 {
-  "data": {
-    "id": "con_newcon123",
-    "type": "connection",
-    "url": "https://api.prisma.io/v1/connections/con_newcon123",
-    "name": "dev",
-    "createdAt": "2025-06-15T10:31:00.000Z",
-    "kind": "postgres",
-    "endpoints": {
-      "direct": {
-        "host": "db.prisma.io",
-        "port": 5432,
-        "connectionString": "postgres://user:pass@db.prisma.io:5432/postgres?sslmode=require"
-      }
-    },
-    "database": {
-      "id": "db_def456",
-      "url": "https://api.prisma.io/v1/databases/db_def456",
-      "name": "my-project"
+    "data": {
+        "id": "con_newcon123",
+        "type": "connection",
+        "url": "https://api.prisma.io/v1/connections/con_newcon123",
+        "name": "dev",
+        "createdAt": "2025-06-15T10:31:00.000Z",
+        "kind": "postgres",
+        "endpoints": {
+            "direct": {
+                "host": "db.prisma.io",
+                "port": 5432,
+                "connectionString": "postgres://user:pass@db.prisma.io:5432/postgres?sslmode=require"
+            }
+        },
+        "database": {
+            "id": "db_def456",
+            "url": "https://api.prisma.io/v1/databases/db_def456",
+            "name": "my-project"
+        }
     }
-  }
 }
 ```
 

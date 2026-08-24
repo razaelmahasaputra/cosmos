@@ -11,7 +11,7 @@ async function startPairing(): Promise<void> {
     }
 
     console.log('Starting pairing process...');
-    
+
     connectToWhatsApp({
         sessionId: 'default',
         phoneNumber,

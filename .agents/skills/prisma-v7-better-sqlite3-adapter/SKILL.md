@@ -6,16 +6,19 @@ description: Panduan untuk menginisialisasi PrismaClient v7 menggunakan driver a
 # Prisma v7: @prisma/adapter-better-sqlite3
 
 ## Deskripsi Error
+
 Saat melakukan upgrade Prisma ke v7 dengan adapter `better-sqlite3`, jika adapter diinstansiasi dengan melempar instance `Database` dari `better-sqlite3`, akan muncul error TypeScript atau runtime karena adapter v7 telah berubah dan memerlukan argumen berupa objek `{ url: string }`.
 
 **Error yang terjadi:**
+
 ```
 Argument of type 'Database' is not assignable to parameter of type 'BetterSQLite3InputParams'.
 Property 'url' is missing in type 'Database' but required in type '{ url: ":memory:" | (string & {}); }'
 ```
 
 ## Solusi / Implementasi Benar
-Di Prisma v7, inisialisasi `PrismaBetterSqlite3` harus dilakukan dengan memberikan parameter objek opsi yang mengandung properti `url` berupa path database, **bukan** sebuah instance dari driver `better-sqlite3` secara langsung. 
+
+Di Prisma v7, inisialisasi `PrismaBetterSqlite3` harus dilakukan dengan memberikan parameter objek opsi yang mengandung properti `url` berupa path database, **bukan** sebuah instance dari driver `better-sqlite3` secara langsung.
 
 Contoh implementasi yang benar:
 
@@ -34,6 +37,7 @@ export const prisma = new PrismaClient({ adapter });
 ```
 
 **Penting:**
+
 - Tidak perlu mengimpor `Database` dari `better-sqlite3` di file ini.
 - Jangan melakukan `const sqlite = new Database(...)`.
 - Langsung teruskan `{ url }` ke dalam `PrismaBetterSqlite3`.

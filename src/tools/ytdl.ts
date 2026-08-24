@@ -33,12 +33,13 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         const quotedMsg = ctx.msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         if (quotedMsg) {
             const extText = quotedMsg.extendedTextMessage;
-            targetUrl = quotedMsg.conversation || 
-                        extText?.text || 
-                        extText?.matchedText || 
-                        quotedMsg.videoMessage?.caption ||
-                        quotedMsg.imageMessage?.caption ||
-                        '';
+            targetUrl =
+                quotedMsg.conversation ||
+                extText?.text ||
+                extText?.matchedText ||
+                quotedMsg.videoMessage?.caption ||
+                quotedMsg.imageMessage?.caption ||
+                '';
         }
     }
 
@@ -56,10 +57,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         return;
     }
 
-    await ctx.sock.sendMessage(
-        ctx.jid,
-        { react: { text: '⏳', key: ctx.msg.key } }
-    );
+    await ctx.sock.sendMessage(ctx.jid, { react: { text: '⏳', key: ctx.msg.key } });
 
     const candidates = ['/usr/local/bin/yt-dlp', path.resolve(process.cwd(), 'yt-dlp')];
     let ytdlpPath = 'yt-dlp';
@@ -70,7 +68,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         }
     }
     const storagePath = path.resolve(process.cwd(), 'storage');
-    
+
     if (!fs.existsSync(storagePath)) {
         fs.mkdirSync(storagePath, { recursive: true });
     }
@@ -85,13 +83,17 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         // Limit the filesize to 15MB to ensure it can be sent via WhatsApp.
         const ffmpegLoc = ffmpeg ? `--ffmpeg-location "${ffmpeg}"` : '';
         const baseCommand = `"${ytdlpPath}" --js-runtimes node ${cookiesArg} ${ffmpegLoc} --extractor-args "youtube:player_client=android,web"`;
-        
+
         let downloadedFiles: string[] = [];
         try {
             // Note: Instagram carousels and other multi-media posts will output multiple lines.
             const vidCommand = `${baseCommand} -S "vcodec:h264,acodec:m4a" -f "bestvideo[filesize<15M]+bestaudio/best[filesize<15M]" --merge-output-format mp4 -o "${outTemplate}" "${targetUrl}" --print after_move:filepath`;
             const { stdout } = await execAsync(vidCommand);
-            downloadedFiles = stdout.trim().split('\n').filter(line => line.trim() !== '' && fs.existsSync(line.trim())).map(l => l.trim());
+            downloadedFiles = stdout
+                .trim()
+                .split('\n')
+                .filter((line) => line.trim() !== '' && fs.existsSync(line.trim()))
+                .map((l) => l.trim());
         } catch (e) {
             console.error('[YTDL Tool] Media download failed:', e);
         }
@@ -103,7 +105,10 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 const audTemplate = path.join(storagePath, `ytdl_${timestamp}_audio.%(ext)s`);
                 const audCommand = `${baseCommand} -f "bestaudio[filesize<15M]/bestaudio" --extract-audio --audio-format mp3 -o "${audTemplate}" "${targetUrl}" --print after_move:filepath`;
                 const { stdout } = await execAsync(audCommand);
-                const outputLines = stdout.trim().split('\n').filter(line => line.trim() !== '' && fs.existsSync(line.trim()));
+                const outputLines = stdout
+                    .trim()
+                    .split('\n')
+                    .filter((line) => line.trim() !== '' && fs.existsSync(line.trim()));
                 if (outputLines.length > 0) downloadedAudioOnly = outputLines[outputLines.length - 1].trim();
             } catch (e) {
                 console.error('[YTDL Tool] Audio download failed:', e);
@@ -121,10 +126,11 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             if (['.mp4', '.webm', '.mkv'].includes(ext)) {
                 const sentMsg = await ctx.sock.sendMessage(
                     ctx.jid,
-                    { 
+                    {
                         video: { url: file },
                         caption: '✅ The video has been successfully downloaded.',
-                        mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 }
+                        mentions: senderJid ? [senderJid] : undefined,
+                        contextInfo: { isForwarded: true, forwardingScore: 1 }
                     },
                     { quoted: ctx.msg }
                 );
@@ -135,10 +141,11 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             } else if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
                 const sentMsg = await ctx.sock.sendMessage(
                     ctx.jid,
-                    { 
+                    {
                         image: { url: file },
                         caption: '✅ The image has been successfully downloaded.',
-                        mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 }
+                        mentions: senderJid ? [senderJid] : undefined,
+                        contextInfo: { isForwarded: true, forwardingScore: 1 }
                     },
                     { quoted: ctx.msg }
                 );
@@ -150,7 +157,13 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 // Document fallback
                 await ctx.sock.sendMessage(
                     ctx.jid,
-                    { document: { url: file }, mimetype: 'application/octet-stream', fileName: path.basename(file), mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
+                    {
+                        document: { url: file },
+                        mimetype: 'application/octet-stream',
+                        fileName: path.basename(file),
+                        mentions: senderJid ? [senderJid] : undefined,
+                        contextInfo: { isForwarded: true, forwardingScore: 1 }
+                    },
                     { quoted: ctx.msg }
                 );
             }
@@ -160,10 +173,11 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         if (downloadedAudioOnly && fs.existsSync(downloadedAudioOnly)) {
             const sentMsg = await ctx.sock.sendMessage(
                 ctx.jid,
-                { 
+                {
                     audio: { url: downloadedAudioOnly },
                     mimetype: 'audio/mpeg',
-                    mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 }
+                    mentions: senderJid ? [senderJid] : undefined,
+                    contextInfo: { isForwarded: true, forwardingScore: 1 }
                 },
                 { quoted: ctx.msg }
             );
