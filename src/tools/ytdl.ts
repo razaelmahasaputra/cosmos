@@ -84,7 +84,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
         // Limit the filesize to 15MB to ensure it can be sent via WhatsApp.
         const ffmpegLoc = ffmpeg ? `--ffmpeg-location "${ffmpeg}"` : '';
-        const baseCommand = `"${ytdlpPath}" --js-runtimes node ${cookiesArg} ${ffmpegLoc}`;
+        const baseCommand = `"${ytdlpPath}" --js-runtimes node ${cookiesArg} ${ffmpegLoc} --extractor-args "youtube:player_client=android,web"`;
         
         let downloadedVideo = '';
         try {

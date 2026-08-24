@@ -431,7 +431,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             return;
         }
 
-        console.error('[TelegramDL Tool] File not found after download.');
+        console.error('[TelegramDL Tool] No media found in post after yt-dlp execution (or extraction failed silently).');
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
         return 'Error: The media could not be retrieved. Please ensure the Telegram post contains a supported video.';
     } catch (error: any) {

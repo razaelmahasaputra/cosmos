@@ -103,7 +103,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         );
 
         try {
-            const command = `"${ytdlpPath}" --js-runtimes node ${cookiesArg} --print "%(title)s - %(webpage_url)s" "ytsearch5:${query}"`;
+            const command = `"${ytdlpPath}" --js-runtimes node ${cookiesArg} --extractor-args "youtube:player_client=android,web" --print "%(title)s - %(webpage_url)s" "ytsearch5:${query}"`;
             const { stdout } = await execAsync(command);
             
             const results = stdout.trim().split('\n').filter(line => line.trim() !== '');
@@ -152,7 +152,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
         try {
             const ffmpegLoc = ffmpeg ? `--ffmpeg-location "${ffmpeg}"` : '';
-            const command = `"${ytdlpPath}" --js-runtimes node ${cookiesArg} ${ffmpegLoc} --ignore-errors --max-downloads 1 -x --audio-format mp3 -o "${outTemplate}" "${query}" --print after_move:filepath`;
+            const command = `"${ytdlpPath}" --js-runtimes node ${cookiesArg} ${ffmpegLoc} --extractor-args "youtube:player_client=android,web" --ignore-errors --max-downloads 1 -x --audio-format mp3 -o "${outTemplate}" "${query}" --print after_move:filepath`;
             
             let stdout = '';
             let stderr = '';

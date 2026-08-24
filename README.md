@@ -48,19 +48,6 @@ CREATE TABLE IF NOT EXISTS whatsapp_auth (
     value JSONB NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
--- 2. Table for storing Scheduled WhatsApp Status / Story Posts
-CREATE TABLE IF NOT EXISTS scheduled_stories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    sender_jid TEXT NOT NULL,
-    media_type TEXT NOT NULL,
-    content TEXT NOT NULL,
-    caption TEXT,
-    scheduled_at TIMESTAMPTZ NOT NULL,
-    status TEXT DEFAULT 'pending',
-    error_message TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
 ```
 
 ---
