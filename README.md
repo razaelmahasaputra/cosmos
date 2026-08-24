@@ -1,13 +1,15 @@
 # 🚀 WAF - WhatsApp Bot Framework
 
-**WAF (WhatsApp Bot Framework)** is a modern, enterprise-grade WhatsApp Bot framework built with **TypeScript**, **@whiskeysockets/baileys v7**, **Groq AI SDK**, and **Supabase Cloud Backend**.
+**WAF (WhatsApp Bot Framework)** is a modern, enterprise-grade WhatsApp Bot framework built with **TypeScript**, **@whiskeysockets/baileys v7**, **Groq AI SDK**, and **Prisma ORM (SQLite)**.
 
 ---
 
 ## 🌟 Key Features
 
 - ⚡ **TypeScript & ESM Native:** Written in strict TypeScript with ES Modules (`type: "module"`).
-- ☁️ **Supabase Cloud Authentication State:** Session keys & pairing tokens are stored in Supabase PostgreSQL (`whatsapp_auth` table), ensuring zero session loss across restarts or server redeployments.
+- 🗄️ **Local Prisma Database:** Session keys, configuration, auto-delete queues, and history are stored efficiently using Prisma ORM with SQLite, ensuring self-contained offline capability and fast I/O.
+- 📥 **Advanced Auto Downloader:** Automatically detects and downloads media from TikTok, YouTube, Instagram (including carousels), Twitter/X, Facebook, Threads, and Pinterest with a powerful queueing and concurrency limiter.
+- 🕒 **Auto-Delete Memory:** Downloads self-destruct locally and remove triggers gracefully (via Prisma-persisted queues) to preserve chat cleanliness and respect admin privileges.
 - 🤖 **Groq AI & Native Function Calling:** Native integration with Groq LLMs and Whisper Speech-to-Text.
 - 🎨 **Media & Sticker Processing:** High-performance image and video sticker rendering via `sharp` & `ffmpeg-static`.
 - 🔄 **Daemon & Systemd Support:** Background process management with Systemd service (`waf-bot.service`) and standalone daemon scripts without unwanted auto-restarts.
@@ -21,9 +23,10 @@
 | **Package Manager**          | [PNPM](https://pnpm.io/) (`pnpm-lock.yaml`)   |
 | **Language**                 | TypeScript / Node.js ES Modules               |
 | **WhatsApp Engine**          | `@whiskeysockets/baileys` (v7+)               |
-| **Cloud Database**           | Supabase (`@supabase/supabase-js`)            |
+| **Database**                 | Prisma ORM (`@prisma/client` + SQLite)        |
 | **AI STT & LLM**             | Groq SDK (`groq-sdk`)                         |
 | **Image & Video Processing** | `sharp`, `@img/sharp-wasm32`, `ffmpeg-static` |
+| **Media Extraction**         | `yt-dlp`, APIs                                |
 | **Logging**                  | `pino`                                        |
 
 ---
@@ -32,22 +35,18 @@
 
 - **Node.js** `>= 20.x` (Tested on Node `v24.x`)
 - **PNPM** `>= 8.x` (_Do NOT use `npm` or `yarn`_)
-- **Supabase Account** with a active project
 - **Groq API Key**
+- **FFmpeg & yt-dlp** (For some media extraction features, though statics are bundled)
 
 ---
 
-## 🗄️ Database Setup (Supabase)
+## 🗄️ Database Setup (Prisma)
 
-Before starting the bot, create the required database tables in your **Supabase Dashboard -> SQL Editor**:
+Before starting the bot, initialize the SQLite database using Prisma:
 
-```sql
--- 1. Table for storing Baileys WhatsApp Authentication Tokens
-CREATE TABLE IF NOT EXISTS whatsapp_auth (
-    id TEXT PRIMARY KEY,
-    value JSONB NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+```bash
+pnpm prisma db push
+pnpm prisma generate
 ```
 
 ---
@@ -64,15 +63,12 @@ pnpm install
 
 ### 2. Environment Configuration
 
-Create a `.env` file in the root directory with your Supabase bootstrap credentials:
+Create a `.env` file in the root directory:
 
 ```env
-# Supabase Cloud Database Credentials
-SUPABASE_URL="https://your-project.supabase.co"
-SUPABASE_SERVICE_ROLE_KEY="your-supabase-service-role-key"
+BOT_PHONE_NUMBER="your-bot-number"
+GROQ_API_KEY="your-groq-api-key"
 ```
-
-> **Note:** Make sure you have your other configurations (`BOT_PHONE_NUMBER`, `GROQ_API_KEY`, etc.) set in your `.env` file or environment variables.
 
 ### 3. Build & Typecheck
 
@@ -157,15 +153,17 @@ sudo journalctl -u waf-bot -f
 waf/
 ├── src/
 │   ├── index.ts                  # Application entry point
-│   ├── db.ts                     # Supabase database client
+│   ├── db.ts                     # Prisma database client
 │   ├── logger.ts                 # Logging utility
 │   ├── handlers/                 # Message & event handlers
-│   ├── tools/                    # Bot commands and tools
+│   ├── tools/                    # Bot commands (Downloaders, AI tools)
 │   └── utils/
-│       ├── supabaseAuthState.ts  # Baileys auth state handler for Supabase
-│       ├── autoCorrection.ts     # AI message auto-correction
-│       ├── autoSticker.ts        # Sticker generation utilities
+│       ├── prismaAuthState.ts    # Baileys auth state handler for Prisma
+│       ├── autodl.ts             # Auto-downloader URL interceptor & queue
+│       ├── autoDelete.ts         # Persistent DB-backed media cleanup service
 │       └── messageCache.ts       # Message caching
+├── prisma/
+│   └── schema.prisma             # SQLite schema for Auth, Config, Deletions
 ├── dist/                         # Compiled JavaScript output (`pnpm build`)
 ├── .agents/skills/               # AI Agent skills and guidelines
 ├── start.sh                      # Daemon startup script

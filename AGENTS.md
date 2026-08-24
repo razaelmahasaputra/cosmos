@@ -12,7 +12,7 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 - **Library Utama:**
     - `@whiskeysockets/baileys` (Koneksi & Handler WhatsApp Web API)
     - `groq-sdk` (AI Speech-to-Text & LLM Function Calling)
-    - `@supabase/supabase-js` (Database & Storage Backend)
+    - `@prisma/client` (SQLite Database ORM Backend)
     - `sharp` & `@img/sharp-wasm32` (Pengolahan gambar / stiker)
     - `ffmpeg-static` (Pengolahan media audio/video/stiker bergerak)
     - `pino` (Logging system)
@@ -100,3 +100,8 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 4. **Jalankan Verifikasi:** Jalankan `pnpm typecheck` dan `pnpm lint` untuk memastikan tidak ada syntax error atau tipe mismatch.
 5. **Lakukan Git Commit:** Lakukan commit lokal atas semua perubahan yang telah selesai dan terverifikasi.
 6. **Ringkaskan Hasil:** Berikan penjelasan singkat, padat, dan jelas mengenai perubahan yang telah dilakukan beserta bukti verifikasi.
+
+### J. Database & Persistensi (Prisma SQLite)
+
+- **Local Persistence:** WAF menggunakan Prisma ORM dengan SQLite untuk menyimpan state, kredensial Baileys, konfigurasi auto-dl, dan antrean `ScheduledDeletion`.
+- **Auto-Delete Queue:** Segala bentuk task _auto-delete_ untuk pesan harus diintegrasikan dengan database Prisma (tabel `ScheduledDeletion`) agar antrean tidak hilang saat server di-restart atau crash. Jangan menggunakan `setTimeout` in-memory.
