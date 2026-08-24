@@ -251,11 +251,15 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             
             // Send as Media
             if (isVideo) {
-                await ctx.sock.sendMessage(
+                const sentMsg = await ctx.sock.sendMessage(
                     ctx.jid,
-                    { video: { url: filepath }, mimetype: 'video/mp4', caption: caption, mentions: senderJid ? [senderJid] : undefined },
+                    { video: { url: filepath }, mimetype: 'video/mp4', caption: caption, mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
                     { quoted: ctx.msg }
                 );
+                if (sentMsg) {
+                    const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+                    scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg, 'video');
+                }
 
                 const audioOut = path.join(tempDir, `pinterest_${timestamp}_${i}_audio.mp3`);
                 try {
@@ -263,21 +267,29 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     await execAsync(`${ffmpegCmd} -i "${filepath}" -q:a 0 -map a "${audioOut}" -y`);
                     if (fs.existsSync(audioOut)) {
                         downloadedFiles.push(audioOut);
-                        await ctx.sock.sendMessage(
+                        const sentMsg2 = await ctx.sock.sendMessage(
                             ctx.jid,
-                            { audio: { url: audioOut }, mimetype: 'audio/mpeg', mentions: senderJid ? [senderJid] : undefined },
+                            { audio: { url: audioOut }, mimetype: 'audio/mpeg', mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
                             { quoted: ctx.msg }
                         );
+                        if (sentMsg2) {
+                            const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+                            scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg2, 'audio');
+                        }
                     }
                 } catch (e) {
                     console.error('[PinterestDL Tool] Audio extraction failed:', e);
                 }
             } else {
-                await ctx.sock.sendMessage(
+                const sentMsg = await ctx.sock.sendMessage(
                     ctx.jid,
-                    { image: { url: filepath }, caption: caption, mentions: senderJid ? [senderJid] : undefined },
+                    { image: { url: filepath }, caption: caption, mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
                     { quoted: ctx.msg }
                 );
+                if (sentMsg) {
+                    const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+                    scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg, 'image');
+                }
             }
 
             // Send as Document (requested by user)
@@ -288,7 +300,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     mimetype: isVideo ? 'video/mp4' : 'image/jpeg', 
                     fileName: `Pinterest_${timestamp}_${i}${ext}`, 
                     caption: `Document version`, 
-                    mentions: senderJid ? [senderJid] : undefined 
+                    mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } 
                 },
                 { quoted: ctx.msg }
             );

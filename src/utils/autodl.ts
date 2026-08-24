@@ -4,6 +4,45 @@ import toolsHandler from '#/tools/handler.js';
 
 const autoDlCache = new Map<string, Map<string, boolean>>();
 
+class ChatQueue {
+    private queue: (() => Promise<void>)[] = [];
+    private running = 0;
+    private maxConcurrency = 2; // Prevent process crashes by limiting simultaneous DLs per chat
+
+    async add(task: () => Promise<void>) {
+        this.queue.push(task);
+        this.runNext();
+    }
+
+    private async runNext() {
+        if (this.running >= this.maxConcurrency || this.queue.length === 0) {
+            return;
+        }
+
+        this.running++;
+        const task = this.queue.shift();
+        if (task) {
+            try {
+                await task();
+            } finally {
+                this.running--;
+                this.runNext();
+            }
+        }
+    }
+}
+
+const chatQueues = new Map<string, ChatQueue>();
+
+function getChatQueue(jid: string): ChatQueue {
+    let queue = chatQueues.get(jid);
+    if (!queue) {
+        queue = new ChatQueue();
+        chatQueues.set(jid, queue);
+    }
+    return queue;
+}
+
 export async function loadAutoDlSettings() {
     try {
         const settings = await prisma.autoDlSetting.findMany();
@@ -58,38 +97,76 @@ export async function processAutoDl(sock: WASocket, msg: WAMessage, jid: string,
     const matches = text.match(urlRegex);
     if (!matches) return;
 
-    for (const url of matches) {
+    // Deduplicate and sanitize trailing punctuation
+    const rawUrls = matches.map(url => url.replace(/[.,!?)>"']+$/, ''));
+    const uniqueUrls = [...new Set(rawUrls)];
+
+    for (const url of uniqueUrls) {
         let platform = '';
         let toolName = '';
 
-        if (url.includes('tiktok.com')) {
+        let host: string;
+        try {
+            host = new URL(url).hostname.toLowerCase();
+        } catch {
+            continue; // Invalid URL
+        }
+
+        if (host.includes('tiktok.com')) {
             platform = 'tiktok';
             toolName = 'tiktokdl';
-        } else if (url.includes('instagram.com') || url.includes('instagr.am')) {
+        } else if (host.includes('instagram.com') || host.includes('instagr.am')) {
             platform = 'ig';
             toolName = 'ytdl'; // Since ytdl uses yt-dlp which supports IG
-        } else if (url.includes('pin.it') || url.includes('pinterest.com')) {
+        } else if (host.includes('pin.it') || host.includes('pinterest.com')) {
             platform = 'pin';
             toolName = 'pinterestdl';
-        } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        } else if (host.includes('youtube.com') || host.includes('youtu.be')) {
             platform = 'yt';
             toolName = 'ytdl';
-        } else if (url.includes('t.me')) {
+        } else if (host.includes('t.me')) {
             platform = 'tg';
             toolName = 'telegramdl';
+        } else if (host.includes('twitter.com') || host.includes('x.com') || host.includes('t.co')) {
+            platform = 'twitter';
+            toolName = 'ytdl';
+        } else if (host.includes('facebook.com') || host.includes('fb.watch') || host.includes('fb.gg')) {
+            platform = 'fb';
+            toolName = 'ytdl';
+        } else if (host.includes('threads.net')) {
+            platform = 'threads';
+            toolName = 'ytdl';
         }
 
         if (platform && isAutoDlEnabled(jid, platform)) {
-            console.log(`[AutoDl] Triggered for platform ${platform} with URL ${url}`);
-            try {
-                // Ensure we don't spam if there are multiple URLs
-                const result = await toolsHandler.execute(toolName, { url }, { sock, msg, jid });
-                if (result && typeof result === 'string' && result.trim().length > 0) {
-                    await sock.sendMessage(jid, { text: result }, { quoted: msg });
+            const queue = getChatQueue(jid);
+            
+            queue.add(async () => {
+                console.log(`[AutoDl] Triggered for platform ${platform} with URL ${url}`);
+                try {
+                    // Send reaction indicator to let user know it's queued
+                    await sock.sendMessage(jid, { react: { text: '⏳', key: msg.key } });
+
+                    // We ensure it executes only if the tool exists, otherwise we wait for phase 2.
+                    // This handles gracefully if Phase 2 tools are not yet implemented.
+                    if (toolsHandler.getTool(toolName)) {
+                        const result = await toolsHandler.execute(toolName, { url }, { sock, msg, jid });
+                        if (result && typeof result === 'string' && result.trim().length > 0) {
+                            await sock.sendMessage(jid, { text: result }, { quoted: msg });
+                            await sock.sendMessage(jid, { react: { text: '✅', key: msg.key } });
+                        } else {
+                            await sock.sendMessage(jid, { react: { text: '✅', key: msg.key } });
+                        }
+                        const { deleteSenderLink } = await import('./autoDelete.js');
+                        await deleteSenderLink(sock, jid, msg.key);
+                    } else {
+                        console.warn(`[AutoDl] Tool ${toolName} not implemented yet.`);
+                    }
+                } catch (err) {
+                    console.error(`[AutoDl] Error executing ${toolName}:`, err);
+                    await sock.sendMessage(jid, { react: { text: '❌', key: msg.key } });
                 }
-            } catch (err) {
-                console.error(`[AutoDl] Error executing ${toolName}:`, err);
-            }
+            });
         }
     }
 }

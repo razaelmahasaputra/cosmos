@@ -86,70 +86,92 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         const ffmpegLoc = ffmpeg ? `--ffmpeg-location "${ffmpeg}"` : '';
         const baseCommand = `"${ytdlpPath}" --js-runtimes node ${cookiesArg} ${ffmpegLoc} --extractor-args "youtube:player_client=android,web"`;
         
-        let downloadedVideo = '';
+        let downloadedFiles: string[] = [];
         try {
-            const vidCommand = `${baseCommand} -S "vcodec:h264,acodec:m4a" -f "bestvideo[filesize<10M]+bestaudio/best[filesize<15M]" --merge-output-format mp4 -o "${outTemplate}" "${targetUrl}" --print after_move:filepath`;
+            // Note: Instagram carousels and other multi-media posts will output multiple lines.
+            const vidCommand = `${baseCommand} -S "vcodec:h264,acodec:m4a" -f "bestvideo[filesize<15M]+bestaudio/best[filesize<15M]" --merge-output-format mp4 -o "${outTemplate}" "${targetUrl}" --print after_move:filepath`;
             const { stdout } = await execAsync(vidCommand);
-            const outputLines = stdout.trim().split('\n').filter(line => line.trim() !== '');
-            downloadedVideo = outputLines.length > 0 ? outputLines[outputLines.length - 1].trim() : '';
+            downloadedFiles = stdout.trim().split('\n').filter(line => line.trim() !== '' && fs.existsSync(line.trim())).map(l => l.trim());
         } catch (e) {
-            console.error('[YTDL Tool] Video download failed:', e);
+            console.error('[YTDL Tool] Media download failed:', e);
         }
 
-        let downloadedAudio = '';
-        if (downloadedVideo && fs.existsSync(downloadedVideo)) {
-            const audioOut = path.join(storagePath, `ytdl_${timestamp}_audio.mp3`);
-            try {
-                const ffmpegCmd = ffmpeg ? `"${ffmpeg}"` : 'ffmpeg';
-                await execAsync(`${ffmpegCmd} -i "${downloadedVideo}" -q:a 0 -map a "${audioOut}" -y`);
-                if (fs.existsSync(audioOut)) {
-                    downloadedAudio = audioOut;
-                }
-            } catch (e) {
-                console.error('[YTDL Tool] Audio extraction failed:', e);
-            }
-        } else {
+        let downloadedAudioOnly = '';
+        if (downloadedFiles.length === 0) {
+            // Fallback for audio-only
             try {
                 const audTemplate = path.join(storagePath, `ytdl_${timestamp}_audio.%(ext)s`);
                 const audCommand = `${baseCommand} -f "bestaudio[filesize<15M]/bestaudio" --extract-audio --audio-format mp3 -o "${audTemplate}" "${targetUrl}" --print after_move:filepath`;
                 const { stdout } = await execAsync(audCommand);
-                const outputLines = stdout.trim().split('\n').filter(line => line.trim() !== '');
-                const file = outputLines.length > 0 ? outputLines[outputLines.length - 1].trim() : '';
-                if (file && fs.existsSync(file)) downloadedAudio = file;
+                const outputLines = stdout.trim().split('\n').filter(line => line.trim() !== '' && fs.existsSync(line.trim()));
+                if (outputLines.length > 0) downloadedAudioOnly = outputLines[outputLines.length - 1].trim();
             } catch (e) {
                 console.error('[YTDL Tool] Audio download failed:', e);
             }
         }
 
-        if (!downloadedVideo && !downloadedAudio) {
+        if (downloadedFiles.length === 0 && !downloadedAudioOnly) {
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
             return;
         }
 
-        if (downloadedVideo && fs.existsSync(downloadedVideo)) {
-            await ctx.sock.sendMessage(
-                ctx.jid,
-                { 
-                    video: { url: downloadedVideo },
-                    caption: '✅ The video has been successfully downloaded.',
-                    mentions: senderJid ? [senderJid] : undefined
-                },
-                { quoted: ctx.msg }
-            );
-            fs.unlinkSync(downloadedVideo);
+        // Send all downloaded media files (for carousels)
+        for (const file of downloadedFiles) {
+            const ext = path.extname(file).toLowerCase();
+            if (['.mp4', '.webm', '.mkv'].includes(ext)) {
+                const sentMsg = await ctx.sock.sendMessage(
+                    ctx.jid,
+                    { 
+                        video: { url: file },
+                        caption: '✅ The video has been successfully downloaded.',
+                        mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 }
+                    },
+                    { quoted: ctx.msg }
+                );
+                if (sentMsg) {
+                    const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+                    scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg, 'video');
+                }
+            } else if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
+                const sentMsg = await ctx.sock.sendMessage(
+                    ctx.jid,
+                    { 
+                        image: { url: file },
+                        caption: '✅ The image has been successfully downloaded.',
+                        mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 }
+                    },
+                    { quoted: ctx.msg }
+                );
+                if (sentMsg) {
+                    const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+                    scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg, 'image');
+                }
+            } else {
+                // Document fallback
+                await ctx.sock.sendMessage(
+                    ctx.jid,
+                    { document: { url: file }, mimetype: 'application/octet-stream', fileName: path.basename(file), mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
+                    { quoted: ctx.msg }
+                );
+            }
+            fs.unlinkSync(file);
         }
 
-        if (downloadedAudio && fs.existsSync(downloadedAudio)) {
-            await ctx.sock.sendMessage(
+        if (downloadedAudioOnly && fs.existsSync(downloadedAudioOnly)) {
+            const sentMsg = await ctx.sock.sendMessage(
                 ctx.jid,
                 { 
-                    audio: { url: downloadedAudio },
+                    audio: { url: downloadedAudioOnly },
                     mimetype: 'audio/mpeg',
-                    mentions: senderJid ? [senderJid] : undefined
+                    mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 }
                 },
                 { quoted: ctx.msg }
             );
-            fs.unlinkSync(downloadedAudio);
+            if (sentMsg) {
+                const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+                scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg, 'audio');
+            }
+            fs.unlinkSync(downloadedAudioOnly);
         }
 
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });

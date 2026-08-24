@@ -168,7 +168,7 @@ async function sendPrivateMedia(ctx: ToolContext, file: PrivateMediaFile): Promi
     const quoted = { quoted: ctx.msg };
 
     if (file.kind === 'video') {
-        await ctx.sock.sendMessage(
+        const sentMsg1 = await ctx.sock.sendMessage(
             ctx.jid,
             {
                 video: { url: file.filePath },
@@ -178,36 +178,52 @@ async function sendPrivateMedia(ctx: ToolContext, file: PrivateMediaFile): Promi
             },
             quoted
         );
+        if (sentMsg1) {
+            const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+            scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg1, 'video');
+        }
 
         const audioOut = path.join(os.tmpdir(), `tgdl_audio_${Date.now()}.mp3`);
         try {
             const ffmpegCmd = ffmpeg ? `"${ffmpeg}"` : 'ffmpeg';
             await execAsync(`${ffmpegCmd} -i "${file.filePath}" -q:a 0 -map a "${audioOut}" -y`);
             if (fs.existsSync(audioOut)) {
-                await ctx.sock.sendMessage(
+                const sentMsg2 = await ctx.sock.sendMessage(
                     ctx.jid,
                     { audio: { url: audioOut }, mimetype: 'audio/mpeg', mentions },
                     quoted
                 );
+                if (sentMsg2) {
+                    const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+                    scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg2, 'audio');
+                }
                 fs.unlinkSync(audioOut);
             }
         } catch (e) {
             console.error('[TelegramDL Tool] Audio extraction failed:', e);
         }
     } else if (file.kind === 'image') {
-        await ctx.sock.sendMessage(
+        const sentMsg = await ctx.sock.sendMessage(
             ctx.jid,
             { image: { url: file.filePath }, caption: '✅ The Telegram photo has been successfully retrieved.', mentions },
             quoted
         );
+        if (sentMsg) {
+            const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+            scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg, 'image');
+        }
     } else if (file.kind === 'audio') {
-        await ctx.sock.sendMessage(
+        const sentMsg = await ctx.sock.sendMessage(
             ctx.jid,
             { audio: { url: file.filePath }, mimetype: file.mimeType, mentions },
             quoted
         );
+        if (sentMsg) {
+            const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+            scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg, 'audio');
+        }
     } else {
-        await ctx.sock.sendMessage(
+        const sentMsg = await ctx.sock.sendMessage(
             ctx.jid,
             {
                 document: { url: file.filePath },
@@ -217,6 +233,9 @@ async function sendPrivateMedia(ctx: ToolContext, file: PrivateMediaFile): Promi
             },
             quoted
         );
+        if (sentMsg) {
+            // documents can just be treated as file without specific timer or fallback to something, wait, no timer specified for docs. We skip doc for now.
+        }
     }
 }
 
@@ -379,26 +398,34 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 return 'Error: The Telegram video exceeds the 15MB size limit and cannot be sent via WhatsApp.';
             }
 
-            await ctx.sock.sendMessage(
+            const sentMsg3 = await ctx.sock.sendMessage(
                 ctx.jid,
                 {
                     video: { url: downloadedFile },
                     caption: '✅ The Telegram video has been successfully downloaded.',
-                    mentions: senderJid ? [senderJid] : undefined
+                    mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 }
                 },
                 { quoted: ctx.msg }
             );
+            if (sentMsg3) {
+                const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+                scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg3, 'video');
+            }
 
             const audioOut = path.join(tempDir, `tgdl_audio_${Date.now()}.mp3`);
             try {
                 const ffmpegCmd = ffmpeg ? `"${ffmpeg}"` : 'ffmpeg';
                 await execAsync(`${ffmpegCmd} -i "${downloadedFile}" -q:a 0 -map a "${audioOut}" -y`);
                 if (fs.existsSync(audioOut)) {
-                    await ctx.sock.sendMessage(
+                    const sentMsg4 = await ctx.sock.sendMessage(
                         ctx.jid,
-                        { audio: { url: audioOut }, mimetype: 'audio/mpeg', mentions: senderJid ? [senderJid] : undefined },
+                        { audio: { url: audioOut }, mimetype: 'audio/mpeg', mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
                         { quoted: ctx.msg }
                     );
+                    if (sentMsg4) {
+                        const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+                        scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg4, 'audio');
+                    }
                     // Add it to be cleaned up
                     // Actually, filePrefix cleanup handles it if it matches the prefix, but our prefix is different here.
                     // We can just unlink it.
@@ -417,15 +444,19 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 return 'Error: The Telegram audio exceeds the 15MB size limit and cannot be sent via WhatsApp.';
             }
 
-            await ctx.sock.sendMessage(
+            const sentMsg5 = await ctx.sock.sendMessage(
                 ctx.jid,
                 {
                     audio: { url: downloadedAudioOnly },
                     mimetype: 'audio/mpeg',
-                    mentions: senderJid ? [senderJid] : undefined
+                    mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 }
                 },
                 { quoted: ctx.msg }
             );
+            if (sentMsg5) {
+                const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+                scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg5, 'audio');
+            }
 
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
             return;

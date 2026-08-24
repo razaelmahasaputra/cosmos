@@ -202,11 +202,15 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     const ffmpegCommand = `"/usr/bin/ffmpeg" ${inputs} -filter_complex "${filterComplex}" -map "[outv]" -map ${audioIdx}:a -c:v libx264 -profile:v main -preset fast -crf 28 -c:a aac -b:a 128k -shortest -y "${outputVideo}"`;
                     await execAsync(ffmpegCommand);
 
-                    await ctx.sock.sendMessage(
+                    const sentMsg = await ctx.sock.sendMessage(
                         ctx.jid,
-                        { video: { url: outputVideo }, mimetype: 'video/mp4', caption: slideshowCaption, mentions: senderJid ? [senderJid] : undefined },
+                        { video: { url: outputVideo }, mimetype: 'video/mp4', caption: slideshowCaption, mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
                         { quoted: ctx.msg }
                     );
+                    if (sentMsg) {
+                        const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+                        scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg, 'video');
+                    }
                     fs.unlinkSync(outputVideo);
                     images.forEach(img => fs.existsSync(img) && fs.unlinkSync(img));
                     // Keep audios to be sent separately!
@@ -222,33 +226,46 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 if (!fs.existsSync(file)) continue;
                 const ext = path.extname(file).toLowerCase();
 
+                let sentMsg;
                 if (['.mp4', '.webm', '.mkv', '.mov'].includes(ext)) {
                     // Send the original media untouched; re-encoding produced files
                     // that recipients could not download.
-                    await ctx.sock.sendMessage(
+                    sentMsg = await ctx.sock.sendMessage(
                         ctx.jid,
-                        { video: { url: file }, mimetype: 'video/mp4', caption: mediaCaption, mentions: senderJid ? [senderJid] : undefined },
+                        { video: { url: file }, mimetype: 'video/mp4', caption: mediaCaption, mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
                         { quoted: ctx.msg }
                     );
+                    if (sentMsg) {
+                        const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+                        scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg, 'video');
+                    }
                     fs.unlinkSync(file);
                 } else if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
-                    await ctx.sock.sendMessage(
+                    sentMsg = await ctx.sock.sendMessage(
                         ctx.jid,
-                        { image: { url: file }, caption: mediaCaption, mentions: senderJid ? [senderJid] : undefined },
+                        { image: { url: file }, caption: mediaCaption, mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
                         { quoted: ctx.msg }
                     );
+                    if (sentMsg) {
+                        const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+                        scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg, 'image');
+                    }
                     fs.unlinkSync(file);
                 } else if (['.mp3', '.m4a', '.aac', '.wav'].includes(ext)) {
-                    await ctx.sock.sendMessage(
+                    sentMsg = await ctx.sock.sendMessage(
                         ctx.jid,
-                        { audio: { url: file }, mimetype: AUDIO_MIME_TYPES[ext] || 'audio/mpeg', mentions: senderJid ? [senderJid] : undefined },
+                        { audio: { url: file }, mimetype: AUDIO_MIME_TYPES[ext] || 'audio/mpeg', mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
                         { quoted: ctx.msg }
                     );
+                    if (sentMsg) {
+                        const { scheduleMediaAutoDelete } = await import('../utils/autoDelete.js');
+                        scheduleMediaAutoDelete(ctx.sock, ctx.jid, sentMsg, 'audio');
+                    }
                     fs.unlinkSync(file);
                 } else {
                     await ctx.sock.sendMessage(
                         ctx.jid,
-                        { document: { url: file }, mimetype: 'application/octet-stream', fileName: path.basename(file), mentions: senderJid ? [senderJid] : undefined },
+                        { document: { url: file }, mimetype: 'application/octet-stream', fileName: path.basename(file), mentions: senderJid ? [senderJid] : undefined, contextInfo: { isForwarded: true, forwardingScore: 1 } },
                         { quoted: ctx.msg }
                     );
                     fs.unlinkSync(file);

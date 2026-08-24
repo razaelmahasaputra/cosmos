@@ -23,7 +23,7 @@ export const definition: ToolDefinition = {
     }
 };
 
-const VALID_PLATFORMS = ['tiktok', 'tt', 'ig', 'instagram', 'pin', 'pinterest', 'yt', 'youtube', 'tg', 'telegram', 'all', 'list'];
+const VALID_PLATFORMS = ['tiktok', 'tt', 'ig', 'instagram', 'pin', 'pinterest', 'yt', 'youtube', 'tg', 'telegram', 'twitter', 'x', 'fb', 'facebook', 'threads', 'autodelete', 'all', 'list'];
 
 export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string | void> {
     let { platform, state } = args;
@@ -57,7 +57,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             return '❌ This command can only be used by group admins or the bot owner.';
         }
     } else {
-        // Private chat: only owner can toggle (or maybe anyone for their own chat, but let's restrict to owner as per requirements)
+        // Private chat: only owner can toggle
         const ownerNumber = process.env.BOT_PHONE_NUMBER ? process.env.BOT_PHONE_NUMBER.split(':')[0].split('@')[0] : null;
         const senderRaw = jid.split(':')[0].split('@')[0];
         const isOwner = Boolean(ctx.msg.key.fromMe) || (ownerNumber !== null && senderRaw === ownerNumber);
@@ -67,7 +67,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     }
 
     if (!platform || typeof platform !== 'string') {
-        return '❌ Invalid platform. Supported: tiktok, ig, pin, yt, tg, all.';
+        return '❌ Invalid platform. Supported: tiktok, ig, pin, yt, tg, twitter, fb, threads, autodelete, all.';
     }
 
     const platRaw = platform.toLowerCase().trim();
@@ -75,10 +75,12 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                        platRaw === 'instagram' ? 'ig' :
                        platRaw === 'pinterest' ? 'pin' :
                        platRaw === 'youtube' ? 'yt' :
-                       platRaw === 'telegram' ? 'tg' : platRaw;
+                       platRaw === 'telegram' ? 'tg' : 
+                       platRaw === 'x' ? 'twitter' :
+                       platRaw === 'facebook' ? 'fb' : platRaw;
 
     if (!VALID_PLATFORMS.includes(platTarget)) {
-        return '❌ Invalid platform. Supported: tiktok, ig, pin, yt, tg, all.';
+        return '❌ Invalid platform. Supported: tiktok, ig, pin, yt, tg, twitter, fb, threads, autodelete, all.';
     }
 
     const enabled = state ? state.toLowerCase() === 'on' || state === 'true' || state === '1' : true;
@@ -86,16 +88,21 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     await ctx.sock.sendMessage(ctx.jid, { react: { text: '⏳', key: ctx.msg.key } });
 
     if (platTarget === 'list') {
-        const platformsToCheck = ['tiktok', 'ig', 'pin', 'yt', 'tg'];
+        const platformsToCheck = ['tiktok', 'ig', 'pin', 'yt', 'tg', 'twitter', 'fb', 'threads'];
         let msg = '*📋 Auto-Downloader Status*\n\n';
         for (const p of platformsToCheck) {
             const status = isAutoDlEnabled(jid, p) ? '✅ ON' : '❌ OFF';
             msg += `- ${p.toUpperCase()}: ${status}\n`;
         }
+        
+        msg += '\n*⚙️ Settings*\n';
+        const adStatus = isAutoDlEnabled(jid, 'autodelete') ? '✅ ON' : '❌ OFF';
+        msg += `- AUTODELETE: ${adStatus}\n`;
+
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
         return msg.trim();
     } else if (platTarget === 'all') {
-        const platformsToSet = ['tiktok', 'ig', 'pin', 'yt', 'tg'];
+        const platformsToSet = ['tiktok', 'ig', 'pin', 'yt', 'tg', 'twitter', 'fb', 'threads'];
         let success = true;
         for (const p of platformsToSet) {
             const res = await setAutoDl(jid, p, enabled);
@@ -103,7 +110,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         }
         if (success) {
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
-            return `✅ Auto-download for all platforms has been turned ${enabled ? 'ON' : 'OFF'}.`;
+            return `✅ Auto-download for all media platforms has been turned ${enabled ? 'ON' : 'OFF'}.`;
         } else {
             return '❌ Failed to save auto-download settings.';
         }
@@ -111,6 +118,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         const success = await setAutoDl(jid, platTarget, enabled);
         if (success) {
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
+            if (platTarget === 'autodelete') {
+                return `✅ Auto-delete for downloaded media and links is now ${enabled ? 'ON' : 'OFF'}.`;
+            }
             return `✅ Auto-download for ${platTarget.toUpperCase()} has been turned ${enabled ? 'ON' : 'OFF'}.`;
         } else {
             return '❌ Failed to save auto-download settings.';
