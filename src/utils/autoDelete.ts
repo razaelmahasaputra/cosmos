@@ -8,7 +8,7 @@ let currentSock: WASocket | null = null;
 export function initAutoDelete(sock: WASocket) {
     currentSock = sock;
     if (cleanupInterval) clearInterval(cleanupInterval);
-    
+
     // Check database every 30 seconds for expired messages
     cleanupInterval = setInterval(processDeletionQueue, 30 * 1000);
     processDeletionQueue(); // run immediately on startup
@@ -32,7 +32,7 @@ export async function scheduleMediaAutoDelete(
     if (delayMs === 0) return;
 
     const deleteAt = new Date(Date.now() + delayMs);
-    
+
     try {
         await prisma.scheduledDeletion.upsert({
             where: {
@@ -73,11 +73,11 @@ async function processDeletionQueue() {
 
         for (const task of pending) {
             try {
-                await currentSock.sendMessage(task.jid, { 
-                    delete: { remoteJid: task.jid, fromMe: task.fromMe, id: task.msgId } 
+                await currentSock.sendMessage(task.jid, {
+                    delete: { remoteJid: task.jid, fromMe: task.fromMe, id: task.msgId }
                 });
                 console.log(`[AutoDelete] Deleted media message ${task.msgId} in ${task.jid}`);
-                
+
                 await prisma.scheduledDeletion.delete({
                     where: { id: task.id }
                 });
@@ -85,9 +85,11 @@ async function processDeletionQueue() {
                 console.error(`[AutoDelete] Failed to delete media message ${task.msgId}`, err);
                 // Optionally delete it from DB if it fails repeatedly, but for now we just keep trying or let it be.
                 // Wait, if it fails, we should delete it from DB to avoid infinite loops
-                await prisma.scheduledDeletion.delete({
-                    where: { id: task.id }
-                }).catch(() => {});
+                await prisma.scheduledDeletion
+                    .delete({
+                        where: { id: task.id }
+                    })
+                    .catch(() => {});
             }
         }
     } catch (err) {

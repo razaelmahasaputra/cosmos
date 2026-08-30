@@ -1,4 +1,4 @@
-import { makeWASocket, DisconnectReason } from '@whiskeysockets/baileys';
+import { makeWASocket, DisconnectReason, Browsers, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import { handleMessage } from '#/handlers/message.js';
 import { cacheMessage, getCachedMessage } from '#/utils/messageCache.js';
@@ -6,7 +6,7 @@ import { usePrismaAuthState } from '#/utils/prismaAuthState.js';
 import { initActiveSessions } from '#/utils/sessionStore.js';
 import { dbContext, getPrismaClient } from '#/db.js';
 
-const logger = pino({ level: 'silent' });
+const logger = pino({ level: 'debug' });
 const MAX_RECONNECT_ATTEMPTS = 15;
 const RECONNECT_BASE_DELAY_MS = 3000;
 
@@ -33,12 +33,14 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
 
     const authState = await usePrismaAuthState(sessionId);
     const { state, saveCreds } = authState;
+    const { version } = await fetchLatestBaileysVersion();
 
     const sock = makeWASocket({
+        version,
         auth: state,
         printQRInTerminal: false,
         logger: logger as any,
-        browser: ['Ubuntu', 'Chrome', '20.0.04'],
+        browser: ['Chrome (Linux)', '', ''],
         syncFullHistory: false,
         generateHighQualityLinkPreview: true,
         keepAliveIntervalMs: 15000,
@@ -94,7 +96,7 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
             connectionOpenTimeSec = Math.floor(Date.now() / 1000);
             if (sessionId === 'default') {
                 await initActiveSessions();
-                
+
                 const { initAutoDelete } = await import('./autoDelete.js');
                 initAutoDelete(sock);
             }
@@ -105,7 +107,8 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
             pairingRequested = true;
             try {
                 console.log(`[Pairing] [${sessionId}] Requesting pairing code for ${phoneNumber}...`);
-                const code = await sock.requestPairingCode(phoneNumber);
+                await delay(3000); // Add delay to ensure notification is triggered
+                let code = await sock.requestPairingCode(phoneNumber);
                 const formattedCode = code.match(/.{1,4}/g)?.join('-') || code;
                 if (onPairingCode) {
                     onPairingCode(formattedCode);
