@@ -40,7 +40,7 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
         auth: state,
         printQRInTerminal: false,
         logger: logger as any,
-        browser: ['Chrome (Linux)', '', ''],
+        browser: Browsers.ubuntu('Chrome'),
         syncFullHistory: false,
         generateHighQualityLinkPreview: true,
         keepAliveIntervalMs: 15000,
@@ -108,7 +108,7 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
             try {
                 console.log(`[Pairing] [${sessionId}] Requesting pairing code for ${phoneNumber}...`);
                 await delay(3000); // Add delay to ensure notification is triggered
-                let code = await sock.requestPairingCode(phoneNumber);
+                const code = await sock.requestPairingCode(phoneNumber);
                 const formattedCode = code.match(/.{1,4}/g)?.join('-') || code;
                 if (onPairingCode) {
                     onPairingCode(formattedCode);
