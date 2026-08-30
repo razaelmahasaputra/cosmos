@@ -74,10 +74,6 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
     let pairingRequested = false;
 
     if (pendingPairing) {
-        if (!options.isPairingMode) {
-            console.error(`[Error] Session '${sessionId}' is not paired. Please run 'pnpm pair' first.`);
-            process.exit(1);
-        }
         if (!phoneNumber) {
             console.error(`[Pairing] [${sessionId}] No phone number provided for pairing`);
         } else {
@@ -146,6 +142,17 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
 
             if (lastDisconnect?.error) {
                 console.error(`Connection close details [${sessionId}]: ${errorMessage}`, lastDisconnect.error);
+            }
+
+            if (isLoggedOut) {
+                console.log(`[Connection] [${sessionId}] Logged out. Clearing credentials...`);
+                try {
+                    await getPrismaClient(sessionId).whatsAppAuth.deleteMany();
+                    console.log(`[Connection] [${sessionId}] Credentials cleared. Exiting to allow restart & re-pair...`);
+                } catch (e) {
+                    console.error('Failed to clear credentials', e);
+                }
+                process.exit(1);
             }
 
             if (onClosed) onClosed(isLoggedOut);
