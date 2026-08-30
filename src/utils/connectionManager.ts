@@ -40,7 +40,7 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
         auth: state,
         printQRInTerminal: false,
         logger: logger as any,
-        browser: Browsers.ubuntu('Chrome'),
+        browser: Browsers.macOS('Desktop'),
         syncFullHistory: false,
         generateHighQualityLinkPreview: true,
         keepAliveIntervalMs: 15000,
