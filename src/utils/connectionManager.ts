@@ -1,6 +1,5 @@
 import { makeWASocket, DisconnectReason, Browsers, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
 import pino from 'pino';
-import qrcode from 'qrcode-terminal';
 import { handleMessage } from '#/handlers/message.js';
 import { cacheMessage, getCachedMessage } from '#/utils/messageCache.js';
 import { usePrismaAuthState } from '#/utils/prismaAuthState.js';
@@ -17,6 +16,8 @@ function delay(ms: number): Promise<void> {
 
 export interface ConnectOptions {
     sessionId: string;
+    phoneNumber?: string;
+    onPairingCode?: (code: string) => void;
     onConnected?: () => void;
     onClosed?: (isLoggedOut: boolean) => void;
     disableReconnect?: boolean;
@@ -26,7 +27,7 @@ export interface ConnectOptions {
 export const activeConnections = new Map<string, ReturnType<typeof makeWASocket>>();
 
 export async function connectToWhatsApp(options: ConnectOptions): Promise<void> {
-    const { sessionId, onConnected, onClosed } = options;
+    const { sessionId, phoneNumber, onPairingCode, onConnected, onClosed } = options;
     let connectionOpenTimeSec = 0;
     let reconnectAttempts = 0;
 
@@ -70,14 +71,20 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
     activeConnections.set(sessionId, sock);
 
     const pendingPairing = !sock.authState.creds.registered;
-
+    let pairingRequested = false;
 
     if (pendingPairing) {
         if (!options.isPairingMode) {
             console.error(`[Error] Session '${sessionId}' is not paired. Please run 'pnpm pair' first.`);
             process.exit(1);
         }
-        console.log(`[Pairing] [${sessionId}] Waiting for QR code to be scanned...`);
+        if (!phoneNumber) {
+            console.error(`[Pairing] [${sessionId}] No phone number provided for pairing`);
+        } else {
+            console.log(
+                `[Pairing] [${sessionId}] Will request pairing code for ${phoneNumber} after WebSocket connects...`
+            );
+        }
     }
 
     sock.ev.on('connection.update', async (update) => {
@@ -95,9 +102,33 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
             }
             if (onConnected) onConnected();
         }
-        if (update.qr && pendingPairing && !sock.authState.creds.registered) {
-            console.log(`[Pairing] [${sessionId}] Scan the QR code below:`);
-            qrcode.generate(update.qr, { small: true });
+        if (update.qr && pendingPairing && !sock.authState.creds.registered && !pairingRequested && phoneNumber) {
+            pairingRequested = true;
+            try {
+                console.log(`[Pairing] [${sessionId}] Requesting pairing code for ${phoneNumber}...`);
+                await delay(3000); // Add delay to ensure notification is triggered
+                const code = await sock.requestPairingCode(phoneNumber);
+                const formattedCode = code.match(/.{1,4}/g)?.join('-') || code;
+                if (onPairingCode) {
+                    onPairingCode(formattedCode);
+                } else {
+                    const msg = [
+                        '',
+                        '╔══════════════════════════════════════╗',
+                        '║         PAIRING CODE                 ║',
+                        `║     ${formattedCode.padEnd(34)}║`,
+                        '╚══════════════════════════════════════╝',
+                        '',
+                        `[Pairing] [${sessionId}] Enter this code in WhatsApp > Linked Devices > Pair a device`,
+                        ''
+                    ].join('\n');
+                    console.log(msg);
+                    console.error(msg);
+                }
+            } catch (err) {
+                console.error(`[Pairing] [${sessionId}] Failed to request pairing code:`, err);
+                pairingRequested = false;
+            }
         }
         if (connection === 'close') {
             const lastDisconnectError = lastDisconnect?.error as any;

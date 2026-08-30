@@ -28,9 +28,16 @@ async function startSystem(): Promise<void> {
         console.log('[System] Telegram dummy account is not configured; private content proxying is disabled.');
     }
 
+    const phoneNumber = process.env.BOT_PHONE_NUMBER;
+    if (!phoneNumber) {
+        console.error('BOT_PHONE_NUMBER is not set in .env');
+        process.exit(1);
+    }
+
     // Connect default bot
     connectToWhatsApp({
-        sessionId: 'default'
+        sessionId: 'default',
+        phoneNumber
     });
 }
 
