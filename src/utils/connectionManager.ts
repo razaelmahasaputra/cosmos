@@ -1,5 +1,6 @@
 import { makeWASocket, DisconnectReason, Browsers, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
 import pino from 'pino';
+import qrcode from 'qrcode-terminal';
 import { handleMessage } from '#/handlers/message.js';
 import { cacheMessage, getCachedMessage } from '#/utils/messageCache.js';
 import { usePrismaAuthState } from '#/utils/prismaAuthState.js';
@@ -36,7 +37,7 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
     const sock = makeWASocket({
         version,
         auth: state,
-        printQRInTerminal: options.isPairingMode ? true : false,
+        printQRInTerminal: false,
         logger: logger as any,
         browser: Browsers.ubuntu('Chrome'),
         syncFullHistory: false,
@@ -94,9 +95,10 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
             }
             if (onConnected) onConnected();
         }
-
-
-
+        if (update.qr && pendingPairing && !sock.authState.creds.registered) {
+            console.log(`[Pairing] [${sessionId}] Scan the QR code below:`);
+            qrcode.generate(update.qr, { small: true });
+        }
         if (connection === 'close') {
             const lastDisconnectError = lastDisconnect?.error as any;
             const errorCode = lastDisconnectError?.output?.statusCode || lastDisconnectError?.code;
