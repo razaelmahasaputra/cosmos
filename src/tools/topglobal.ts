@@ -28,7 +28,13 @@ const topGlobalTool: ToolModule = {
             const topUsers = [];
 
             for (const user of allUsers) {
-                const name = user.pushName || user.username || user.id.split('@')[0];
+                let defaultName = user.id.split('@')[0];
+                if (user.id.includes('@lid')) {
+                    defaultName = 'Unknown Player';
+                } else {
+                    defaultName = `+${defaultName}`;
+                }
+                const name = user.pushName || user.username || defaultName;
                 if (!seenNames.has(name)) {
                     seenNames.add(name);
                     topUsers.push({ ...user, displayName: name });
