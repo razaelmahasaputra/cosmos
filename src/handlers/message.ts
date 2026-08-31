@@ -4,10 +4,9 @@ import toolsHandler from '#/tools/handler.js';
 import { isAutoStickerEnabled } from '#/utils/autoSticker.js';
 import {
     isAutoCorrectionEnabled,
-    isMessageProcessed,
-    markMessageProcessed,
     analyzeAndCorrectText
 } from '#/utils/autoCorrection.js';
+import { isMessageProcessed, markMessageProcessed } from '#/utils/messageCache.js';
 import { processAutoDl } from '#/utils/autodl.js';
 import { handleOfflineAiResponder } from '#/utils/offlineAi.js';
 
@@ -39,7 +38,12 @@ function hasDirectMedia(rawMsg: any): boolean {
 }
 
 export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<void> {
-    if (!msg.message || !msg.key.remoteJid) return;
+    if (!msg.message || !msg.key.remoteJid || !msg.key.id) return;
+
+    if (isMessageProcessed(msg.key.id)) {
+        return;
+    }
+    markMessageProcessed(msg.key.id);
 
     console.log('[DEBUG] Message received:', {
         fromMe: msg.key.fromMe,
@@ -183,8 +187,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
     // Auto-correct processing for owner's sent text messages
     if (isOwner && Boolean(msg.key.fromMe) && isAutoCorrectionEnabled(jid)) {
         const msgId = msg.key.id;
-        if (msgId && !isMessageProcessed(msgId) && trimmedText.length > 1 && !trimmedText.startsWith('.')) {
-            markMessageProcessed(msgId);
+        if (msgId && trimmedText.length > 1 && !trimmedText.startsWith('.')) {
             try {
                 const corrected = await analyzeAndCorrectText(trimmedText);
                 if (corrected && corrected !== trimmedText) {

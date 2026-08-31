@@ -7,8 +7,7 @@ import { isSessionActive, activateSession, deactivateSession, toggleSession } fr
 const FEATURE_NAME = 'autocorrection';
 let isGlobalAutoCorrectionEnabled = false;
 
-const processedMsgIds = new Set<string>();
-const MAX_PROCESSED_IDS = 1000;
+
 
 export async function enableAutoCorrection(jid?: string): Promise<void> {
     if (jid) {
@@ -33,20 +32,6 @@ export async function toggleAutoCorrection(jid: string): Promise<boolean> {
 
 export function isAutoCorrectionEnabled(jid: string): boolean {
     return isGlobalAutoCorrectionEnabled || isSessionActive(FEATURE_NAME, jid);
-}
-
-export function isMessageProcessed(msgId: string): boolean {
-    return processedMsgIds.has(msgId);
-}
-
-export function markMessageProcessed(msgId: string): void {
-    processedMsgIds.add(msgId);
-    if (processedMsgIds.size > MAX_PROCESSED_IDS) {
-        const first = processedMsgIds.values().next().value;
-        if (first) {
-            processedMsgIds.delete(first);
-        }
-    }
 }
 
 /**

@@ -22,3 +22,16 @@ export function cacheMessage(msg: WAMessage): void {
 export function getCachedMessage(id: string): proto.IMessage | undefined {
     return messageCache.get(id) || undefined;
 }
+const processedMsgIds = new Set<string>();
+
+export function isMessageProcessed(id: string): boolean {
+    return processedMsgIds.has(id);
+}
+
+export function markMessageProcessed(id: string): void {
+    processedMsgIds.add(id);
+    if (processedMsgIds.size > 1000) {
+        const first = processedMsgIds.values().next().value;
+        if (first) processedMsgIds.delete(first);
+    }
+}
