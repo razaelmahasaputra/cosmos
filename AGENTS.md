@@ -105,3 +105,7 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 
 - **Local Persistence:** WAF menggunakan Prisma ORM dengan SQLite untuk menyimpan state, kredensial Baileys, konfigurasi auto-dl, dan antrean `ScheduledDeletion`.
 - **Auto-Delete Queue:** Segala bentuk task _auto-delete_ untuk pesan harus diintegrasikan dengan database Prisma (tabel `ScheduledDeletion`) agar antrean tidak hilang saat server di-restart atau crash. Jangan menggunakan `setTimeout` in-memory.
+
+### K. Pencegahan Eksekusi Pesan Ganda
+
+- **Message Processing Cache:** WhatsApp Baileys sering mengirimkan event message secara berulang (misal: `notify` disusul `append` saat sync). WAJIB menggunakan metode `isMessageProcessed` dan `markMessageProcessed` (dari `messageCache.ts`) pada level tertinggi handler (`handleMessage`) untuk memfilter ID pesan agar tidak ada fitur, minigame, atau auto-response yang tereksekusi dua kali pada satu pesan yang sama.

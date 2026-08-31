@@ -11,6 +11,7 @@
 - 📥 **Advanced Auto Downloader:** Automatically detects and downloads media from TikTok, YouTube, Instagram (including carousels), Twitter/X, Facebook, Threads, and Pinterest with a powerful queueing and concurrency limiter.
 - 🕒 **Auto-Delete Memory:** Downloads self-destruct locally and remove triggers gracefully (via Prisma-persisted queues) to preserve chat cleanliness and respect admin privileges.
 - 🤖 **Groq AI & Native Function Calling:** Native integration with Groq LLMs and Whisper Speech-to-Text.
+- 🎰 **Casino & Economy System:** Built-in virtual economy with games (dice, slot, coinflip), daily rewards, transfers, and real-time global/group leaderboards.
 - 🎨 **Media & Sticker Processing:** High-performance image and video sticker rendering via `sharp` & `ffmpeg-static`.
 - 🔄 **Daemon & Systemd Support:** Background process management with Systemd service (`waf-bot.service`) and standalone daemon scripts without unwanted auto-restarts.
 
