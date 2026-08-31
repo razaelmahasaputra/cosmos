@@ -23,7 +23,7 @@ const topGlobalTool: ToolModule = {
                 orderBy: { balance: 'desc' },
                 take: 100 // Fetch more to deduplicate
             });
-            
+
             const seenNames = new Set<string>();
             const topUsers = [];
 

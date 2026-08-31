@@ -78,7 +78,10 @@ export async function executeGamble(
                 const diff = now - user.lastGambleAt.getTime();
                 if (diff < 5100) {
                     const remainingSeconds = ((5100 - diff) / 1000).toFixed(1);
-                    return { success: false, error: `Please wait ${remainingSeconds} more seconds before betting again.` };
+                    return {
+                        success: false,
+                        error: `Please wait ${remainingSeconds} more seconds before betting again.`
+                    };
                 }
             }
 
