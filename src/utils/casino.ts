@@ -64,7 +64,7 @@ export async function executeGamble(
     mutex.add(jid);
 
     if (sock && msg) {
-        await sock.sendMessage(jid, { react: { text: '🆗', key: msg.key } }).catch(() => {});
+        await sock.sendMessage(msg.key.remoteJid, { react: { text: '🆗', key: msg.key } }).catch(() => {});
     }
 
     try {
