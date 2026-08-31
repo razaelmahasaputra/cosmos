@@ -1,5 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { casinoState } from '../utils/casino.js';
+import { getAllWhitelistedGroups } from '../db.js';
 
 const feverTimeTool: ToolModule = {
     definition: {
@@ -13,7 +14,7 @@ const feverTimeTool: ToolModule = {
         }
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
-        const { sock, jid } = ctx;
+        const { sock, msg } = ctx;
 
         const durationMs = 15 * 60 * 1000;
         casinoState.feverTimeEnd = Date.now() + durationMs;
@@ -37,7 +38,16 @@ const feverTimeTool: ToolModule = {
             `_Use .slot, .coinflip, or .dice to start playing!_`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
-        await sock.sendMessage(jid, { text }, { quoted: fakeWafQuote as any });
+        
+        const whitelistedGroups = await getAllWhitelistedGroups();
+        for (const groupJid of whitelistedGroups) {
+            await sock.sendMessage(groupJid, { text }, { quoted: fakeWafQuote as any }).catch(() => {});
+        }
+        
+        // React to acknowledge success without sending output text to the triggerer (if in PM)
+        if (msg.key.remoteJid) {
+            await sock.sendMessage(msg.key.remoteJid, { react: { text: '✅', key: msg.key } }).catch(() => {});
+        }
     }
 };
 

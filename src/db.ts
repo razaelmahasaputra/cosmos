@@ -72,6 +72,15 @@ export async function isGroupWhitelisted(jid: string): Promise<boolean> {
     }
 }
 
+export async function getAllWhitelistedGroups(): Promise<string[]> {
+    try {
+        const groups = await prisma.whitelistedGroup.findMany();
+        return groups.map((g: any) => g.jid);
+    } catch {
+        return [];
+    }
+}
+
 // --- Telegram Private Chat Registry ---
 
 export interface TelegramPrivateChatInfo {
