@@ -2,10 +2,7 @@ import { jidNormalizedUser, WASocket, WAMessage } from '@whiskeysockets/baileys'
 import { addGroup, isGroupWhitelisted } from '#/db.js';
 import toolsHandler from '#/tools/handler.js';
 import { isAutoStickerEnabled } from '#/utils/autoSticker.js';
-import {
-    isAutoCorrectionEnabled,
-    analyzeAndCorrectText
-} from '#/utils/autoCorrection.js';
+import { isAutoCorrectionEnabled, analyzeAndCorrectText } from '#/utils/autoCorrection.js';
 import { isMessageProcessed, markMessageProcessed } from '#/utils/messageCache.js';
 import { processAutoDl } from '#/utils/autodl.js';
 import { handleOfflineAiResponder } from '#/utils/offlineAi.js';

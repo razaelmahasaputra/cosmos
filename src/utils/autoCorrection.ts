@@ -7,8 +7,6 @@ import { isSessionActive, activateSession, deactivateSession, toggleSession } fr
 const FEATURE_NAME = 'autocorrection';
 let isGlobalAutoCorrectionEnabled = false;
 
-
-
 export async function enableAutoCorrection(jid?: string): Promise<void> {
     if (jid) {
         await activateSession(FEATURE_NAME, jid);
