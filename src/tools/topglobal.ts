@@ -19,11 +19,23 @@ const topGlobalTool: ToolModule = {
 
         const now = Date.now();
         if (!topGlobalCache || now > topGlobalCacheExpiry) {
-            const topUsers = await prisma.user.findMany({
+            const allUsers = await prisma.user.findMany({
                 orderBy: { balance: 'desc' },
-                take: 10
+                take: 100 // Fetch more to deduplicate
             });
-            topGlobalCache = topUsers;
+            
+            const seenNames = new Set<string>();
+            const topUsers = [];
+
+            for (const user of allUsers) {
+                const name = user.pushName || user.username || user.id.split('@')[0];
+                if (!seenNames.has(name)) {
+                    seenNames.add(name);
+                    topUsers.push({ ...user, displayName: name });
+                }
+            }
+
+            topGlobalCache = topUsers.slice(0, 10);
             topGlobalCacheExpiry = now + 5 * 60 * 1000; // 5 minutes cache
         }
 
@@ -34,8 +46,7 @@ const topGlobalTool: ToolModule = {
             text += `No players found.`;
         } else {
             topUsers.forEach((user: any, index: number) => {
-                const name = user.pushName || user.username || user.id.split('@')[0];
-                text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* ${name} - *${user.balance}* coins\n`;
+                text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* ${user.displayName} - *${user.balance}* coins\n`;
             });
         }
 

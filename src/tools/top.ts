@@ -34,20 +34,31 @@ const topTool: ToolModule = {
                 }
             }
 
-            const topUsers = await prisma.user.findMany({
+            const allUsers = await prisma.user.findMany({
                 where: { id: { in: memberJids } },
-                orderBy: { balance: 'desc' },
-                take: 10
+                orderBy: { balance: 'desc' }
             });
+
+            const seenNames = new Set<string>();
+            const topUsers = [];
+
+            for (const user of allUsers) {
+                const name = user.pushName || user.username || user.id.split('@')[0];
+                if (!seenNames.has(name)) {
+                    seenNames.add(name);
+                    topUsers.push({ ...user, displayName: name });
+                }
+            }
+
+            const finalTopUsers = topUsers.slice(0, 10);
 
             let text = `👥 *Group Casino Leaderboard* 👥\n\n`;
 
-            if (topUsers.length === 0) {
+            if (finalTopUsers.length === 0) {
                 text += `No players found in this group.`;
             } else {
-                topUsers.forEach((user: any, index: number) => {
-                    const name = user.pushName || user.username || user.id.split('@')[0];
-                    text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* ${name} - *${user.balance}* coins\n`;
+                finalTopUsers.forEach((user: any, index: number) => {
+                    text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* ${user.displayName} - *${user.balance}* coins\n`;
                 });
             }
 
