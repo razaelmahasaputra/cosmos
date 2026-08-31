@@ -26,11 +26,11 @@ class ToolsHandler {
             );
         for (const file of files) {
             try {
-                let fileUrl = pathToFileURL(path.join(toolsPath, file)).href;
-                let imported = await import(fileUrl);
+                const fileUrl = pathToFileURL(path.join(toolsPath, file)).href;
+                const imported = await import(fileUrl);
                 
                 // Support both named exports and default export
-                let toolModule: ToolModule = imported.default ? imported.default : imported;
+                const toolModule: ToolModule = imported.default ? imported.default : imported;
 
                 if (toolModule.definition && typeof toolModule.execute === 'function') {
                     const { name, aliases } = toolModule.definition;
