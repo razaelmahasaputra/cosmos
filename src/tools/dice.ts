@@ -43,7 +43,7 @@ const diceTool: ToolModule = {
         }
 
         // Dice probabilities: 16% win, 84% lose. Multiplier: 5
-        const result = await executeGamble(prisma, senderJid, bet, 5, 16, 84);
+        const result = await executeGamble(prisma, senderJid, bet, 5, 16, 84, sock, msg);
 
         if (!result.success) {
             return `❌ ${result.error}`;

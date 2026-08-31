@@ -54,12 +54,18 @@ export async function executeGamble(
     bet: number,
     winMultiplier: number,
     baseWinWeight: number,
-    baseLoseWeight: number
+    baseLoseWeight: number,
+    sock?: any,
+    msg?: any
 ): Promise<GambleResult> {
     if (mutex.has(jid)) {
         return { success: false, error: 'Please wait, transaction is being processed.' };
     }
     mutex.add(jid);
+
+    if (sock && msg) {
+        await sock.sendMessage(jid, { react: { text: '🆗', key: msg.key } }).catch(() => {});
+    }
 
     try {
         return await prisma.$transaction(async (tx) => {

@@ -37,7 +37,7 @@ const slotTool: ToolModule = {
         }
 
         // Slot probabilities: 20% win, 80% lose
-        const result = await executeGamble(prisma, senderJid, bet, 3, 20, 80);
+        const result = await executeGamble(prisma, senderJid, bet, 3, 20, 80, sock, msg);
 
         if (!result.success) {
             return `❌ ${result.error}`;

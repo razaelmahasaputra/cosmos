@@ -57,7 +57,7 @@ const coinflipTool: ToolModule = {
         }
 
         // Coinflip probabilities: 30% win, 70% lose
-        const result = await executeGamble(prisma, senderJid, bet, 2, 30, 70);
+        const result = await executeGamble(prisma, senderJid, bet, 2, 30, 70, sock, msg);
 
         if (!result.success) {
             return `❌ ${result.error}`;
