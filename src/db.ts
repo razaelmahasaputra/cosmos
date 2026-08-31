@@ -129,7 +129,7 @@ export async function getTelegramPrivateChat(chatId: string): Promise<TelegramPr
 export async function listTelegramPrivateChats(): Promise<TelegramPrivateChatInfo[]> {
     try {
         const chats = await prisma.telegramPrivateChat.findMany({ orderBy: { added_at: 'asc' } });
-        return chats.map((c) => ({ chatId: c.chatId, title: c.title, inviteLink: c.inviteLink }));
+        return chats.map((c: any) => ({ chatId: c.chatId, title: c.title, inviteLink: c.inviteLink }));
     } catch {
         return [];
     }

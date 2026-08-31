@@ -1,0 +1,79 @@
+import { ToolModule, ToolContext } from './types.js';
+import { prisma } from '../db.js';
+import { cleanId } from '../utils/casino.js';
+import { getUser } from '../utils/casino.js';
+
+const transferTool: ToolModule = {
+    definition: {
+        name: 'transfer',
+        aliases: ['tf'],
+        description: 'Transfer casino coins to another user.',
+        category: 'Casino',
+        parameters: {
+            type: 'object',
+            properties: {
+                input: { type: 'string', description: 'Target user and amount' }
+            },
+            required: ['input']
+        }
+    },
+    execute: async (args: Record<string, any>, ctx: ToolContext) => {
+        const { msg, sock } = ctx;
+        const senderJid = cleanId(msg.key.participant || msg.key.remoteJid!);
+        
+        const pushName = msg.pushName || undefined;
+        const user = await getUser(prisma, senderJid, pushName);
+
+        const mentionedJidList = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
+        const targetJid = mentionedJidList.length > 0 ? mentionedJidList[0] : null;
+
+        if (!targetJid) {
+            return `❌ Please mention a user to transfer coins to. Example: .transfer @user 50`;
+        }
+        if (targetJid === senderJid) {
+            return `❌ You cannot transfer coins to yourself.`;
+        }
+
+        const inputStr = String(args.input || '').trim();
+        const amountMatch = inputStr.match(/\b(\d+)\b/);
+        const amount = amountMatch ? parseInt(amountMatch[1], 10) : 0;
+
+        if (isNaN(amount) || amount <= 0) {
+            return `❌ Invalid amount. Please specify a valid amount of coins to transfer.`;
+        }
+
+        if (user.balance < amount) {
+            return `❌ Insufficient balance. You only have ${user.balance} coins.`;
+        }
+
+        // Anti-Miss: Transaction wrapper
+        try {
+            await prisma.$transaction(async (tx) => {
+                const sender = await tx.user.findUnique({ where: { id: senderJid } });
+                if (!sender || sender.balance < amount) {
+                    throw new Error('Insufficient balance');
+                }
+                
+                await tx.user.upsert({
+                    where: { id: targetJid },
+                    update: { balance: { increment: amount } },
+                    create: { id: targetJid, balance: 5 + amount } // 5 is starterpack
+                });
+
+                await tx.user.update({
+                    where: { id: senderJid },
+                    data: { balance: { decrement: amount } }
+                });
+            });
+
+            await sock.sendMessage(msg.key.remoteJid!, {
+                text: `💸 *Transfer Successful!*\n\nYou have successfully transferred *${amount}* coins to @${targetJid.split('@')[0]}.\nYour remaining balance is *${user.balance - amount}* coins.`,
+                mentions: [targetJid]
+            }, { quoted: msg });
+        } catch (error: any) {
+            return `❌ Transfer failed: ${error.message}`;
+        }
+    }
+};
+
+export default transferTool;

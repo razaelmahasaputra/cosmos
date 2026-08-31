@@ -36,7 +36,7 @@ export async function getConversationContext(jid: string, groqClient: Groq): Pro
     const now = Date.now();
 
     // Filter messages strictly within the last 2 hours to avoid stale context
-    let sessionMessages = session.messages.filter((m) => now - m.timestamp.getTime() < TWO_HOURS);
+    let sessionMessages = session.messages.filter((m: any) => now - m.timestamp.getTime() < TWO_HOURS);
 
     // If the history is getting too long, summarize the older parts to save AI quota
     if (sessionMessages.length > MAX_MESSAGES_BEFORE_SUMMARY) {
@@ -48,7 +48,7 @@ export async function getConversationContext(jid: string, groqClient: Groq): Pro
 
         const truncate = (str: string, len: number) => (str.length > len ? str.substring(0, len) + '...' : str);
         const transcript = messagesToSummarize
-            .map((m) => `${m.role === 'user' ? 'User' : 'AI'}: ${truncate(m.content, 1000)}`)
+            .map((m: any) => `${m.role === 'user' ? 'User' : 'AI'}: ${truncate(m.content, 1000)}`)
             .join('\n');
 
         const summaryPrompt = `You are an AI tasked with maintaining a concise running summary of a conversation.
@@ -101,7 +101,7 @@ Return ONLY the updated summary text. Do not add any conversational filler.`;
                     }),
                     prisma.aiChatMessage.deleteMany({
                         where: {
-                            id: { in: messagesToSummarize.map((m) => m.id) }
+                            id: { in: messagesToSummarize.map((m: any) => m.id) }
                         }
                     })
                 ]);

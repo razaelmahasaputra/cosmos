@@ -76,3 +76,25 @@ model ScheduledDeletion {
 
   @@unique([jid, msgId])
 }
+
+model User {
+  id             String    @id // Nomor WA / JID (contoh: 628123456789@s.whatsapp.net)
+  pushName       String?   // Display Name / Nama Profil WhatsApp
+  username       String?   @unique // Username baru WhatsApp (contoh: razael123)
+  balance        Int       @default(5) // Starterpack 5 koin
+  lastDailyClaim DateTime? 
+  lastGambleAt   DateTime? // Cooldown permanen per user untuk minigame
+  gamesPlayed    Int       @default(0)
+  totalWins      Int       @default(0)
+  totalLosses    Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model HouseVault {
+  id          Int      @id @default(1) 
+  income      BigInt   @default(0) // Total koin masuk (kalah dari player)
+  payout      BigInt   @default(0) // Total koin keluar (diberikan ke player)
+  netProfit   BigInt   @default(0) // Keuntungan bersih bandar
+  updatedAt   DateTime @updatedAt
+}
