@@ -93,31 +93,32 @@ export async function executeGamble(
             let winWeight = baseWinWeight;
             let loseWeight = baseLoseWeight;
 
-            // Fever Time Buff
             if (isFeverTime()) {
-                winWeight += 30; // Massive buff
-            }
+                // Fever Time: consistent jackpot, very low loss rate, bypass anti-win streak
+                winWeight = 99;
+                loseWeight = 1;
+            } else {
+                // Anti-win streak: if won many games recently or total wins > total losses heavily
+                if (user.totalWins > user.totalLosses + 10) {
+                    winWeight = Math.max(1, winWeight - 15);
+                }
 
-            // Anti-win streak: if won many games recently or total wins > total losses heavily
-            if (user.totalWins > user.totalLosses + 10) {
-                winWeight = Math.max(1, winWeight - 15);
-            }
+                // Global RTP
+                const netProfit = Number(vault.netProfit);
+                if (netProfit < 0 && bet > 500) {
+                    // Force Lose
+                    winWeight = 1;
+                    loseWeight = 99;
+                } else if (netProfit > 5000 && bet <= 50) {
+                    // Breadcrumbing
+                    winWeight += 40;
+                }
 
-            // Global RTP
-            const netProfit = Number(vault.netProfit);
-            if (netProfit < 0 && bet > 500) {
-                // Force Lose
-                winWeight = 1;
-                loseWeight = 99;
-            } else if (netProfit > 5000 && bet <= 50) {
-                // Breadcrumbing
-                winWeight += 40;
-            }
-
-            // Dynamic bet scaling (All-in or large bets)
-            if (bet >= user.balance * 0.8 && bet >= 100) {
-                // Large percentage of balance
-                winWeight = Math.max(1, Math.floor(winWeight * 0.5));
+                // Dynamic bet scaling (All-in or large bets)
+                if (bet >= user.balance * 0.8 && bet >= 100) {
+                    // Large percentage of balance
+                    winWeight = Math.max(1, Math.floor(winWeight * 0.5));
+                }
             }
 
             const isWin = chance.weighted([true, false], [winWeight, loseWeight]);
