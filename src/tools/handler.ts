@@ -28,7 +28,7 @@ class ToolsHandler {
             try {
                 const fileUrl = pathToFileURL(path.join(toolsPath, file)).href;
                 const imported = await import(fileUrl);
-                
+
                 // Support both named exports and default export
                 const toolModule: ToolModule = imported.default ? imported.default : imported;
 

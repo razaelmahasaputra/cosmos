@@ -14,7 +14,7 @@ const feverTimeTool: ToolModule = {
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { sock, jid } = ctx;
-        
+
         const durationMs = 15 * 60 * 1000;
         casinoState.feverTimeEnd = Date.now() + durationMs;
 
@@ -30,12 +30,13 @@ const feverTimeTool: ToolModule = {
             }
         };
 
-        const text = `🚨 *FEVER TIME IS ACTIVE!* 🚨\n\n` +
+        const text =
+            `🚨 *FEVER TIME IS ACTIVE!* 🚨\n\n` +
             `The global win rate has been massively boosted for the next 15 minutes!\n` +
             `This is the best time to gamble and win big!\n\n` +
             `_Use .slot, .coinflip, or .dice to start playing!_`;
 
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: fakeWafQuote as any });
     }
 };

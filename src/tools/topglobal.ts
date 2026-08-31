@@ -16,7 +16,7 @@ const topGlobalTool: ToolModule = {
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
-        
+
         const now = Date.now();
         if (!topGlobalCache || now > topGlobalCacheExpiry) {
             const topUsers = await prisma.user.findMany({
@@ -26,7 +26,7 @@ const topGlobalTool: ToolModule = {
             topGlobalCache = topUsers;
             topGlobalCacheExpiry = now + 5 * 60 * 1000; // 5 minutes cache
         }
-        
+
         let text = `🌍 *Global Casino Leaderboard* 🌍\n\n`;
         const topUsers = topGlobalCache;
 
@@ -38,10 +38,10 @@ const topGlobalTool: ToolModule = {
                 text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* ${name} - *${user.balance}* coins\n`;
             });
         }
-        
+
         text += `\n_Updated every 5 minutes._`;
 
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: msg });
     }
 };

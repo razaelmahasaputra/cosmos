@@ -20,12 +20,14 @@ const diceTool: ToolModule = {
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
         const senderJid = cleanId(msg.key.participant || msg.key.remoteJid!);
-        
+
         const pushName = msg.pushName || undefined;
         const user = await getUser(prisma, senderJid, pushName);
-        
-        const inputStr = String(args.input || '').trim().toLowerCase();
-        
+
+        const inputStr = String(args.input || '')
+            .trim()
+            .toLowerCase();
+
         const match = inputStr.match(/\b([1-6])\b/);
         const guess = match ? parseInt(match[1], 10) : null;
 
@@ -42,7 +44,7 @@ const diceTool: ToolModule = {
 
         // Dice probabilities: 16% win, 84% lose. Multiplier: 5
         const result = await executeGamble(prisma, senderJid, bet, 5, 16, 84);
-        
+
         if (!result.success) {
             return `❌ ${result.error}`;
         }
@@ -51,21 +53,22 @@ const diceTool: ToolModule = {
         if (result.isWin) {
             rolled = guess;
         } else {
-            const possible = [1, 2, 3, 4, 5, 6].filter(n => n !== guess);
+            const possible = [1, 2, 3, 4, 5, 6].filter((n) => n !== guess);
             rolled = chance.pickone(possible);
         }
 
-        const winMsg = result.isWin 
-            ? `🎉 *You Win!* You earned *${result.winAmount}* coins!` 
+        const winMsg = result.isWin
+            ? `🎉 *You Win!* You earned *${result.winAmount}* coins!`
             : `💀 *You Lose!* You lost *${bet}* coins.`;
 
-        const text = `🎲 *DICE ROLL* 🎲\n\n` +
+        const text =
+            `🎲 *DICE ROLL* 🎲\n\n` +
             `You guessed: *${guess}*\n` +
             `Dice rolled: *${rolled}*\n\n` +
             `${winMsg}\n` +
             `Current Balance: *${result.newBalance}* coins`;
 
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: msg });
     }
 };

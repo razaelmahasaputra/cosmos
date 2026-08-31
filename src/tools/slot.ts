@@ -22,10 +22,10 @@ const slotTool: ToolModule = {
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
         const senderJid = cleanId(msg.key.participant || msg.key.remoteJid!);
-        
+
         const pushName = msg.pushName || undefined;
         const user = await getUser(prisma, senderJid, pushName);
-        
+
         const inputStr = String(args.bet || '').trim();
         if (!inputStr) {
             return `❌ Please specify your bet amount. Example: .slot 100`;
@@ -38,7 +38,7 @@ const slotTool: ToolModule = {
 
         // Slot probabilities: 20% win, 80% lose
         const result = await executeGamble(prisma, senderJid, bet, 3, 20, 80);
-        
+
         if (!result.success) {
             return `❌ ${result.error}`;
         }
@@ -55,16 +55,17 @@ const slotTool: ToolModule = {
             } while (slot1 === slot2 && slot2 === slot3); // Ensure they don't match
         }
 
-        const winMsg = result.isWin 
-            ? `🎉 *JACKPOT!* You won *${result.winAmount}* coins!` 
+        const winMsg = result.isWin
+            ? `🎉 *JACKPOT!* You won *${result.winAmount}* coins!`
             : `💀 *YOU LOSE!* You lost *${bet}* coins.`;
 
-        const text = `🎰 *SLOT MACHINE* 🎰\n\n` +
+        const text =
+            `🎰 *SLOT MACHINE* 🎰\n\n` +
             `[ ${slot1} | ${slot2} | ${slot3} ]\n\n` +
             `${winMsg}\n` +
             `Current Balance: *${result.newBalance}* coins`;
 
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: msg });
     }
 };

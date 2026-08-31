@@ -20,7 +20,7 @@ const transferTool: ToolModule = {
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock } = ctx;
         const senderJid = cleanId(msg.key.participant || msg.key.remoteJid!);
-        
+
         const pushName = msg.pushName || undefined;
         const user = await getUser(prisma, senderJid, pushName);
 
@@ -58,7 +58,7 @@ const transferTool: ToolModule = {
                 if (!sender || sender.balance < amount) {
                     throw new Error('Insufficient balance');
                 }
-                
+
                 await tx.user.upsert({
                     where: { id: targetJid },
                     update: { balance: { increment: amount } },
@@ -71,11 +71,15 @@ const transferTool: ToolModule = {
                 });
             });
 
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            await sock.sendMessage(msg.key.remoteJid!, {
-                text: `💸 *Transfer Successful!*\n\nYou have successfully transferred *${amount}* coins to @${targetJid.split('@')[0]}.\nYour remaining balance is *${user.balance - amount}* coins.`,
-                mentions: [targetJid]
-            }, { quoted: msg });
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+            await sock.sendMessage(
+                msg.key.remoteJid!,
+                {
+                    text: `💸 *Transfer Successful!*\n\nYou have successfully transferred *${amount}* coins to @${targetJid.split('@')[0]}.\nYour remaining balance is *${user.balance - amount}* coins.`,
+                    mentions: [targetJid]
+                },
+                { quoted: msg }
+            );
         } catch (error: any) {
             return `❌ Transfer failed: ${error.message}`;
         }

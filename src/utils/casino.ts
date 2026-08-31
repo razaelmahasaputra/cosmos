@@ -45,9 +45,8 @@ export function parseBet(input: string, balance: number): number | null {
 
 const mutex = new Set<string>();
 
-type GambleResult = 
-    | { success: true; isWin: boolean; winAmount: number; newBalance: number }
-    | { success: false; error: string };
+type GambleResult =
+    { success: true; isWin: boolean; winAmount: number; newBalance: number } | { success: false; error: string };
 
 export async function executeGamble(
     prisma: PrismaClient,
@@ -87,7 +86,7 @@ export async function executeGamble(
             if (!vault) {
                 vault = await tx.houseVault.create({ data: { id: 1 } });
             }
-            
+
             let winWeight = baseWinWeight;
             let loseWeight = baseLoseWeight;
 
@@ -121,15 +120,13 @@ export async function executeGamble(
             const isWin = chance.weighted([true, false], [winWeight, loseWeight]);
 
             let winAmount = 0;
-            const profitChange = isWin 
-                ? BigInt(-1) * BigInt(Math.floor(bet * winMultiplier) - bet) 
-                : BigInt(bet);
+            const profitChange = isWin ? BigInt(-1) * BigInt(Math.floor(bet * winMultiplier) - bet) : BigInt(bet);
 
             if (isWin) {
                 winAmount = Math.floor(bet * winMultiplier);
             }
 
-            const balanceChange = isWin ? (winAmount - bet) : -bet;
+            const balanceChange = isWin ? winAmount - bet : -bet;
 
             // Transaction
             const updatedUser = await tx.user.update({
@@ -139,7 +136,7 @@ export async function executeGamble(
                     lastGambleAt: new Date(now),
                     gamesPlayed: { increment: 1 },
                     totalWins: isWin ? { increment: 1 } : undefined,
-                    totalLosses: !isWin ? { increment: 1 } : undefined,
+                    totalLosses: !isWin ? { increment: 1 } : undefined
                 }
             });
 

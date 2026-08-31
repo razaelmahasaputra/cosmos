@@ -68,11 +68,15 @@ const addBalanceTool: ToolModule = {
                 }
             });
 
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            await sock.sendMessage(msg.key.remoteJid!, {
-                text: `✅ *Balance Added!*\n\nSuccessfully added *${amount}* coins to @${targetJid.split('@')[0]} from the house vault.`,
-                mentions: [targetJid]
-            }, { quoted: msg });
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await sock.sendMessage(
+                msg.key.remoteJid!,
+                {
+                    text: `✅ *Balance Added!*\n\nSuccessfully added *${amount}* coins to @${targetJid.split('@')[0]} from the house vault.`,
+                    mentions: [targetJid]
+                },
+                { quoted: msg }
+            );
         } catch (error: any) {
             return `❌ Failed to add balance: ${error.message}`;
         }

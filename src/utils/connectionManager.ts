@@ -148,7 +148,9 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
                 console.log(`[Connection] [${sessionId}] Logged out. Clearing credentials...`);
                 try {
                     await getPrismaClient(sessionId).whatsAppAuth.deleteMany();
-                    console.log(`[Connection] [${sessionId}] Credentials cleared. Exiting to allow restart & re-pair...`);
+                    console.log(
+                        `[Connection] [${sessionId}] Credentials cleared. Exiting to allow restart & re-pair...`
+                    );
                 } catch (e) {
                     console.error('Failed to clear credentials', e);
                 }
