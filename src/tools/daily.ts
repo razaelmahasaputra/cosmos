@@ -6,7 +6,7 @@ import { getUser } from '../utils/casino.js';
 const dailyTool: ToolModule = {
     definition: {
         name: 'daily',
-        aliases: ['klaim'],
+        aliases: ['klaim', 'claim'],
         description: 'Claim your daily casino coin reward.',
         category: 'Casino',
         parameters: {

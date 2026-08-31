@@ -26,8 +26,12 @@ class ToolsHandler {
             );
         for (const file of files) {
             try {
-                const fileUrl = pathToFileURL(path.join(toolsPath, file)).href;
-                const toolModule: ToolModule = await import(fileUrl);
+                let fileUrl = pathToFileURL(path.join(toolsPath, file)).href;
+                let imported = await import(fileUrl);
+                
+                // Support both named exports and default export
+                let toolModule: ToolModule = imported.default ? imported.default : imported;
+
                 if (toolModule.definition && typeof toolModule.execute === 'function') {
                     const { name, aliases } = toolModule.definition;
                     const normalizedName = name.toLowerCase();

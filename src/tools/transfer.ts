@@ -34,8 +34,13 @@ const transferTool: ToolModule = {
             return `❌ You cannot transfer coins to yourself.`;
         }
 
-        const inputStr = String(args.input || '').trim();
-        const amountMatch = inputStr.match(/\b(\d+)\b/);
+        let cleanedInputStr = String(args.input || '').trim();
+        for (const jid of mentionedJidList) {
+            const num = jid.split('@')[0];
+            cleanedInputStr = cleanedInputStr.replace(new RegExp(`@?${num}`, 'g'), '');
+        }
+
+        const amountMatch = cleanedInputStr.match(/\b(\d+)\b/);
         const amount = amountMatch ? parseInt(amountMatch[1], 10) : 0;
 
         if (isNaN(amount) || amount <= 0) {

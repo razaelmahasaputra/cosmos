@@ -166,5 +166,8 @@ export async function executeGamble(
 
 export const cleanId = (idStr: string | null | undefined): string => {
     if (!idStr) return '';
-    return idStr.split(':')[0].split('@')[0] + '@s.whatsapp.net';
+    const parts = idStr.split('@');
+    const user = parts[0].split(':')[0];
+    const domain = parts[1] || 's.whatsapp.net';
+    return `${user}@${domain}`;
 };

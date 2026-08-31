@@ -21,7 +21,18 @@ const topTool: ToolModule = {
 
         try {
             const groupMetadata = await sock.groupMetadata(jid);
-            const memberJids = groupMetadata.participants.map(p => p.id);
+            const memberJids: string[] = [];
+            for (const p of groupMetadata.participants) {
+                const cleaned = p.id ? p.id.split(':')[0].split('@')[0] : '';
+                if (cleaned) {
+                    const domain = p.id.includes('@lid') ? 'lid' : 's.whatsapp.net';
+                    memberJids.push(`${cleaned}@${domain}`);
+                    if (domain === 'lid') {
+                        // Legacy support for when LIDs were saved as s.whatsapp.net
+                        memberJids.push(`${cleaned}@s.whatsapp.net`);
+                    }
+                }
+            }
             
             const topUsers = await prisma.user.findMany({
                 where: { id: { in: memberJids } },
