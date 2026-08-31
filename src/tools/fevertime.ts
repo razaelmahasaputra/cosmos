@@ -35,6 +35,7 @@ const feverTimeTool: ToolModule = {
             `This is the best time to gamble and win big!\n\n` +
             `_Use .slot, .coinflip, or .dice to start playing!_`;
 
+        await new Promise(resolve => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: fakeWafQuote as any });
     }
 };

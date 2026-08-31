@@ -41,6 +41,7 @@ const topGlobalTool: ToolModule = {
         
         text += `\n_Updated every 5 minutes._`;
 
+        await new Promise(resolve => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: msg });
     }
 };

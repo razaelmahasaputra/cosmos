@@ -51,6 +51,7 @@ const topTool: ToolModule = {
                 });
             }
 
+            await new Promise(resolve => setTimeout(resolve, 3000));
             await sock.sendMessage(jid, { text }, { quoted: msg });
         } catch (error) {
             console.error('[Top Command Error]', error);

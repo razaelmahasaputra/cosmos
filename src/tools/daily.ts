@@ -48,6 +48,7 @@ const dailyTool: ToolModule = {
             }
         });
 
+        await new Promise(resolve => setTimeout(resolve, 3000));
         await sock.sendMessage(msg.key.remoteJid!, {
             text: `🎉 *Daily Reward Claimed!*\n\nYou have received *${reward}* coins.\nYour new balance is *${user.balance + reward}* coins.`
         }, { quoted: msg });

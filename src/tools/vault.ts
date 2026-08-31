@@ -40,6 +40,7 @@ const vaultTool: ToolModule = {
             `📉 *Total Payout:* ${payout} coins\n` +
             `💰 *Net Profit:* ${netProfit} coins`;
 
+        await new Promise(resolve => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: fakeWafQuote as any });
     }
 };

@@ -65,6 +65,7 @@ const diceTool: ToolModule = {
             `${winMsg}\n` +
             `Current Balance: *${result.newBalance}* coins`;
 
+        await new Promise(resolve => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: msg });
     }
 };

@@ -71,6 +71,7 @@ const transferTool: ToolModule = {
                 });
             });
 
+            await new Promise(resolve => setTimeout(resolve, 3000));
             await sock.sendMessage(msg.key.remoteJid!, {
                 text: `💸 *Transfer Successful!*\n\nYou have successfully transferred *${amount}* coins to @${targetJid.split('@')[0]}.\nYour remaining balance is *${user.balance - amount}* coins.`,
                 mentions: [targetJid]
