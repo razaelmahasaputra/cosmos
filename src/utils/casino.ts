@@ -57,7 +57,7 @@ export async function executeGamble(
     baseLoseWeight: number
 ): Promise<GambleResult> {
     if (mutex.has(jid)) {
-        return { success: false, error: 'Tunggu sebentar, transaksi sedang diproses.' };
+        return { success: false, error: 'Please wait, transaction is being processed.' };
     }
     mutex.add(jid);
 
@@ -67,18 +67,18 @@ export async function executeGamble(
             if (!user) throw new Error('User not found');
 
             if (user.balance < bet) {
-                return { success: false, error: `Saldo tidak mencukupi. Saldo Anda: ${user.balance} Koin.` };
+                return { success: false, error: `Insufficient balance. Your balance: ${user.balance} Coins.` };
             }
             if (bet < 10) {
-                return { success: false, error: 'Minimal taruhan adalah 10 koin.' };
+                return { success: false, error: 'Minimum bet is 10 coins.' };
             }
 
             const now = Date.now();
             if (user.lastGambleAt) {
                 const diff = now - user.lastGambleAt.getTime();
                 if (diff < 5100) {
-                    const sisaDetik = ((5100 - diff) / 1000).toFixed(1);
-                    return { success: false, error: `Sabar! Tunggu ${sisaDetik} detik lagi sebelum bertaruh.` };
+                    const remainingSeconds = ((5100 - diff) / 1000).toFixed(1);
+                    return { success: false, error: `Please wait ${remainingSeconds} more seconds before betting again.` };
                 }
             }
 
