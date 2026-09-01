@@ -27,12 +27,7 @@ const topTool: ToolModule = {
             for (const p of groupMetadata.participants) {
                 const cleaned = p.id ? p.id.split(':')[0].split('@')[0] : '';
                 if (cleaned) {
-                    const domain = p.id.includes('@lid') ? 'lid' : 's.whatsapp.net';
-                    memberJids.push(`${cleaned}@${domain}`);
-                    if (domain === 'lid') {
-                        // Legacy support for when LIDs were saved as s.whatsapp.net
-                        memberJids.push(`${cleaned}@s.whatsapp.net`);
-                    }
+                    memberJids.push(cleaned);
                 }
             }
 
@@ -57,12 +52,7 @@ const topTool: ToolModule = {
             for (const user of allUsers) {
                 if (isRoulette && user.rouletteRounds === 0 && user.rouletteWins === 0) continue;
 
-                let defaultName = user.id.split('@')[0];
-                if (user.id.includes('@lid')) {
-                    defaultName = 'Unknown Player';
-                } else {
-                    defaultName = `+${defaultName}`;
-                }
+                let defaultName = `+${user.id}`;
                 const name = user.pushName || user.username || defaultName;
                 if (!userMap.has(name)) {
                     userMap.set(name, { ...user, displayName: name });

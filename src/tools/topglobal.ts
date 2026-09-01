@@ -35,12 +35,7 @@ const topGlobalTool: ToolModule = {
             const userMap = new Map<string, any>();
 
             for (const user of allUsers) {
-                let defaultName = user.id.split('@')[0];
-                if (user.id.includes('@lid')) {
-                    defaultName = 'Unknown Player';
-                } else {
-                    defaultName = `+${defaultName}`;
-                }
+                let defaultName = `+${user.id}`;
                 const name = user.pushName || user.username || defaultName;
 
                 if (!userMap.has(name)) {

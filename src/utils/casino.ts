@@ -191,9 +191,15 @@ export const getSenderJid = (msg: any): string => {
             msg.key.remoteJidAlt ||
             (msg.key as any).participantAlt ||
             (msg.key as any).remoteJidAlt;
+        
+        const cleanedLid = cleanId(jid);
+        
         if (alt) {
-            lidToPnMap.set(cleanId(jid), cleanId(alt));
+            lidToPnMap.set(cleanedLid, cleanId(alt));
             jid = alt;
+        } else if (lidToPnMap.has(cleanedLid)) {
+            // Fallback to cache if WhatsApp didn't send participantAlt this time
+            return lidToPnMap.get(cleanedLid)!;
         }
     }
     return cleanId(jid);
