@@ -45,6 +45,7 @@ const startGameTool: ToolModule = {
         session.status = 'PLAYING';
         session.shells = generateShells();
         session.turnIndex = 0;
+        session.lastActionAt = Date.now();
 
         // Give items
         for (const player of session.players) {

@@ -63,6 +63,7 @@ const useTool: ToolModule = {
 
         currentPlayer.inventory.splice(itemIndex, 1);
         currentPlayer.hasUsedItemThisTurn = true;
+        session.lastActionAt = Date.now();
 
         let outputMsg = '';
 

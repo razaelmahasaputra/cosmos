@@ -56,6 +56,7 @@ const shootTool: ToolModule = {
         let targetEliminated = false;
 
         currentPlayer.handSawActive = false;
+        session.lastActionAt = Date.now();
 
         let outputMsg = `💥 @${senderJid.split('@')[0]} aims the shotgun at @${targetId.split('@')[0]}...\n`;
 
