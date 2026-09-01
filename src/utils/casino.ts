@@ -182,7 +182,11 @@ export const cleanId = (idStr: string | null | undefined): string => {
 export const getSenderJid = (msg: any): string => {
     let jid = msg.key.participant || msg.key.remoteJid;
     if (jid && jid.endsWith('@lid')) {
-        const alt = msg.key.participantAlt || msg.key.remoteJidAlt || (msg.key as any).participantAlt || (msg.key as any).remoteJidAlt;
+        const alt =
+            msg.key.participantAlt ||
+            msg.key.remoteJidAlt ||
+            (msg.key as any).participantAlt ||
+            (msg.key as any).remoteJidAlt;
         if (alt) jid = alt;
     }
     return cleanId(jid);

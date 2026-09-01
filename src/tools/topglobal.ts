@@ -20,7 +20,9 @@ const topGlobalTool: ToolModule = {
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
-        const category = String(args.input || '').trim().toLowerCase();
+        const category = String(args.input || '')
+            .trim()
+            .toLowerCase();
         const isRoulette = category === 'roulette' || category === 'buckshot';
 
         const now = Date.now();
@@ -52,7 +54,7 @@ const topGlobalTool: ToolModule = {
             }
 
             const mergedUsers = Array.from(userMap.values());
-            mergedUsers.sort((a, b) => isRoulette ? b.rouletteWins - a.rouletteWins : b.balance - a.balance);
+            mergedUsers.sort((a, b) => (isRoulette ? b.rouletteWins - a.rouletteWins : b.balance - a.balance));
 
             if (isRoulette) {
                 topRouletteCache = mergedUsers.slice(0, 10);

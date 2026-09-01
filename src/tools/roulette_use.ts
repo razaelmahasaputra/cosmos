@@ -18,7 +18,9 @@ const useTool: ToolModule = {
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
         const senderJid = getSenderJid(msg);
-        const inputStr = String(args.input || '').trim().toLowerCase();
+        const inputStr = String(args.input || '')
+            .trim()
+            .toLowerCase();
 
         const session = getSessionByChatId(jid);
         if (!session || session.status !== 'PLAYING') {
@@ -29,19 +31,19 @@ const useTool: ToolModule = {
         if (currentPlayer.userId !== senderJid) {
             return `❌ It's not your turn!`;
         }
-        
+
         if (currentPlayer.hasUsedItemThisTurn) {
             return `❌ You have already used an item this turn! You must shoot.`;
         }
 
         const itemNameRaw = inputStr.split(' ')[0];
         let targetId = '';
-        
+
         const mentionedJidList = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
         if (mentionedJidList.length > 0) {
             targetId = cleanId(mentionedJidList[0]);
         }
-        
+
         let itemType: ItemType | undefined;
         if (itemNameRaw === 'cola' || itemNameRaw === 'beer') itemType = 'COLA';
         else if (itemNameRaw === 'magnifying' || itemNameRaw === 'glass') itemType = 'MAGNIFYING_GLASS';
@@ -49,7 +51,7 @@ const useTool: ToolModule = {
         else if (itemNameRaw === 'handcuffs') itemType = 'HANDCUFFS';
         else if (itemNameRaw === 'cigarettes' || itemNameRaw === 'cigar') itemType = 'CIGARETTES';
         else if (itemNameRaw === 'inverter') itemType = 'INVERTER';
-        
+
         if (!itemType) {
             return `❌ Invalid item.`;
         }
@@ -61,7 +63,7 @@ const useTool: ToolModule = {
 
         currentPlayer.inventory.splice(itemIndex, 1);
         currentPlayer.hasUsedItemThisTurn = true;
-        
+
         let outputMsg = '';
 
         switch (itemType) {
@@ -76,7 +78,7 @@ const useTool: ToolModule = {
                 break;
             case 'HANDCUFFS': {
                 if (!targetId) return `❌ Use the format: .use handcuffs @target`;
-                const target = session.players.find(p => p.userId === targetId);
+                const target = session.players.find((p) => p.userId === targetId);
                 if (target && target.hp > 0) {
                     target.isHandcuffed = true;
                     outputMsg = `🔗 @${senderJid.split('@')[0]} handcuffed @${targetId.split('@')[0]}!\nTheir next turn will be skipped.`;
@@ -90,9 +92,14 @@ const useTool: ToolModule = {
                 await sock.sendMessage(jid, { text: outputMsg, mentions: [senderJid] });
                 const shell = session.shells[session.shells.length - 1];
                 try {
-                    await sock.sendMessage(senderJid, { text: `🔍 *Magnifying Glass Result:*\nThe current shell in the barrel is: *${shell}*` });
+                    await sock.sendMessage(senderJid, {
+                        text: `🔍 *Magnifying Glass Result:*\nThe current shell in the barrel is: *${shell}*`
+                    });
                 } catch {
-                    await sock.sendMessage(jid, { text: `⚠️ *FAILED TO SEND DM!*\n@${senderJid.split('@')[0]}, the Bot cannot send a private message to your number!\nThe *Magnifying Glass* was wasted with no result!`, mentions: [senderJid] });
+                    await sock.sendMessage(jid, {
+                        text: `⚠️ *FAILED TO SEND DM!*\n@${senderJid.split('@')[0]}, the Bot cannot send a private message to your number!\nThe *Magnifying Glass* was wasted with no result!`,
+                        mentions: [senderJid]
+                    });
                 }
                 return null;
             }
@@ -104,7 +111,7 @@ const useTool: ToolModule = {
             }
         }
 
-        const mentions = session.players.map(p => p.userId);
+        const mentions = session.players.map((p) => p.userId);
         await sock.sendMessage(jid, { text: outputMsg, mentions });
         return null;
     }

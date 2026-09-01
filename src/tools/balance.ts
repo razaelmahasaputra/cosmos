@@ -34,7 +34,7 @@ const balanceTool: ToolModule = {
             if (!isOwner) {
                 await sock.sendMessage(
                     msg.key.remoteJid!,
-                    { text: '❌ Only the bot owner can check other users\' balances.' },
+                    { text: "❌ Only the bot owner can check other users' balances." },
                     { quoted: msg }
                 );
                 return;
@@ -43,11 +43,11 @@ const balanceTool: ToolModule = {
             isCheckingOther = true;
         }
 
-        const pushName = !isCheckingOther ? (msg.pushName || undefined) : undefined;
+        const pushName = !isCheckingOther ? msg.pushName || undefined : undefined;
         const user = await getUser(prisma, queryJid, pushName);
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
-        
+
         let text = `💰 *Your Balance*\n\nYou currently have *${user.balance}* coins.\nKeep playing and claim your daily reward!`;
         if (isCheckingOther) {
             text = `💰 *User Balance*\n\n@${queryJid.split('@')[0]} currently has *${user.balance}* coins.`;

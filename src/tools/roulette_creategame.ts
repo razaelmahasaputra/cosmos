@@ -6,7 +6,7 @@ const createGameTool: ToolModule = {
     definition: {
         name: 'creategame',
         description: 'Create a new Buckshot Roulette minigame session',
-        category: 'Games',
+        category: 'Games'
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;

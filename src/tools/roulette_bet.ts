@@ -35,7 +35,7 @@ const betTool: ToolModule = {
             return `❌ Betting is closed. The game has already started.`;
         }
 
-        const player = session.players.find(p => p.userId === senderJid);
+        const player = session.players.find((p) => p.userId === senderJid);
         if (!player) {
             return `❌ You are not in this game session. Type .joingame ${session.sessionId} first.`;
         }

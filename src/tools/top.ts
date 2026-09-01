@@ -36,7 +36,9 @@ const topTool: ToolModule = {
                 }
             }
 
-            const category = String(args.input || '').trim().toLowerCase();
+            const category = String(args.input || '')
+                .trim()
+                .toLowerCase();
             const isRoulette = category === 'roulette' || category === 'buckshot';
 
             const allUsers: any[] = [];
@@ -73,7 +75,7 @@ const topTool: ToolModule = {
             }
 
             const mergedUsers = Array.from(userMap.values());
-            mergedUsers.sort((a, b) => isRoulette ? b.rouletteWins - a.rouletteWins : b.balance - a.balance);
+            mergedUsers.sort((a, b) => (isRoulette ? b.rouletteWins - a.rouletteWins : b.balance - a.balance));
 
             const finalTopUsers = mergedUsers.slice(0, 10);
 

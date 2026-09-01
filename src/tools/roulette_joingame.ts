@@ -19,7 +19,9 @@ const joinGameTool: ToolModule = {
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg } = ctx;
         const senderJid = getSenderJid(msg);
-        const sessionId = String(args.input || '').trim().toUpperCase();
+        const sessionId = String(args.input || '')
+            .trim()
+            .toUpperCase();
 
         if (!sessionId) {
             return `❌ Please provide a Session ID. Example: .joingame A1X9B`;
@@ -38,7 +40,7 @@ const joinGameTool: ToolModule = {
             return `❌ The room is full (Maximum 5 players).`;
         }
 
-        if (session.players.find(p => p.userId === senderJid)) {
+        if (session.players.find((p) => p.userId === senderJid)) {
             return `❌ You are already in this room!`;
         }
 
@@ -65,12 +67,12 @@ const joinGameTool: ToolModule = {
         let playerList = '';
         session.players.forEach((p, idx) => {
             const prefix = idx === 0 ? '👑 ' : '';
-            const rounds = idx === 0 ? creatorRounds : (p.userId === senderJid ? roundCount : 0); // Quick hack to show rounds
+            const rounds = idx === 0 ? creatorRounds : p.userId === senderJid ? roundCount : 0; // Quick hack to show rounds
             playerList += `${idx + 1}. ${prefix}@${p.userId.split('@')[0]} (${rounds} Rounds)\n`;
         });
 
         const numPlayers = session.players.length;
-        const betters = session.players.filter(p => p.betAmount > 0).length;
+        const betters = session.players.filter((p) => p.betAmount > 0).length;
 
         return `📥 @${senderJid.split('@')[0]} has joined the room!\n👥 *Players (${numPlayers}/5):*\n${playerList.trim()}\n\n💰 *Current Pot:* ${session.potAmount} Coins (From ${betters} Player${betters > 1 ? 's' : ''})\n\n⚠️ Don't forget to place your bets!\n👉 Type *.bet <amount>* (Min. 25 Coins)`;
     }
