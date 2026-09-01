@@ -1,5 +1,5 @@
 import { jidNormalizedUser, WASocket, WAMessage } from '@whiskeysockets/baileys';
-import { addGroup, isGroupWhitelisted } from '#/db.js';
+import { addGroup, isGroupWhitelisted, prisma } from '#/db.js';
 import toolsHandler from '#/tools/handler.js';
 import { isAutoStickerEnabled } from '#/utils/autoSticker.js';
 import { isAutoCorrectionEnabled, analyzeAndCorrectText } from '#/utils/autoCorrection.js';
@@ -162,6 +162,64 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
                         args = JSON.parse(argsStr);
                     } catch {
                         args[keys[0]] = argsStr;
+                    }
+                }
+            }
+
+            // Fix quote previews for LIDs: replace raw LID numbers in the message text with pushnames or phone numbers
+            // We do this by modifying `msg` in place before execution, so tools quoting this `msg` have a readable preview.
+            if (msg.message) {
+                const msgKeys = ['extendedTextMessage', 'imageMessage', 'videoMessage'] as const;
+                for (const msgKey of msgKeys) {
+                    const msgContent = msg.message[msgKey];
+                    if (msgContent) {
+                        const textKey = msgKey === 'extendedTextMessage' ? 'text' : 'caption';
+                        let currentText = (msgContent as any)[textKey] as string | null | undefined;
+                        const mentionedJids = msgContent.contextInfo?.mentionedJid;
+
+                        if (currentText && mentionedJids && mentionedJids.length > 0) {
+                            let groupParticipants: any[] = [];
+                            if (jid.endsWith('@g.us')) {
+                                try {
+                                    const meta = await sock.groupMetadata(jid);
+                                    groupParticipants = meta.participants;
+                                } catch {
+                                    // ignore error
+                                }
+                            }
+
+                            for (const mJid of mentionedJids) {
+                                if (mJid.endsWith('@lid')) {
+                                    const lidNum = mJid.split('@')[0];
+                                    if (currentText.includes(`@${lidNum}`)) {
+                                        let resolvedJid = mJid;
+                                        const participant = groupParticipants.find((p: any) => p.lid === mJid);
+                                        if (participant && participant.id) {
+                                            resolvedJid = participant.id;
+                                        }
+
+                                        const searchJid = resolvedJid.endsWith('@lid') ? null : resolvedJid;
+                                        let replacement = `@${lidNum}`; // fallback
+
+                                        if (searchJid) {
+                                            const jidNum = searchJid.split('@')[0];
+                                            replacement = `@${jidNum}`; // phone fallback
+                                            try {
+                                                const user = await prisma.user.findUnique({ where: { id: searchJid } });
+                                                if (user && user.pushName) {
+                                                    replacement = `@${user.pushName}`;
+                                                }
+                                            } catch {
+                                                // ignore error
+                                            }
+                                        }
+
+                                        currentText = currentText.replace(new RegExp(`@${lidNum}`, 'g'), replacement);
+                                    }
+                                }
+                            }
+                            (msgContent as any)[textKey] = currentText;
+                        }
                     }
                 }
             }
