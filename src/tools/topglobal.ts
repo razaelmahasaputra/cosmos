@@ -28,13 +28,9 @@ const topGlobalTool: ToolModule = {
         const expiry = isRoulette ? topRouletteCacheExpiry : topGlobalCacheExpiry;
 
         if (!cache || now > expiry) {
-            const allUsers = await prisma.user.findMany({
-                orderBy: isRoulette ? { rouletteWins: 'desc' } : { balance: 'desc' },
-                take: 100
-            });
+            const allUsers = await prisma.user.findMany();
 
-            const seenNames = new Set<string>();
-            const topUsers = [];
+            const userMap = new Map<string, any>();
 
             for (const user of allUsers) {
                 let defaultName = user.id.split('@')[0];
@@ -44,17 +40,25 @@ const topGlobalTool: ToolModule = {
                     defaultName = `+${defaultName}`;
                 }
                 const name = user.pushName || user.username || defaultName;
-                if (!seenNames.has(name)) {
-                    seenNames.add(name);
-                    topUsers.push({ ...user, displayName: name });
+
+                if (!userMap.has(name)) {
+                    userMap.set(name, { ...user, displayName: name });
+                } else {
+                    const existing = userMap.get(name);
+                    existing.balance += user.balance;
+                    existing.rouletteWins += user.rouletteWins;
+                    existing.rouletteRounds += user.rouletteRounds;
                 }
             }
 
+            const mergedUsers = Array.from(userMap.values());
+            mergedUsers.sort((a, b) => isRoulette ? b.rouletteWins - a.rouletteWins : b.balance - a.balance);
+
             if (isRoulette) {
-                topRouletteCache = topUsers.slice(0, 10);
+                topRouletteCache = mergedUsers.slice(0, 10);
                 topRouletteCacheExpiry = now + 5 * 60 * 1000;
             } else {
-                topGlobalCache = topUsers.slice(0, 10);
+                topGlobalCache = mergedUsers.slice(0, 10);
                 topGlobalCacheExpiry = now + 5 * 60 * 1000;
             }
         }

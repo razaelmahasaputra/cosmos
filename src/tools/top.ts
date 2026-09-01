@@ -51,14 +51,8 @@ const topTool: ToolModule = {
                 }
             }
 
-            // Sort manually since we chunked
-            allUsers.sort((a, b) => isRoulette ? b.rouletteWins - a.rouletteWins : b.balance - a.balance);
-
-            const seenNames = new Set<string>();
-            const topUsers = [];
-
+            const userMap = new Map<string, any>();
             for (const user of allUsers) {
-                // If checking roulette, maybe only show players who have played
                 if (isRoulette && user.rouletteRounds === 0 && user.rouletteWins === 0) continue;
 
                 let defaultName = user.id.split('@')[0];
@@ -68,13 +62,20 @@ const topTool: ToolModule = {
                     defaultName = `+${defaultName}`;
                 }
                 const name = user.pushName || user.username || defaultName;
-                if (!seenNames.has(name)) {
-                    seenNames.add(name);
-                    topUsers.push({ ...user, displayName: name });
+                if (!userMap.has(name)) {
+                    userMap.set(name, { ...user, displayName: name });
+                } else {
+                    const existing = userMap.get(name);
+                    existing.balance += user.balance;
+                    existing.rouletteWins += user.rouletteWins;
+                    existing.rouletteRounds += user.rouletteRounds;
                 }
             }
 
-            const finalTopUsers = topUsers.slice(0, 10);
+            const mergedUsers = Array.from(userMap.values());
+            mergedUsers.sort((a, b) => isRoulette ? b.rouletteWins - a.rouletteWins : b.balance - a.balance);
+
+            const finalTopUsers = mergedUsers.slice(0, 10);
 
             let text = isRoulette ? `🔫 *Group Roulette Leaderboard* 🔫\n\n` : `👥 *Group Casino Leaderboard* 👥\n\n`;
 
