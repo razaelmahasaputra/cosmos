@@ -39,7 +39,7 @@ const balanceTool: ToolModule = {
                 );
                 return;
             }
-            queryJid = targetJid;
+            queryJid = targetJid.split(':')[0].split('@')[0];
             isCheckingOther = true;
         }
 
@@ -57,7 +57,7 @@ const balanceTool: ToolModule = {
             msg.key.remoteJid!,
             {
                 text,
-                mentions: isCheckingOther ? [queryJid] : []
+                mentions: isCheckingOther && targetJid ? [targetJid] : []
             },
             { quoted: msg }
         );

@@ -51,6 +51,8 @@ const transferTool: ToolModule = {
             return `❌ Insufficient balance. You only have ${user.balance} coins.`;
         }
 
+        const cleanTargetJid = targetJid.split(':')[0].split('@')[0];
+
         // Anti-Miss: Transaction wrapper
         try {
             await prisma.$transaction(async (tx) => {
@@ -60,9 +62,9 @@ const transferTool: ToolModule = {
                 }
 
                 await tx.user.upsert({
-                    where: { id: targetJid },
+                    where: { id: cleanTargetJid },
                     update: { balance: { increment: amount } },
-                    create: { id: targetJid, balance: 5 + amount } // 5 is starterpack
+                    create: { id: cleanTargetJid, balance: 5 + amount } // 5 is starterpack
                 });
 
                 await tx.user.update({
