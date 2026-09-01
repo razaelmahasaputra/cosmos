@@ -2,6 +2,7 @@ import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
 import { getSenderJid, resolveId } from '../utils/casino.js';
 import { getUser } from '../utils/casino.js';
+import { logTransaction } from '../utils/transactionLogger.js';
 
 const transferTool: ToolModule = {
     definition: {
@@ -73,6 +74,9 @@ const transferTool: ToolModule = {
                     data: { balance: { decrement: amount } }
                 });
             });
+
+            // Log the successful transfer
+            logTransaction(senderJid, cleanTargetJid, amount);
 
             await new Promise((resolve) => setTimeout(resolve, 3000));
             await sock.sendMessage(
