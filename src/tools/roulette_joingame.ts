@@ -49,6 +49,7 @@ const joinGameTool: ToolModule = {
 
         const newPlayer: Player = {
             userId: senderJid,
+            pushName: msg.pushName || senderJid.split('@')[0],
             hp: 5,
             inventory: [],
             betAmount: 0,
@@ -68,13 +69,13 @@ const joinGameTool: ToolModule = {
         session.players.forEach((p, idx) => {
             const prefix = idx === 0 ? '👑 ' : '';
             const rounds = idx === 0 ? creatorRounds : p.userId === senderJid ? roundCount : 0; // Quick hack to show rounds
-            playerList += `${idx + 1}. ${prefix}@${p.userId.split('@')[0]} (${rounds} Rounds)\n`;
+            playerList += `${idx + 1}. ${prefix}@${p.pushName} (${rounds} Rounds)\n`;
         });
 
         const numPlayers = session.players.length;
         const betters = session.players.filter((p) => p.betAmount > 0).length;
 
-        return `📥 @${senderJid.split('@')[0]} has joined the room!\n👥 *Players (${numPlayers}/5):*\n${playerList.trim()}\n\n💰 *Current Pot:* ${session.potAmount} Coins (From ${betters} Player${betters > 1 ? 's' : ''})\n\n⚠️ Don't forget to place your bets!\n👉 Type *.bet <amount>* (Min. 25 Coins)`;
+        return `📥 @${newPlayer.pushName} has joined the room!\n👥 *Players (${numPlayers}/5):*\n${playerList.trim()}\n\n💰 *Current Pot:* ${session.potAmount} Coins (From ${betters} Player${betters > 1 ? 's' : ''})\n\n⚠️ Don't forget to place your bets!\n👉 Type *.bet <amount>* (Min. 25 Coins)`;
     }
 };
 

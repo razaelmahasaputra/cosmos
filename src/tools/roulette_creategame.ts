@@ -32,6 +32,7 @@ const createGameTool: ToolModule = {
 
         const creator: Player = {
             userId: senderJid,
+            pushName: msg.pushName || senderJid.split('@')[0],
             hp: 5,
             inventory: [],
             betAmount: 0,
@@ -54,7 +55,7 @@ const createGameTool: ToolModule = {
             timeoutId
         });
 
-        return `🔫 *ROULETTE MINIGAME* 🔫\n\nRoom successfully created by 👑 @${senderJid.split('@')[0]}!\n🆔 *Session ID:* \`${sessionId}\`\n\nWaiting for other players to join...\n👉 Type *.joingame ${sessionId}* to join this session.\n⏱️ *Timeout:* 30 Seconds if no one joins.`;
+        return `🔫 *ROULETTE MINIGAME* 🔫\n\nRoom successfully created by 👑 @${creator.pushName}!\n🆔 *Session ID:* \`${sessionId}\`\n\nWaiting for other players to join...\n👉 Type *.joingame ${sessionId}* to join this session.\n⏱️ *Timeout:* 30 Seconds if no one joins.`;
     }
 };
 

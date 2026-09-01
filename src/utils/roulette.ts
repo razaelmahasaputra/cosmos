@@ -4,6 +4,7 @@ export type GameStatus = 'LOBBY' | 'PLAYING' | 'FINISHED';
 
 export interface Player {
     userId: string;
+    pushName: string;
     hp: number;
     inventory: ItemType[];
     betAmount: number;
@@ -67,19 +68,19 @@ export function getSessionByChatId(chatId: string): GameSession | undefined {
 }
 
 export function handleElimination(session: GameSession, deadPlayer: Player): string {
-    let msg = `\n💀 *ELIMINATED!*\n@${deadPlayer.userId.split('@')[0]}'s lives have run out (0).\n`;
+    let msg = `\n💀 *ELIMINATED!*\n@${deadPlayer.pushName}'s lives have run out (0).\n`;
 
     const alivePlayers = session.players.filter((p) => p.hp > 0);
 
     if (deadPlayer.inventory.length > 0 && alivePlayers.length > 0) {
-        msg += `\n🎁 *DEATH LOOT!*\n@${deadPlayer.userId.split('@')[0]}'s inventory has been dropped...\n`;
+        msg += `\n🎁 *DEATH LOOT!*\n@${deadPlayer.pushName}'s inventory has been dropped...\n`;
 
         for (const item of deadPlayer.inventory) {
             const eligiblePlayers = alivePlayers.filter((p) => p.inventory.length < 4);
             if (eligiblePlayers.length > 0) {
                 const receiver = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
                 receiver.inventory.push(item);
-                msg += `@${receiver.userId.split('@')[0]} received *${item.replace('_', ' ')}*!\n`;
+                msg += `@${receiver.pushName} received *${item.replace('_', ' ')}*!\n`;
             }
         }
     }
@@ -103,11 +104,11 @@ export function nextTurn(session: GameSession, shouldRandomize: boolean): string
     const nextPlayer = session.players[session.turnIndex];
     nextPlayer.hasUsedItemThisTurn = false;
 
-    let msg = `\n👉 *NEXT TURN:* @${nextPlayer.userId.split('@')[0]}\n`;
+    let msg = `\n👉 *NEXT TURN:* @${nextPlayer.pushName}\n`;
 
     if (nextPlayer.isHandcuffed) {
         nextPlayer.isHandcuffed = false;
-        msg += `🔗 @${nextPlayer.userId.split('@')[0]}'s turn is skipped because they are handcuffed!\n`;
+        msg += `🔗 @${nextPlayer.pushName}'s turn is skipped because they are handcuffed!\n`;
         msg += nextTurn(session, false);
     } else {
         const inventoryStr =

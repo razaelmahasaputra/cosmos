@@ -36,7 +36,6 @@ const useTool: ToolModule = {
             return `❌ You have already used an item this turn! You must shoot.`;
         }
 
-        const itemNameRaw = inputStr.split(' ')[0];
         let targetId = '';
 
         const mentionedJidList = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
@@ -45,12 +44,12 @@ const useTool: ToolModule = {
         }
 
         let itemType: ItemType | undefined;
-        if (itemNameRaw === 'cola' || itemNameRaw === 'beer') itemType = 'COLA';
-        else if (itemNameRaw === 'magnifying' || itemNameRaw === 'glass') itemType = 'MAGNIFYING_GLASS';
-        else if (itemNameRaw === 'saw' || itemNameRaw === 'handsaw') itemType = 'HAND_SAW';
-        else if (itemNameRaw === 'handcuffs') itemType = 'HANDCUFFS';
-        else if (itemNameRaw === 'cigarettes' || itemNameRaw === 'cigar') itemType = 'CIGARETTES';
-        else if (itemNameRaw === 'inverter') itemType = 'INVERTER';
+        if (inputStr.includes('cola') || inputStr.includes('beer')) itemType = 'COLA';
+        else if (inputStr.includes('magnifying') || inputStr.includes('glass')) itemType = 'MAGNIFYING_GLASS';
+        else if (inputStr.includes('saw') || inputStr.includes('handsaw')) itemType = 'HAND_SAW';
+        else if (inputStr.includes('handcuff') || inputStr.includes('cuff')) itemType = 'HANDCUFFS';
+        else if (inputStr.includes('cigarette') || inputStr.includes('cigar')) itemType = 'CIGARETTES';
+        else if (inputStr.includes('inverter')) itemType = 'INVERTER';
 
         if (!itemType) {
             return `❌ Invalid item.`;
@@ -71,25 +70,25 @@ const useTool: ToolModule = {
             case 'COLA':
             case 'CIGARETTES':
                 if (currentPlayer.hp < 5) currentPlayer.hp++;
-                outputMsg = `🍺 @${senderJid.split('@')[0]} used ${itemType === 'COLA' ? 'Cola' : 'Cigarettes'}!\n❤️ Lives restored (+1 Heart).\nCurrent lives: [${'❤️'.repeat(currentPlayer.hp)}${'🖤'.repeat(5 - currentPlayer.hp)}]`;
+                outputMsg = `🍺 @${currentPlayer.pushName} used ${itemType === 'COLA' ? 'Cola' : 'Cigarettes'}!\n❤️ Lives restored (+1 Heart).\nCurrent lives: [${'❤️'.repeat(currentPlayer.hp)}${'🖤'.repeat(5 - currentPlayer.hp)}]`;
                 break;
             case 'HAND_SAW':
                 currentPlayer.handSawActive = true;
-                outputMsg = `🪚 @${senderJid.split('@')[0]} sawed off the barrel! Next shell damage is x2.`;
+                outputMsg = `🪚 @${currentPlayer.pushName} sawed off the barrel! Next shell damage is x2.`;
                 break;
             case 'HANDCUFFS': {
                 if (!targetId) return `❌ Use the format: .use handcuffs @target`;
                 const target = session.players.find((p) => p.userId === targetId);
                 if (target && target.hp > 0) {
                     target.isHandcuffed = true;
-                    outputMsg = `🔗 @${senderJid.split('@')[0]} handcuffed @${targetId.split('@')[0]}!\nTheir next turn will be skipped.`;
+                    outputMsg = `🔗 @${currentPlayer.pushName} handcuffed @${target.pushName}!\nTheir next turn will be skipped.`;
                 } else {
                     return `❌ Target is invalid or eliminated.`;
                 }
                 break;
             }
             case 'MAGNIFYING_GLASS': {
-                outputMsg = `🔍 @${senderJid.split('@')[0]} uses the *Magnifying Glass*!`;
+                outputMsg = `🔍 @${currentPlayer.pushName} uses the *Magnifying Glass*!`;
                 await sock.sendMessage(jid, { text: outputMsg, mentions: [senderJid] });
                 const shell = session.shells[session.shells.length - 1];
                 try {
@@ -98,7 +97,7 @@ const useTool: ToolModule = {
                     });
                 } catch {
                     await sock.sendMessage(jid, {
-                        text: `⚠️ *FAILED TO SEND DM!*\n@${senderJid.split('@')[0]}, the Bot cannot send a private message to your number!\nThe *Magnifying Glass* was wasted with no result!`,
+                        text: `⚠️ *FAILED TO SEND DM!*\n@${currentPlayer.pushName}, the Bot cannot send a private message to your number!\nThe *Magnifying Glass* was wasted with no result!`,
                         mentions: [senderJid]
                     });
                 }
@@ -107,7 +106,7 @@ const useTool: ToolModule = {
             case 'INVERTER': {
                 const current = session.shells[session.shells.length - 1];
                 session.shells[session.shells.length - 1] = current === 'LIVE' ? 'BLANK' : 'LIVE';
-                outputMsg = `🔄 @${senderJid.split('@')[0]} used the Inverter!\nThe current shell's polarity has been swapped.`;
+                outputMsg = `🔄 @${currentPlayer.pushName} used the Inverter!\nThe current shell's polarity has been swapped.`;
                 break;
             }
         }

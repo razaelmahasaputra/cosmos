@@ -58,7 +58,7 @@ const shootTool: ToolModule = {
         currentPlayer.handSawActive = false;
         session.lastActionAt = Date.now();
 
-        let outputMsg = `💥 @${senderJid.split('@')[0]} aims the shotgun at @${targetId.split('@')[0]}...\n`;
+        let outputMsg = `💥 @${currentPlayer.pushName} aims the shotgun at @${target.pushName}...\n`;
 
         await sock.sendMessage(jid, { text: outputMsg, mentions: [senderJid, targetId] });
         await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -76,7 +76,7 @@ const shootTool: ToolModule = {
 
             outputMsg += nextTurn(session, targetEliminated);
         } else {
-            outputMsg += `*CLICK!*\n⚪ *BLANK SHELL*\n@${targetId.split('@')[0]} survived the shot!\n`;
+            outputMsg += `*CLICK!*\n⚪ *BLANK SHELL*\n@${target.pushName} survived the shot!\n`;
 
             if (isSelfShoot) {
                 outputMsg += `\nTurn does not pass! You may continue your action.`;
@@ -110,7 +110,7 @@ const shootTool: ToolModule = {
                 });
             }
 
-            outputMsg += `\n\n🏆 *GAME OVER!* 🏆\n\nOnly one person has survived this deadly table...\nCongratulations to: *👑 @${winner.userId.split('@')[0]}*!\n\n💰 *PRIZE AWARDED:*\nTakes the entire Pot worth **${pot} Coins**!\n\n\`.top roulette\` statistics have been updated.\nType *.creategame* to start a new round of madness!`;
+            outputMsg += `\n\n🏆 *GAME OVER!* 🏆\n\nOnly one person has survived this deadly table...\nCongratulations to: *👑 @${winner.pushName}*!\n\n💰 *PRIZE AWARDED:*\nTakes the entire Pot worth **${pot} Coins**!\n\n\`.top roulette\` statistics have been updated.\nType *.creategame* to start a new round of madness!`;
 
             gameSessions.delete(session.sessionId);
         } else {
@@ -121,7 +121,7 @@ const shootTool: ToolModule = {
                 const nextP = session.players[session.turnIndex];
                 const inventoryStr =
                     nextP.inventory.length > 0 ? nextP.inventory.map((i) => i.replace('_', ' ')).join(', ') : 'Empty';
-                outputMsg += `\n👇 *TURN:* @${nextP.userId.split('@')[0]}\n❤️ Lives: [${'❤️'.repeat(nextP.hp)}${'🖤'.repeat(5 - nextP.hp)}]\n🎒 Inventory: ${inventoryStr}`;
+                outputMsg += `\n👇 *TURN:* @${nextP.pushName}\n❤️ Lives: [${'❤️'.repeat(nextP.hp)}${'🖤'.repeat(5 - nextP.hp)}]\n🎒 Inventory: ${inventoryStr}`;
             }
         }
 

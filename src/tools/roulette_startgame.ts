@@ -32,7 +32,7 @@ const startGameTool: ToolModule = {
         // Check if all players have bet
         const nonBetters = session.players.filter((p) => p.betAmount === 0);
         if (nonBetters.length > 0) {
-            const names = nonBetters.map((p) => `@${p.userId.split('@')[0]}`).join(', ');
+            const names = nonBetters.map((p) => `@${p.pushName}`).join(', ');
             return `❌ Failed to start game! User ${names} has not placed a bet.`;
         }
 
@@ -67,7 +67,7 @@ const startGameTool: ToolModule = {
                 ? firstPlayer.inventory.map((i) => i.replace('_', ' ')).join(', ')
                 : 'Empty';
 
-        const roundMsg = `🔄 *ROUND 1 BEGINS* 🔄\n\n*Dealer* loads shells into the shotgun...\n🔴 *Live:* ${liveCount}\n⚪ *Blank:* ${blankCount}\n*(Total ${session.shells.length} shells shuffled mysteriously...)*\n\n📦 *Item Distribution:* Each player receives 2 random items!\n\n👇 *TURN:* 👑 @${firstPlayer.userId.split('@')[0]}\n❤️ Lives: [${'❤️'.repeat(firstPlayer.hp)}${'🖤'.repeat(5 - firstPlayer.hp)}]\n🎒 Inventory: ${inventoryStr}\n🔥 *Active Status:* None\n\nAvailable actions:\n🔫 *.shoot @user* - Shoot another player\n🔫 *.shoot me* - Shoot yourself\n🛠️ *.use <item> [@target]* - Use an item (Max. 1 Item/Turn)`;
+        const roundMsg = `🔄 *ROUND 1 BEGINS* 🔄\n\n*Dealer* loads shells into the shotgun...\n🔴 *Live:* ${liveCount}\n⚪ *Blank:* ${blankCount}\n*(Total ${session.shells.length} shells shuffled mysteriously...)*\n\n📦 *Item Distribution:* Each player receives 2 random items!\n\n👇 *TURN:* 👑 @${firstPlayer.pushName}\n❤️ Lives: [${'❤️'.repeat(firstPlayer.hp)}${'🖤'.repeat(5 - firstPlayer.hp)}]\n🎒 Inventory: ${inventoryStr}\n🔥 *Active Status:* None\n\nAvailable actions:\n🔫 *.shoot @user* - Shoot another player\n🔫 *.shoot me* - Shoot yourself\n🛠️ *.use <item> [@target]* - Use an item (Max. 1 Item/Turn)`;
 
         return roundMsg;
     }

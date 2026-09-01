@@ -58,7 +58,7 @@ const betTool: ToolModule = {
         player.betAmount = amount;
         session.potAmount += amount;
 
-        return `💰 @${senderJid.split('@')[0]} placed a bet of *${amount} Coins*.\n📊 *Current Total Pot:* ${session.potAmount} Coins (Waiting for other players...)`;
+        return `💰 @${player.pushName} placed a bet of *${amount} Coins*.\n📊 *Current Total Pot:* ${session.potAmount} Coins (Waiting for other players...)`;
     }
 };
 
