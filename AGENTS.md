@@ -57,6 +57,7 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
     1. `pnpm typecheck`
     2. `pnpm lint`
     3. `pnpm build` (jika diperlukan untuk memastikan kompilasi dist bersih)
+    4. `pnpm format` (wajib dijalankan untuk merapikan kode sebelum di-commit)
 
 ### C. Logging & Debugging
 
@@ -98,8 +99,9 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 2. **Inspeksi Kode:** Selalu periksa file sumber asli sebelum mengubah logika atau nama fungsi/tipe.
 3. **Eksekusi Perubahan:** Lakukan pengeditan kode secara presisi dan bersih dalam TypeScript.
 4. **Jalankan Verifikasi:** Jalankan `pnpm typecheck` dan `pnpm lint` untuk memastikan tidak ada syntax error atau tipe mismatch.
-5. **Lakukan Git Commit:** Lakukan commit lokal atas semua perubahan yang telah selesai dan terverifikasi.
-6. **Ringkaskan Hasil:** Berikan penjelasan singkat, padat, dan jelas mengenai perubahan yang telah dilakukan beserta bukti verifikasi.
+5. **Format Kode:** Jalankan `pnpm format` agar format kode seragam dan sesuai standar (jalankan setelah script lainnya).
+6. **Lakukan Git Commit:** Lakukan commit lokal atas semua perubahan yang telah selesai dan terverifikasi beserta hasil formatting.
+7. **Ringkaskan Hasil:** Berikan penjelasan singkat, padat, dan jelas mengenai perubahan yang telah dilakukan beserta bukti verifikasi.
 
 ### J. Database & Persistensi (Prisma SQLite)
 
