@@ -9,7 +9,9 @@ const topTool: ToolModule = {
         category: 'Casino',
         parameters: {
             type: 'object',
-            properties: {}
+            properties: {
+                input: { type: 'string', description: 'Category (e.g., roulette)' }
+            }
         }
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
@@ -37,15 +39,28 @@ const topTool: ToolModule = {
             const category = String(args.input || '').trim().toLowerCase();
             const isRoulette = category === 'roulette' || category === 'buckshot';
 
-            const allUsers = await prisma.user.findMany({
-                where: { id: { in: memberJids } },
-                orderBy: isRoulette ? { rouletteWins: 'desc' } : { balance: 'desc' }
-            });
+            const allUsers: any[] = [];
+            if (memberJids.length > 0) {
+                const chunkSize = 500;
+                for (let i = 0; i < memberJids.length; i += chunkSize) {
+                    const chunk = memberJids.slice(i, i + chunkSize);
+                    const usersChunk = await prisma.user.findMany({
+                        where: { id: { in: chunk } }
+                    });
+                    allUsers.push(...usersChunk);
+                }
+            }
+
+            // Sort manually since we chunked
+            allUsers.sort((a, b) => isRoulette ? b.rouletteWins - a.rouletteWins : b.balance - a.balance);
 
             const seenNames = new Set<string>();
             const topUsers = [];
 
             for (const user of allUsers) {
+                // If checking roulette, maybe only show players who have played
+                if (isRoulette && user.rouletteRounds === 0 && user.rouletteWins === 0) continue;
+
                 let defaultName = user.id.split('@')[0];
                 if (user.id.includes('@lid')) {
                     defaultName = 'Unknown Player';
@@ -64,7 +79,7 @@ const topTool: ToolModule = {
             let text = isRoulette ? `🔫 *Group Roulette Leaderboard* 🔫\n\n` : `👥 *Group Casino Leaderboard* 👥\n\n`;
 
             if (finalTopUsers.length === 0) {
-                text += `No players found in this group.`;
+                text += `📭 There are no players registered in the database for this leaderboard yet.`;
             } else {
                 finalTopUsers.forEach((user: any, index: number) => {
                     if (isRoulette) {
