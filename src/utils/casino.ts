@@ -1,7 +1,42 @@
 import { PrismaClient } from '../generated/prisma/client.js';
+import { prisma } from '../db.js';
 import Chance from 'chance';
 
 export const chance = new Chance();
+
+export async function autoMergeAccounts(oldId: string, newId: string) {
+    if (oldId === newId) return;
+    try {
+        const oldUser = await prisma.user.findUnique({ where: { id: oldId } });
+        if (!oldUser) return; // Nothing to merge
+
+        const newUser = await prisma.user.findUnique({ where: { id: newId } });
+
+        if (!newUser) {
+            await prisma.user.update({ where: { id: oldId }, data: { id: newId } });
+            console.log(`[AutoMerge] Renamed ${oldId} to ${newId}`);
+            return;
+        }
+
+        await prisma.user.update({
+            where: { id: newId },
+            data: {
+                balance: { increment: oldUser.balance },
+                totalWins: { increment: oldUser.totalWins },
+                totalLosses: { increment: oldUser.totalLosses },
+                gamesPlayed: { increment: oldUser.gamesPlayed },
+                rouletteRounds: { increment: oldUser.rouletteRounds },
+                rouletteWins: { increment: oldUser.rouletteWins },
+                rouletteKills: { increment: oldUser.rouletteKills },
+                rouletteAfk: { increment: oldUser.rouletteAfk }
+            }
+        });
+        await prisma.user.delete({ where: { id: oldId } });
+        console.log(`[AutoMerge] Merged stats from ${oldId} into ${newId}`);
+    } catch (error) {
+        console.error(`[AutoMerge] Error merging ${oldId} -> ${newId}:`, error);
+    }
+}
 
 // Fever Time in-memory state
 export const casinoState = {
@@ -191,11 +226,16 @@ export const getSenderJid = (msg: any): string => {
             msg.key.remoteJidAlt ||
             (msg.key as any).participantAlt ||
             (msg.key as any).remoteJidAlt;
-        
+
         const cleanedLid = cleanId(jid);
-        
+
         if (alt) {
-            lidToPnMap.set(cleanedLid, cleanId(alt));
+            const cleanedAlt = cleanId(alt);
+            if (!lidToPnMap.has(cleanedLid) || lidToPnMap.get(cleanedLid) !== cleanedAlt) {
+                lidToPnMap.set(cleanedLid, cleanedAlt);
+                // Fire and forget auto-merge in background
+                autoMergeAccounts(cleanedLid, cleanedAlt).catch(() => {});
+            }
             jid = alt;
         } else if (lidToPnMap.has(cleanedLid)) {
             // Fallback to cache if WhatsApp didn't send participantAlt this time
