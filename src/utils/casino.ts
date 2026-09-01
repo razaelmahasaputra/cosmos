@@ -176,6 +176,13 @@ export const cleanId = (idStr: string | null | undefined): string => {
     return idStr.split(':')[0].split('@')[0];
 };
 
+export const lidToPnMap = new Map<string, string>();
+
+export const resolveId = (idStr: string | null | undefined): string => {
+    const cleaned = cleanId(idStr);
+    return lidToPnMap.get(cleaned) || cleaned;
+};
+
 export const getSenderJid = (msg: any): string => {
     let jid = msg.key.participant || msg.key.remoteJid;
     if (jid && jid.endsWith('@lid')) {
@@ -184,7 +191,10 @@ export const getSenderJid = (msg: any): string => {
             msg.key.remoteJidAlt ||
             (msg.key as any).participantAlt ||
             (msg.key as any).remoteJidAlt;
-        if (alt) jid = alt;
+        if (alt) {
+            lidToPnMap.set(cleanId(jid), cleanId(alt));
+            jid = alt;
+        }
     }
     return cleanId(jid);
 };

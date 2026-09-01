@@ -1,6 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { getSessionByChatId, ItemType } from '../utils/roulette.js';
-import { cleanId, getSenderJid } from '../utils/casino.js';
+import { cleanId, getSenderJid, resolveId } from '../utils/casino.js';
 
 const useTool: ToolModule = {
     definition: {
@@ -41,7 +41,7 @@ const useTool: ToolModule = {
 
         const mentionedJidList = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
         if (mentionedJidList.length > 0) {
-            targetId = cleanId(mentionedJidList[0]);
+            targetId = resolveId(mentionedJidList[0]);
         }
 
         let itemType: ItemType | undefined;

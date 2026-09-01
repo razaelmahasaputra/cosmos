@@ -1,6 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
-import { getSenderJid } from '../utils/casino.js';
+import { getSenderJid, resolveId } from '../utils/casino.js';
 import { getUser } from '../utils/casino.js';
 
 const balanceTool: ToolModule = {
@@ -39,7 +39,7 @@ const balanceTool: ToolModule = {
                 );
                 return;
             }
-            queryJid = targetJid.split(':')[0].split('@')[0];
+            queryJid = resolveId(targetJid);
             isCheckingOther = true;
         }
 

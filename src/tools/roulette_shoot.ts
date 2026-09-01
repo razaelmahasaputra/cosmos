@@ -1,6 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { gameSessions, getSessionByChatId, handleElimination, nextTurn, checkReloadShells } from '../utils/roulette.js';
-import { cleanId, getSenderJid } from '../utils/casino.js';
+import { cleanId, getSenderJid, resolveId } from '../utils/casino.js';
 import { prisma } from '../db.js';
 
 const shootTool: ToolModule = {
@@ -39,7 +39,7 @@ const shootTool: ToolModule = {
         } else {
             const mentionedJidList = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
             if (mentionedJidList.length > 0) {
-                targetId = cleanId(mentionedJidList[0]);
+                targetId = resolveId(mentionedJidList[0]);
             } else {
                 return `❌ Please specify a target. Example: .shoot @user or .shoot me`;
             }

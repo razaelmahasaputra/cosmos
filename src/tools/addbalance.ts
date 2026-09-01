@@ -1,5 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
+import { resolveId } from '../utils/casino.js';
 
 const addBalanceTool: ToolModule = {
     definition: {
@@ -39,12 +40,13 @@ const addBalanceTool: ToolModule = {
         }
 
         try {
+            const cleanTargetJid = resolveId(targetJid);
             await prisma.$transaction(async (tx) => {
                 // Ensure target user exists and add balance
                 await tx.user.upsert({
-                    where: { id: targetJid },
+                    where: { id: cleanTargetJid },
                     update: { balance: { increment: amount } },
-                    create: { id: targetJid, balance: 5 + amount }
+                    create: { id: cleanTargetJid, balance: 5 + amount }
                 });
 
                 // Ensure vault exists and update
