@@ -34,9 +34,12 @@ const topTool: ToolModule = {
                 }
             }
 
+            const category = String(args.input || '').trim().toLowerCase();
+            const isRoulette = category === 'roulette' || category === 'buckshot';
+
             const allUsers = await prisma.user.findMany({
                 where: { id: { in: memberJids } },
-                orderBy: { balance: 'desc' }
+                orderBy: isRoulette ? { rouletteWins: 'desc' } : { balance: 'desc' }
             });
 
             const seenNames = new Set<string>();
@@ -58,13 +61,17 @@ const topTool: ToolModule = {
 
             const finalTopUsers = topUsers.slice(0, 10);
 
-            let text = `👥 *Group Casino Leaderboard* 👥\n\n`;
+            let text = isRoulette ? `🔫 *Group Roulette Leaderboard* 🔫\n\n` : `👥 *Group Casino Leaderboard* 👥\n\n`;
 
             if (finalTopUsers.length === 0) {
                 text += `No players found in this group.`;
             } else {
                 finalTopUsers.forEach((user: any, index: number) => {
-                    text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* ${user.displayName} - *${user.balance}* coins\n`;
+                    if (isRoulette) {
+                        text += `${index === 0 ? '👑' : '💀'} *${index + 1}.* ${user.displayName} - *${user.rouletteWins}* Wins / *${user.rouletteRounds}* Matches\n`;
+                    } else {
+                        text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* ${user.displayName} - *${user.balance}* coins\n`;
+                    }
                 });
             }
 
