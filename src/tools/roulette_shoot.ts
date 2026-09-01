@@ -1,6 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { gameSessions, getSessionByChatId, handleElimination, nextTurn, checkReloadShells } from '../utils/roulette.js';
-import { cleanId, getSenderJid, resolveId } from '../utils/casino.js';
+import { getSenderJid, resolveId } from '../utils/casino.js';
 import { prisma } from '../db.js';
 
 const shootTool: ToolModule = {

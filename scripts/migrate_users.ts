@@ -35,9 +35,9 @@ async function main() {
                         where: { id: user.id },
                         data: { id: newId }
                     });
-                } catch (err) {
+                } catch (_err) {
                     console.log(`Update failed, recreating ${user.id} as ${newId}`);
-                    const { createdAt, updatedAt, ...userData } = user;
+                    const { createdAt: _c, updatedAt: _u, ...userData } = user;
                     await prisma.user.create({ data: { ...userData, id: newId } });
                     await prisma.user.delete({ where: { id: user.id } });
                 }

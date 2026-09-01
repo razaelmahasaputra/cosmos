@@ -1,6 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { getSessionByChatId, ItemType } from '../utils/roulette.js';
-import { cleanId, getSenderJid, resolveId } from '../utils/casino.js';
+import { getSenderJid, resolveId } from '../utils/casino.js';
 
 const useTool: ToolModule = {
     definition: {
