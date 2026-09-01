@@ -30,7 +30,10 @@ const transferTool: ToolModule = {
         if (!targetJid) {
             return `❌ Please mention a user to transfer coins to. Example: .transfer @user 50`;
         }
-        if (targetJid === senderJid) {
+
+        const cleanTargetJid = resolveId(targetJid);
+
+        if (cleanTargetJid === senderJid) {
             return `❌ You cannot transfer coins to yourself.`;
         }
 
@@ -50,8 +53,6 @@ const transferTool: ToolModule = {
         if (user.balance < amount) {
             return `❌ Insufficient balance. You only have ${user.balance} coins.`;
         }
-
-        const cleanTargetJid = resolveId(targetJid);
 
         // Anti-Miss: Transaction wrapper
         try {
