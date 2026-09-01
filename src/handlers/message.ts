@@ -169,7 +169,16 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
             await sock.sendPresenceUpdate('composing', jid);
             const result = await toolsHandler.execute(commandName, args, { sock, msg, jid });
             if (result && typeof result === 'string' && result.trim().length > 0) {
-                await sock.sendMessage(jid, { text: result }, { quoted: msg });
+                const mentions: string[] = [];
+                const matches = result.match(/@(\d+)/g);
+                if (matches) {
+                    for (const match of matches) {
+                        const num = match.substring(1);
+                        mentions.push(`${num}@s.whatsapp.net`);
+                        mentions.push(`${num}@lid`);
+                    }
+                }
+                await sock.sendMessage(jid, { text: result, mentions }, { quoted: msg });
             }
             return;
         }
