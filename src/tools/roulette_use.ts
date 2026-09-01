@@ -1,6 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { getSessionByChatId, ItemType } from '../utils/roulette.js';
-import { cleanId } from '../utils/casino.js';
+import { cleanId, getSenderJid } from '../utils/casino.js';
 
 const useTool: ToolModule = {
     definition: {
@@ -17,7 +17,7 @@ const useTool: ToolModule = {
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
-        const senderJid = cleanId(msg.key.participant || msg.key.remoteJid!);
+        const senderJid = getSenderJid(msg);
         const inputStr = String(args.input || '').trim().toLowerCase();
 
         const session = getSessionByChatId(jid);

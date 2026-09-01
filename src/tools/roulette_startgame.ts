@@ -1,6 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { getSessionByChatId, generateShells, getRandomItems } from '../utils/roulette.js';
-import { cleanId } from '../utils/casino.js';
+import { getSenderJid } from '../utils/casino.js';
 
 const startGameTool: ToolModule = {
     definition: {
@@ -10,7 +10,7 @@ const startGameTool: ToolModule = {
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
-        const senderJid = cleanId(msg.key.participant || msg.key.remoteJid!);
+        const senderJid = getSenderJid(msg);
 
         const session = getSessionByChatId(jid);
         if (!session) {

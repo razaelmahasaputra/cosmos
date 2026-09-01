@@ -1,6 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
-import { cleanId } from '../utils/casino.js';
+import { getSenderJid } from '../utils/casino.js';
 import { getUser, parseBet, executeGamble } from '../utils/casino.js';
 import { chance } from '../utils/casino.js';
 
@@ -21,7 +21,7 @@ const slotTool: ToolModule = {
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
-        const senderJid = cleanId(msg.key.participant || msg.key.remoteJid!);
+        const senderJid = getSenderJid(msg);
 
         const pushName = msg.pushName || undefined;
         const user = await getUser(prisma, senderJid, pushName);

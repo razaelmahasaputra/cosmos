@@ -1,6 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { gameSessions, getSessionByChatId, handleElimination, nextTurn, checkReloadShells } from '../utils/roulette.js';
-import { cleanId } from '../utils/casino.js';
+import { cleanId, getSenderJid } from '../utils/casino.js';
 import { prisma } from '../db.js';
 
 const shootTool: ToolModule = {
@@ -18,7 +18,7 @@ const shootTool: ToolModule = {
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
-        const senderJid = cleanId(msg.key.participant || msg.key.remoteJid!);
+        const senderJid = getSenderJid(msg);
         const inputStr = String(args.input || '').trim().toLowerCase();
 
         const session = getSessionByChatId(jid);

@@ -1,6 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { gameSessions, Player } from '../utils/roulette.js';
-import { cleanId } from '../utils/casino.js';
+import { getSenderJid } from '../utils/casino.js';
 import { prisma } from '../db.js';
 
 const joinGameTool: ToolModule = {
@@ -18,7 +18,7 @@ const joinGameTool: ToolModule = {
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg } = ctx;
-        const senderJid = cleanId(msg.key.participant || msg.key.remoteJid!);
+        const senderJid = getSenderJid(msg);
         const sessionId = String(args.input || '').trim().toUpperCase();
 
         if (!sessionId) {

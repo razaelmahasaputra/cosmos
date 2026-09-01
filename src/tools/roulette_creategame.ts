@@ -1,6 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { gameSessions, generateSessionId, Player } from '../utils/roulette.js';
-import { cleanId } from '../utils/casino.js';
+import { getSenderJid } from '../utils/casino.js';
 
 const createGameTool: ToolModule = {
     definition: {
@@ -10,7 +10,7 @@ const createGameTool: ToolModule = {
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
-        const senderJid = cleanId(msg.key.participant || msg.key.remoteJid!);
+        const senderJid = getSenderJid(msg);
 
         // Check if there is already a game in this group
         for (const session of gameSessions.values()) {
