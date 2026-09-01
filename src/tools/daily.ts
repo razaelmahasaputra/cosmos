@@ -22,22 +22,32 @@ const dailyTool: ToolModule = {
         const user = await getUser(prisma, senderJid, pushName);
 
         const now = new Date();
-        const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
         if (user.lastDailyClaim) {
-            const lastClaimUTC = new Date(
-                Date.UTC(
-                    user.lastDailyClaim.getUTCFullYear(),
-                    user.lastDailyClaim.getUTCMonth(),
-                    user.lastDailyClaim.getUTCDate()
-                )
-            );
+            const cooldownMs = 24 * 60 * 60 * 1000;
+            const timePassed = now.getTime() - user.lastDailyClaim.getTime();
 
-            if (todayUTC.getTime() === lastClaimUTC.getTime()) {
+            if (timePassed < cooldownMs) {
+                const remainingMs = cooldownMs - timePassed;
+                const remainingHours = Math.floor(remainingMs / (1000 * 60 * 60));
+                const remainingMinutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+
+                let timeString = '';
+                if (remainingHours > 0) {
+                    timeString += `${remainingHours} hour${remainingHours > 1 ? 's' : ''}`;
+                }
+                if (remainingMinutes > 0) {
+                    if (timeString) timeString += ' and ';
+                    timeString += `${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`;
+                }
+                if (!timeString) {
+                    timeString = 'less than a minute';
+                }
+
                 await sock.sendMessage(
                     msg.key.remoteJid!,
                     {
-                        text: `⏳ You have already claimed your daily reward for today.\nPlease return tomorrow (UTC) for your next claim.`
+                        text: `⏳ You have already claimed your daily reward.\nPlease wait ${timeString} before claiming again.`
                     },
                     { quoted: msg }
                 );
