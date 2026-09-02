@@ -1,7 +1,7 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
 import { getSenderJid, resolveId } from '../utils/casino.js';
-import { getUser } from '../utils/casino.js';
+import { getUser, formatMentions } from '../utils/casino.js';
 
 const balanceTool: ToolModule = {
     definition: {
@@ -57,9 +57,7 @@ const balanceTool: ToolModule = {
             msg.key.remoteJid!,
             {
                 text,
-                mentions: isCheckingOther
-                    ? [`${queryJid.split('@')[0]}@s.whatsapp.net`, `${queryJid.split('@')[0]}@lid`]
-                    : []
+                mentions: isCheckingOther ? formatMentions(queryJid) : []
             },
             { quoted: msg }
         );

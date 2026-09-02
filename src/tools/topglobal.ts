@@ -1,5 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
+import { formatMentions } from '../utils/casino.js';
 
 let topGlobalCache: any = null;
 let topGlobalCacheExpiry: number = 0;
@@ -86,7 +87,7 @@ const topGlobalTool: ToolModule = {
             text += `No players found.`;
         } else {
             topUsersList.forEach((user: any, index: number) => {
-                mentions.push(`${user.id}@s.whatsapp.net`, `${user.id}@lid`);
+                mentions.push(...formatMentions(user.id));
 
                 const displayName = user.pushName ? ` (${user.pushName})` : '';
 

@@ -1,5 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
+import { formatMentions } from '../utils/casino.js';
 
 const topTool: ToolModule = {
     definition: {
@@ -137,7 +138,7 @@ const topTool: ToolModule = {
                 text += `📭 There are no players registered in the database for this leaderboard yet.`;
             } else {
                 finalTopUsers.forEach((user: any, index: number) => {
-                    mentions.push(`${user.cleanId}@s.whatsapp.net`, `${user.cleanId}@lid`);
+                    mentions.push(...formatMentions(user.cleanId));
                     const displayName = user.pushName ? ` (${user.pushName})` : '';
 
                     if (isRoulette) {
