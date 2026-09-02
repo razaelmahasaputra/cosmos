@@ -24,10 +24,15 @@ const topTool: ToolModule = {
         try {
             const groupMetadata = await sock.groupMetadata(jid);
             const memberJids: string[] = [];
+            const idToJidMap = new Map<string, string>();
             for (const p of groupMetadata.participants) {
-                const cleaned = p.id ? p.id.split(':')[0].split('@')[0] : '';
-                if (cleaned) {
-                    memberJids.push(cleaned);
+                if (p.id) {
+                    const cleaned = p.id.split(':')[0].split('@')[0];
+                    if (cleaned) {
+                        memberJids.push(cleaned);
+                        const domain = p.id.includes('@lid') ? 'lid' : 's.whatsapp.net';
+                        idToJidMap.set(cleaned, `${cleaned}@${domain}`);
+                    }
                 }
             }
 
@@ -52,12 +57,10 @@ const topTool: ToolModule = {
             for (const user of allUsers) {
                 if (isRoulette && user.rouletteRounds === 0 && user.rouletteWins === 0) continue;
 
-                const defaultName = `+${user.id}`;
-                const name = user.pushName || user.username || defaultName;
-                if (!userMap.has(name)) {
-                    userMap.set(name, { ...user, displayName: name });
+                if (!userMap.has(user.id)) {
+                    userMap.set(user.id, { ...user });
                 } else {
-                    const existing = userMap.get(name);
+                    const existing = userMap.get(user.id);
                     existing.balance = Number(existing.balance) + Number(user.balance);
                     existing.rouletteWins += user.rouletteWins;
                     existing.rouletteRounds += user.rouletteRounds;
@@ -72,21 +75,25 @@ const topTool: ToolModule = {
             const finalTopUsers = mergedUsers.slice(0, 10);
 
             let text = isRoulette ? `🔫 *Group Roulette Leaderboard* 🔫\n\n` : `👥 *Group Casino Leaderboard* 👥\n\n`;
+            const mentions: string[] = [];
 
             if (finalTopUsers.length === 0) {
                 text += `📭 There are no players registered in the database for this leaderboard yet.`;
             } else {
                 finalTopUsers.forEach((user: any, index: number) => {
+                    const fullJid = idToJidMap.get(user.id);
+                    if (fullJid) mentions.push(fullJid);
+
                     if (isRoulette) {
-                        text += `${index === 0 ? '👑' : '💀'} *${index + 1}.* ${user.displayName} - *${user.rouletteWins}* Wins / *${user.rouletteRounds}* Matches\n`;
+                        text += `${index === 0 ? '👑' : '💀'} *${index + 1}.* @${user.id} - *${user.rouletteWins}* Wins / *${user.rouletteRounds}* Matches\n`;
                     } else {
-                        text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* ${user.displayName} - *Rp ${Number(user.balance).toLocaleString('id-ID')}*\n`;
+                        text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* @${user.id} - *Rp ${Number(user.balance).toLocaleString('id-ID')}*\n`;
                     }
                 });
             }
 
             await new Promise((resolve) => setTimeout(resolve, 3000));
-            await sock.sendMessage(jid, { text }, { quoted: msg });
+            await sock.sendMessage(jid, { text, mentions }, { quoted: msg });
         } catch (error) {
             console.error('[Top Command Error]', error);
             return `❌ Failed to fetch group leaderboard.`;
