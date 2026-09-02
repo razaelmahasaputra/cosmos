@@ -40,7 +40,7 @@ const useTool: ToolModule = {
 
         const mentionedJidList = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
         if (mentionedJidList.length > 0) {
-            targetId = resolveId(mentionedJidList[0]);
+            targetId = await resolveId(mentionedJidList[0], sock, msg.key.remoteJid);
         }
 
         let itemType: ItemType | undefined;

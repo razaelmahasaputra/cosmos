@@ -32,7 +32,7 @@ const transferTool: ToolModule = {
             return `❌ Please mention a user to transfer coins to. Example: .transfer @user 50`;
         }
 
-        const cleanTargetJid = resolveId(targetJid);
+        const cleanTargetJid = await resolveId(targetJid, sock, msg.key.remoteJid);
 
         if (cleanTargetJid === senderJid) {
             return `❌ You cannot transfer coins to yourself.`;

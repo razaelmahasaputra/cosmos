@@ -39,7 +39,7 @@ const balanceTool: ToolModule = {
                 );
                 return;
             }
-            queryJid = resolveId(targetJid);
+            queryJid = await resolveId(targetJid, sock, msg.key.remoteJid);
             isCheckingOther = true;
         }
 

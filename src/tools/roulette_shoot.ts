@@ -39,7 +39,7 @@ const shootTool: ToolModule = {
         } else {
             const mentionedJidList = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
             if (mentionedJidList.length > 0) {
-                targetId = resolveId(mentionedJidList[0]);
+                targetId = await resolveId(mentionedJidList[0], sock, msg.key.remoteJid);
             } else {
                 return `❌ Please specify a target. Example: .shoot @user or .shoot me`;
             }

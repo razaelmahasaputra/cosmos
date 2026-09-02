@@ -40,7 +40,7 @@ const addBalanceTool: ToolModule = {
         }
 
         try {
-            const cleanTargetJid = resolveId(targetJid);
+            const cleanTargetJid = await resolveId(targetJid, sock, msg.key.remoteJid);
             await prisma.$transaction(async (tx) => {
                 // Ensure target user exists and add balance
                 const targetUser = await getUser(tx as any, cleanTargetJid);

@@ -21,6 +21,7 @@ export async function autoMergeAccounts(oldId: string, newId: string) {
         await prisma.user.update({
             where: { id: newId },
             data: {
+                lid: oldId,
                 balance: { increment: oldUser.balance },
                 totalWins: { increment: oldUser.totalWins },
                 totalLosses: { increment: oldUser.totalLosses },
@@ -57,7 +58,7 @@ export async function getUser(prisma: PrismaClient, jidOrLid: string, pushName?:
     let user = await prisma.user.findFirst({
         where: { OR: [{ id: jidOrLid }, { lid: jidOrLid }] }
     });
-    
+
     if (!user) {
         user = await prisma.user.create({
             data: { id: jidOrLid, pushName: pushName || null }
@@ -218,9 +219,33 @@ export const cleanId = (idStr: string | null | undefined): string => {
 
 export const lidToPnMap = new Map<string, string>();
 
-export const resolveId = (idStr: string | null | undefined): string => {
+export const resolveId = async (
+    idStr: string | null | undefined,
+    sock?: any,
+    groupJid?: string | null | undefined
+): Promise<string> => {
     const cleaned = cleanId(idStr);
-    return lidToPnMap.get(cleaned) || cleaned;
+    if (!cleaned) return '';
+    const resolved = lidToPnMap.get(cleaned) || cleaned;
+
+    if (resolved === cleaned && idStr?.includes('@lid') && sock && groupJid?.endsWith('@g.us')) {
+        try {
+            const groupMetadata = await sock.groupMetadata(groupJid);
+            for (const p of groupMetadata.participants) {
+                const pId = p.id ? cleanId(p.id) : null;
+                const pLid = (p as any).lid ? cleanId((p as any).lid) : null;
+
+                if (pLid === cleaned && pId && pId !== pLid) {
+                    lidToPnMap.set(pLid, pId);
+                    autoMergeAccounts(pLid, pId).catch(() => {});
+                    return pId;
+                }
+            }
+        } catch {
+            // ignore
+        }
+    }
+    return resolved;
 };
 
 export const getSenderJid = (msg: any): string => {
