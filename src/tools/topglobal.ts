@@ -35,13 +35,10 @@ const topGlobalTool: ToolModule = {
             const userMap = new Map<string, any>();
 
             for (const user of allUsers) {
-                const defaultName = `+${user.id}`;
-                const name = user.pushName || user.username || defaultName;
-
-                if (!userMap.has(name)) {
-                    userMap.set(name, { ...user, displayName: name });
+                if (!userMap.has(user.id)) {
+                    userMap.set(user.id, { ...user });
                 } else {
-                    const existing = userMap.get(name);
+                    const existing = userMap.get(user.id);
                     existing.balance = Number(existing.balance) + Number(user.balance);
                     existing.rouletteWins += user.rouletteWins;
                     existing.rouletteRounds += user.rouletteRounds;
@@ -64,15 +61,20 @@ const topGlobalTool: ToolModule = {
 
         let text = isRoulette ? `🌍 *Global Roulette Leaderboard* 🌍\n\n` : `🌍 *Global Casino Leaderboard* 🌍\n\n`;
         const topUsersList = isRoulette ? topRouletteCache : topGlobalCache;
+        const mentions: string[] = [];
 
         if (topUsersList.length === 0) {
             text += `No players found.`;
         } else {
             topUsersList.forEach((user: any, index: number) => {
+                // If it looks like an LID (long number), append @lid, else @s.whatsapp.net
+                const domain = String(user.id).length >= 14 ? 'lid' : 's.whatsapp.net';
+                mentions.push(`${user.id}@${domain}`);
+
                 if (isRoulette) {
-                    text += `${index === 0 ? '👑' : '💀'} *${index + 1}.* ${user.displayName} - *${user.rouletteWins}* Wins / *${user.rouletteRounds}* Matches\n`;
+                    text += `${index === 0 ? '👑' : '💀'} *${index + 1}.* @${user.id} - *${user.rouletteWins}* Wins / *${user.rouletteRounds}* Matches\n`;
                 } else {
-                    text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* ${user.displayName} - *Rp ${Number(user.balance).toLocaleString('id-ID')}*\n`;
+                    text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* @${user.id} - *Rp ${Number(user.balance).toLocaleString('id-ID')}*\n`;
                 }
             });
         }
@@ -80,7 +82,7 @@ const topGlobalTool: ToolModule = {
         text += `\n_Updated every 5 minutes._`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
-        await sock.sendMessage(jid, { text }, { quoted: msg });
+        await sock.sendMessage(jid, { text, mentions }, { quoted: msg });
     }
 };
 
