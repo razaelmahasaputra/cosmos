@@ -34,14 +34,33 @@ const topGlobalTool: ToolModule = {
 
             const userMap = new Map<string, any>();
 
+            // First pass: Group by JID where possible.
+            // If a row is clearly a LID (lid field is null, but we find another row with lid = this.id)
+            // we will merge it.
             for (const user of allUsers) {
-                if (!userMap.has(user.id)) {
-                    userMap.set(user.id, { ...user });
+                if (isRoulette) {
+                    if (user.rouletteRounds === 0 && user.rouletteWins === 0) continue;
                 } else {
-                    const existing = userMap.get(user.id);
-                    existing.balance = Number(existing.balance) + Number(user.balance);
-                    existing.rouletteWins += user.rouletteWins;
-                    existing.rouletteRounds += user.rouletteRounds;
+                    if (user.gamesPlayed === 0 && Number(user.balance) === 88876) continue;
+                }
+
+                // Determine the primary key: use user.lid if we somehow indexed by LID?
+                // Actually, the simplest is to see if user.lid is populated.
+                // If this user has a LID, another row might have id == user.lid.
+                // We'll merge by whatever we can. Let's key by user.id, then in second pass merge LID rows into JID rows.
+                userMap.set(user.id, { ...user });
+            }
+
+            // Second pass: Merge stray LID rows into their parent JID rows if both exist
+            for (const user of userMap.values()) {
+                if (user.lid && userMap.has(user.lid)) {
+                    const strayLid = userMap.get(user.lid);
+                    user.balance = Number(user.balance) + Number(strayLid.balance);
+                    user.rouletteWins += strayLid.rouletteWins;
+                    user.rouletteRounds += strayLid.rouletteRounds;
+                    if (strayLid.pushName && !user.pushName) user.pushName = strayLid.pushName;
+
+                    userMap.delete(user.lid); // Remove the stray LID row
                 }
             }
 
@@ -67,14 +86,21 @@ const topGlobalTool: ToolModule = {
             text += `No players found.`;
         } else {
             topUsersList.forEach((user: any, index: number) => {
-                // If it looks like an LID (long number), append @lid, else @s.whatsapp.net
-                const domain = String(user.id).length >= 14 ? 'lid' : 's.whatsapp.net';
+                // If it looks like an LID (usually 14-18 digits but starting with specific prefixes) we could append @lid.
+                // But appending incorrectly causes "Unknown user". It's safer to just provide the number if we can't reliably guess,
+                // but WhatsApp requires a valid domain. We'll fallback to @s.whatsapp.net unless we know it's a LID.
+                // If we know they have a JID (which is the case if length < 14, or if it's the primary row), we use s.whatsapp.net.
+                // Actually, if it's a known LID (because the row only had `id` as LID), we could use @lid.
+                const isLid = String(user.id).length > 14;
+                const domain = isLid ? 'lid' : 's.whatsapp.net';
                 mentions.push(`${user.id}@${domain}`);
+
+                const displayName = user.pushName ? ` (${user.pushName})` : '';
 
                 if (isRoulette) {
                     text += `${index === 0 ? '👑' : '💀'} *${index + 1}.* @${user.id} - *${user.rouletteWins}* Wins / *${user.rouletteRounds}* Matches\n`;
                 } else {
-                    text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* @${user.id} - *Rp ${Number(user.balance).toLocaleString('id-ID')}*\n`;
+                    text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* @${user.id}${displayName} - *Rp ${Number(user.balance).toLocaleString('id-ID')}*\n`;
                 }
             });
         }

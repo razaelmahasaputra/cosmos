@@ -1,6 +1,5 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
-import { autoMergeAccounts } from '../utils/casino.js';
 
 const topTool: ToolModule = {
     definition: {
@@ -46,34 +45,27 @@ const topTool: ToolModule = {
                 }
             }
 
-            // Fire-and-forget migration for old LID accounts
-            (async () => {
-                for (const pair of jidLidPairs) {
-                    try {
-                        const oldUser = await prisma.user.findUnique({ where: { id: pair.lid } });
-                        if (oldUser) {
-                            await autoMergeAccounts(pair.lid, pair.jid);
-                        }
-                        await prisma.user.updateMany({
-                            where: { id: pair.jid },
-                            data: { lid: pair.lid }
-                        });
-                    } catch {
-                        // ignore
-                    }
-                }
-            })();
+            // Remove old LID-JID background migration since it's unreliable here.
 
             const category = String(args.input || '')
                 .trim()
                 .toLowerCase();
             const isRoulette = category === 'roulette' || category === 'buckshot';
 
+            // Gather all cleaned JIDs and LIDs from the group to query the DB
+            const idsToFetch = new Set<string>();
+            for (const p of groupMetadata.participants) {
+                if (p.id) idsToFetch.add(p.id.split(':')[0].split('@')[0]);
+                if ((p as any).lid) idsToFetch.add((p as any).lid.split(':')[0].split('@')[0]);
+            }
+
+            const idsArray = Array.from(idsToFetch);
             const allUsers: any[] = [];
-            if (memberJids.length > 0) {
+
+            if (idsArray.length > 0) {
                 const chunkSize = 500;
-                for (let i = 0; i < memberJids.length; i += chunkSize) {
-                    const chunk = memberJids.slice(i, i + chunkSize);
+                for (let i = 0; i < idsArray.length; i += chunkSize) {
+                    const chunk = idsArray.slice(i, i + chunkSize);
                     const usersChunk = await prisma.user.findMany({
                         where: { OR: [{ id: { in: chunk } }, { lid: { in: chunk } }] }
                     });
@@ -81,26 +73,62 @@ const topTool: ToolModule = {
                 }
             }
 
-            const userMap = new Map<string, any>();
-            for (const user of allUsers) {
-                if (isRoulette && user.rouletteRounds === 0 && user.rouletteWins === 0) continue;
+            // Map DB rows to actual participants to avoid duplicates and resolve mentions perfectly
+            const participantStats: any[] = [];
 
-                if (!userMap.has(user.id)) {
-                    userMap.set(user.id, { ...user });
-                } else {
-                    const existing = userMap.get(user.id);
-                    existing.balance = Number(existing.balance) + Number(user.balance);
-                    existing.rouletteWins += user.rouletteWins;
-                    existing.rouletteRounds += user.rouletteRounds;
+            for (const p of groupMetadata.participants) {
+                if (!p.id) continue;
+                const pIdClean = p.id.split(':')[0].split('@')[0];
+                const pLidClean = (p as any).lid ? (p as any).lid.split(':')[0].split('@')[0] : null;
+
+                let balance = 0n;
+                let rouletteWins = 0;
+                let rouletteRounds = 0;
+                let gamesPlayed = 0;
+                let hasRecord = false;
+                let pushName = '';
+
+                for (const u of allUsers) {
+                    // Match by JID or LID
+                    if (
+                        u.id === pIdClean ||
+                        u.lid === pIdClean ||
+                        (pLidClean && (u.id === pLidClean || u.lid === pLidClean))
+                    ) {
+                        hasRecord = true;
+                        balance += BigInt(u.balance);
+                        rouletteWins += u.rouletteWins;
+                        rouletteRounds += u.rouletteRounds;
+                        gamesPlayed += u.gamesPlayed;
+                        if (u.pushName) pushName = u.pushName;
+                    }
+                }
+
+                if (hasRecord) {
+                    // Filter out users who have never played
+                    if (isRoulette) {
+                        if (rouletteRounds === 0 && rouletteWins === 0) continue;
+                    } else {
+                        // 88876 is the starter pack. Filter if they haven't played and balance is untouched.
+                        if (gamesPlayed === 0 && balance === 88876n) continue;
+                    }
+
+                    participantStats.push({
+                        mentionId: p.id, // e.g. "628...@s.whatsapp.net" or "1203...@lid"
+                        cleanId: pIdClean,
+                        pushName,
+                        balance,
+                        rouletteWins,
+                        rouletteRounds
+                    });
                 }
             }
 
-            const mergedUsers = Array.from(userMap.values());
-            mergedUsers.sort((a, b) =>
+            participantStats.sort((a, b) =>
                 isRoulette ? b.rouletteWins - a.rouletteWins : Number(b.balance) - Number(a.balance)
             );
 
-            const finalTopUsers = mergedUsers.slice(0, 10);
+            const finalTopUsers = participantStats.slice(0, 10);
 
             let text = isRoulette ? `🔫 *Group Roulette Leaderboard* 🔫\n\n` : `👥 *Group Casino Leaderboard* 👥\n\n`;
             const mentions: string[] = [];
@@ -109,13 +137,13 @@ const topTool: ToolModule = {
                 text += `📭 There are no players registered in the database for this leaderboard yet.`;
             } else {
                 finalTopUsers.forEach((user: any, index: number) => {
-                    const domain = String(user.id).length >= 14 ? 'lid' : 's.whatsapp.net';
-                    mentions.push(`${user.id}@${domain}`);
+                    mentions.push(user.mentionId);
+                    const displayName = user.pushName ? ` (${user.pushName})` : '';
 
                     if (isRoulette) {
-                        text += `${index === 0 ? '👑' : '💀'} *${index + 1}.* @${user.id} - *${user.rouletteWins}* Wins / *${user.rouletteRounds}* Matches\n`;
+                        text += `${index === 0 ? '👑' : '💀'} *${index + 1}.* @${user.cleanId} - *${user.rouletteWins}* Wins / *${user.rouletteRounds}* Matches\n`;
                     } else {
-                        text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* @${user.id} - *Rp ${Number(user.balance).toLocaleString('id-ID')}*\n`;
+                        text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* @${user.cleanId}${displayName} - *Rp ${Number(user.balance).toLocaleString('id-ID')}*\n`;
                     }
                 });
             }
