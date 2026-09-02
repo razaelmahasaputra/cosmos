@@ -30,7 +30,7 @@ const isQuotedFromMe =
 
 Menebak secara manual apakah sebuah ID menggunakan domain `@s.whatsapp.net` atau `@lid` (misal berdasarkan panjang string) sangat rawan kesalahan. Jika domain yang dimasukkan ke array `mentions` tidak valid, WhatsApp tidak akan merender mention hijau dan pushname tidak akan muncul (hanya tampil sebagai plain text seperti `@+297...`).
 
-Gunakan utility global `formatMentions` yang ada di `src/utils/casino.ts` untuk mengisi array `mentions`. Fungsi ini secara aman menambahkan versi JID maupun LID secara bersamaan, sehingga WhatsApp dijamin akan menemukan kecocokan yang benar.
+Gunakan utility global `formatMentions` yang ada di `src/utils/casino.ts` untuk mengisi array `mentions`. Fungsi ini secara otomatis mendeteksi apakah ID tersebut adalah JID atau LID berdasarkan panjangnya, lalu menggunakan domain yang tepat (`@s.whatsapp.net` atau `@lid`). DILARANG memasukkan dua domain sekaligus untuk satu ID karena WhatsApp akan gagal meresolve dan menampilkannya sebagai "@Unknown user".
 
 ```typescript
 import { formatMentions } from '../utils/casino.js';
