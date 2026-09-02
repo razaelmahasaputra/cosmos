@@ -228,7 +228,9 @@ export const resolveId = async (
     if (!cleaned) return '';
     const resolved = lidToPnMap.get(cleaned) || cleaned;
 
-    if (resolved === cleaned && idStr?.includes('@lid') && sock && groupJid?.endsWith('@g.us')) {
+    const isLid = idStr?.includes('@lid') || cleaned.length > 14;
+
+    if (resolved === cleaned && isLid && sock && groupJid?.endsWith('@g.us')) {
         try {
             const groupMetadata = await sock.groupMetadata(groupJid);
             for (const p of groupMetadata.participants) {
