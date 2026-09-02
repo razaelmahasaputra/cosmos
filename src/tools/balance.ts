@@ -1,7 +1,7 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
 import { getSenderJid, resolveId } from '../utils/casino.js';
-import { getUser, formatMentions } from '../utils/casino.js';
+import { getUser } from '../utils/casino.js';
 
 const balanceTool: ToolModule = {
     definition: {
@@ -48,16 +48,24 @@ const balanceTool: ToolModule = {
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
 
+        let displayId = queryJid.split('@')[0];
+        let mentionArray: string[] = [];
+
+        if (isCheckingOther && targetJid) {
+            displayId = targetJid.split('@')[0];
+            mentionArray = [targetJid];
+        }
+
         let text = `💰 *Your Balance*\n\nYou currently have *Rp ${Number(user.balance).toLocaleString('id-ID')}*.\nKeep playing and claim your daily reward!`;
         if (isCheckingOther) {
-            text = `💰 *User Balance*\n\n@${queryJid.split('@')[0]} currently has *Rp ${Number(user.balance).toLocaleString('id-ID')}*.`;
+            text = `💰 *User Balance*\n\n@${displayId} currently has *Rp ${Number(user.balance).toLocaleString('id-ID')}*.`;
         }
 
         await sock.sendMessage(
             msg.key.remoteJid!,
             {
                 text,
-                mentions: isCheckingOther ? formatMentions(queryJid) : []
+                mentions: mentionArray
             },
             { quoted: msg }
         );

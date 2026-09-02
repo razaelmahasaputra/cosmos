@@ -217,24 +217,6 @@ export const cleanId = (idStr: string | null | undefined): string => {
     return idStr.split(':')[0].split('@')[0];
 };
 
-/**
- * Safely generates a mentions array for a given user ID (or array of IDs).
- * Uses length heuristic to determine if the ID is a JID or a LID.
- */
-export const formatMentions = (ids: string | string[]): string[] => {
-    const idArray = Array.isArray(ids) ? ids : [ids];
-    const mentions: string[] = [];
-    for (const id of idArray) {
-        const cleaned = cleanId(id);
-        if (cleaned) {
-            const isLid = cleaned.length >= 14;
-            const domain = isLid ? 'lid' : 's.whatsapp.net';
-            mentions.push(`${cleaned}@${domain}`);
-        }
-    }
-    return mentions;
-};
-
 export const lidToPnMap = new Map<string, string>();
 
 export const resolveId = async (

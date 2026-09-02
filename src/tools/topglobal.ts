@@ -1,6 +1,5 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
-import { formatMentions } from '../utils/casino.js';
 
 let topGlobalCache: any = null;
 let topGlobalCacheExpiry: number = 0;
@@ -79,6 +78,15 @@ const topGlobalTool: ToolModule = {
             }
         }
 
+        let groupMetadata: any = null;
+        if (jid.endsWith('@g.us')) {
+            try {
+                groupMetadata = await sock.groupMetadata(jid);
+            } catch {
+                // ignore
+            }
+        }
+
         let text = isRoulette ? `🌍 *Global Roulette Leaderboard* 🌍\n\n` : `🌍 *Global Casino Leaderboard* 🌍\n\n`;
         const topUsersList = isRoulette ? topRouletteCache : topGlobalCache;
         const mentions: string[] = [];
@@ -87,7 +95,27 @@ const topGlobalTool: ToolModule = {
             text += `No players found.`;
         } else {
             topUsersList.forEach((user: any, index: number) => {
-                mentions.push(...formatMentions(user.id));
+                let domain: string;
+
+                // If lid is populated in DB, we know id is JID.
+                // Otherwise, try to find them in the current group for the exact domain.
+                if (user.lid !== null) {
+                    domain = 's.whatsapp.net';
+                } else if (groupMetadata) {
+                    const p = groupMetadata.participants.find(
+                        (x: any) =>
+                            (x.id && x.id.includes(user.id)) || ((x as any).lid && (x as any).lid.includes(user.id))
+                    );
+                    if (p) {
+                        domain = p.id?.includes('@lid') ? 'lid' : 's.whatsapp.net';
+                    } else {
+                        domain = String(user.id).length >= 14 ? 'lid' : 's.whatsapp.net';
+                    }
+                } else {
+                    domain = String(user.id).length >= 14 ? 'lid' : 's.whatsapp.net';
+                }
+
+                mentions.push(`${user.id}@${domain}`);
 
                 const displayName = user.pushName ? ` (${user.pushName})` : '';
 
