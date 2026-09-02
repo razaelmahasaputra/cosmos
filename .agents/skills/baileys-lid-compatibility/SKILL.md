@@ -25,3 +25,21 @@ const isQuotedFromMe =
     (botRawJid && participantRaw === botRawJid) ||
     (botRawLid && participantRaw === botRawLid);
 ```
+
+## Mentions (Green Mentions)
+
+Menebak secara manual apakah sebuah ID menggunakan domain `@s.whatsapp.net` atau `@lid` (misal berdasarkan panjang string) sangat rawan kesalahan. Jika domain yang dimasukkan ke array `mentions` tidak valid, WhatsApp tidak akan merender mention hijau dan pushname tidak akan muncul (hanya tampil sebagai plain text seperti `@+297...`).
+
+Gunakan utility global `formatMentions` yang ada di `src/utils/casino.ts` untuk mengisi array `mentions`. Fungsi ini secara aman menambahkan versi JID maupun LID secara bersamaan, sehingga WhatsApp dijamin akan menemukan kecocokan yang benar.
+
+```typescript
+import { formatMentions } from '../utils/casino.js';
+
+// Dalam fungsi execute:
+const mentions = formatMentions(user.id);
+
+await sock.sendMessage(jid, {
+    text: `@${user.id} hello!`,
+    mentions
+});
+```

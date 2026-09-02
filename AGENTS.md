@@ -72,6 +72,7 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 ### E. Integrasi Baileys (WhatsApp API)
 
 - **Kompatibilitas JID vs LID:** Di Baileys v7+, identifikasi pengguna dapat berupa JID (`@s.whatsapp.net`) atau LID (`@lid`). Gunakan helper/logic pencocokan yang mendukung kedua format tersebut agar identifikasi pengguna tidak mismatch.
+- **Mentions Hijau (Green Mentions):** Untuk memastikan JID/LID dapat di-mention dengan benar oleh WhatsApp dan merender nama pengguna (pushname), **WAJIB** menggunakan fungsi global `formatMentions` dari `src/utils/casino.ts` saat mengisi array `mentions`. Jangan menebak domain `@s.whatsapp.net` atau `@lid` secara manual karena dapat menyebabkan mention gagal dirender (plain-text).
 
 ### F. Integrasi Groq SDK & LLM
 
