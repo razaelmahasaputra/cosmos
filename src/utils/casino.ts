@@ -53,15 +53,18 @@ export async function getHouseVault(prisma: PrismaClient) {
     return vault;
 }
 
-export async function getUser(prisma: PrismaClient, jid: string, pushName?: string) {
-    let user = await prisma.user.findUnique({ where: { id: jid } });
+export async function getUser(prisma: PrismaClient, jidOrLid: string, pushName?: string) {
+    let user = await prisma.user.findFirst({
+        where: { OR: [{ id: jidOrLid }, { lid: jidOrLid }] }
+    });
+    
     if (!user) {
         user = await prisma.user.create({
-            data: { id: jid, pushName: pushName || null }
+            data: { id: jidOrLid, pushName: pushName || null }
         });
     } else if (pushName && user.pushName !== pushName) {
         user = await prisma.user.update({
-            where: { id: jid },
+            where: { id: user.id },
             data: { pushName }
         });
     }

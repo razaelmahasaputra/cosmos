@@ -63,10 +63,10 @@ const transferTool: ToolModule = {
                     throw new Error('Insufficient balance');
                 }
 
-                await tx.user.upsert({
-                    where: { id: cleanTargetJid },
-                    update: { balance: { increment: amount } },
-                    create: { id: cleanTargetJid, balance: 88876 + amount } // 88876 is starterpack
+                const targetUser = await getUser(tx as any, cleanTargetJid);
+                await tx.user.update({
+                    where: { id: targetUser.id },
+                    data: { balance: { increment: amount } }
                 });
 
                 await tx.user.update({
