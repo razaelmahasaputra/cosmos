@@ -227,7 +227,7 @@ export const formatMentions = (ids: string | string[]): string[] => {
     for (const id of idArray) {
         const cleaned = cleanId(id);
         if (cleaned) {
-            const isLid = cleaned.length > 14;
+            const isLid = cleaned.length >= 14;
             const domain = isLid ? 'lid' : 's.whatsapp.net';
             mentions.push(`${cleaned}@${domain}`);
         }
