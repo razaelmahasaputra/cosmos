@@ -55,8 +55,8 @@ const dailyTool: ToolModule = {
             }
         }
 
-        const reward = 50;
-        await prisma.user.update({
+        const reward = 900000;
+        const updatedUser = await prisma.user.update({
             where: { id: senderJid },
             data: {
                 balance: { increment: reward },
@@ -68,7 +68,7 @@ const dailyTool: ToolModule = {
         await sock.sendMessage(
             msg.key.remoteJid!,
             {
-                text: `🎉 *Daily Reward Claimed!*\n\nYou have received *${reward}* coins.\nYour new balance is *${user.balance + reward}* coins.`
+                text: `🎉 *Daily Reward Claimed!*\n\nYou have received *Rp ${reward.toLocaleString('id-ID')}*.\nYour new balance is *Rp ${Number(updatedUser.balance).toLocaleString('id-ID')}*.`
             },
             { quoted: msg }
         );

@@ -22,8 +22,8 @@ const betTool: ToolModule = {
         const amountStr = String(args.input || '').trim();
         const amount = parseInt(amountStr);
 
-        if (isNaN(amount) || amount < 25) {
-            return `❌ Minimum bet is 25 Coins.`;
+        if (isNaN(amount) || amount < 450000) {
+            return `❌ Minimum bet is Rp 450,000.`;
         }
 
         const session = getSessionByChatId(jid);
@@ -46,8 +46,8 @@ const betTool: ToolModule = {
 
         // Deduct from DB
         const user = await prisma.user.findUnique({ where: { id: senderJid } });
-        if (!user || user.balance < amount) {
-            return `❌ Insufficient balance. You have ${user?.balance || 0} Coins.`;
+        if (!user || Number(user.balance) < amount) {
+            return `❌ Insufficient balance. You have Rp ${Number(user?.balance || 0).toLocaleString('id-ID')}.`;
         }
 
         await prisma.user.update({
@@ -58,7 +58,7 @@ const betTool: ToolModule = {
         player.betAmount = amount;
         session.potAmount += amount;
 
-        return `💰 @${player.pushName} placed a bet of *${amount} Coins*.\n📊 *Current Total Pot:* ${session.potAmount} Coins (Waiting for other players...)`;
+        return `💰 @${player.pushName} placed a bet of *Rp ${amount.toLocaleString('id-ID')}*.\n📊 *Current Total Pot:* Rp ${session.potAmount.toLocaleString('id-ID')} (Waiting for other players...)`;
     }
 };
 

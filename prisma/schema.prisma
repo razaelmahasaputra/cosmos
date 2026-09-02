@@ -81,7 +81,7 @@ model User {
   id             String    @id // Nomor WA / JID (contoh: 628123456789@s.whatsapp.net)
   pushName       String?   // Display Name / Nama Profil WhatsApp
   username       String?   @unique // Username baru WhatsApp (contoh: razael123)
-  balance        Int       @default(5) // Starterpack 5 koin
+  balance        BigInt    @default(90000) // Starterpack 90,000 Rp
   lastDailyClaim DateTime? 
   lastGambleAt   DateTime? // Cooldown permanen per user untuk minigame
   gamesPlayed    Int       @default(0)

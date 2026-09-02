@@ -51,22 +51,22 @@ const transferTool: ToolModule = {
             return `❌ Invalid amount. Please specify a valid amount of coins to transfer.`;
         }
 
-        if (user.balance < amount) {
-            return `❌ Insufficient balance. You only have ${user.balance} coins.`;
+        if (Number(user.balance) < amount) {
+            return `❌ Insufficient balance. You only have Rp ${Number(user.balance).toLocaleString('id-ID')}.`;
         }
 
         // Anti-Miss: Transaction wrapper
         try {
             await prisma.$transaction(async (tx) => {
                 const sender = await tx.user.findUnique({ where: { id: senderJid } });
-                if (!sender || sender.balance < amount) {
+                if (!sender || Number(sender.balance) < amount) {
                     throw new Error('Insufficient balance');
                 }
 
                 await tx.user.upsert({
                     where: { id: cleanTargetJid },
                     update: { balance: { increment: amount } },
-                    create: { id: cleanTargetJid, balance: 5 + amount } // 5 is starterpack
+                    create: { id: cleanTargetJid, balance: 90000 + amount } // 90000 is starterpack
                 });
 
                 await tx.user.update({
@@ -82,7 +82,7 @@ const transferTool: ToolModule = {
             await sock.sendMessage(
                 msg.key.remoteJid!,
                 {
-                    text: `💸 *Transfer Successful!*\n\nYou have successfully transferred *${amount}* coins to @${targetJid.split('@')[0]}.\nYour remaining balance is *${user.balance - amount}* coins.`,
+                    text: `💸 *Transfer Successful!*\n\nYou have successfully transferred *Rp ${amount.toLocaleString('id-ID')}* to @${targetJid.split('@')[0]}.\nYour remaining balance is *Rp ${Number(Number(user.balance) - amount).toLocaleString('id-ID')}*.`,
                     mentions: [targetJid]
                 },
                 { quoted: msg }

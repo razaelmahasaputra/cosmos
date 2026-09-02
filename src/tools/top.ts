@@ -58,14 +58,14 @@ const topTool: ToolModule = {
                     userMap.set(name, { ...user, displayName: name });
                 } else {
                     const existing = userMap.get(name);
-                    existing.balance += user.balance;
+                    existing.balance = Number(existing.balance) + Number(user.balance);
                     existing.rouletteWins += user.rouletteWins;
                     existing.rouletteRounds += user.rouletteRounds;
                 }
             }
 
             const mergedUsers = Array.from(userMap.values());
-            mergedUsers.sort((a, b) => (isRoulette ? b.rouletteWins - a.rouletteWins : b.balance - a.balance));
+            mergedUsers.sort((a, b) => (isRoulette ? b.rouletteWins - a.rouletteWins : Number(b.balance) - Number(a.balance)));
 
             const finalTopUsers = mergedUsers.slice(0, 10);
 
@@ -78,7 +78,7 @@ const topTool: ToolModule = {
                     if (isRoulette) {
                         text += `${index === 0 ? '👑' : '💀'} *${index + 1}.* ${user.displayName} - *${user.rouletteWins}* Wins / *${user.rouletteRounds}* Matches\n`;
                     } else {
-                        text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* ${user.displayName} - *${user.balance}* coins\n`;
+                        text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* ${user.displayName} - *Rp ${Number(user.balance).toLocaleString('id-ID')}*\n`;
                     }
                 });
             }

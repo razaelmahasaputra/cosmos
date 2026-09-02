@@ -75,7 +75,7 @@ const joinGameTool: ToolModule = {
         const numPlayers = session.players.length;
         const betters = session.players.filter((p) => p.betAmount > 0).length;
 
-        return `📥 @${newPlayer.pushName} has joined the room!\n👥 *Players (${numPlayers}/5):*\n${playerList.trim()}\n\n💰 *Current Pot:* ${session.potAmount} Coins (From ${betters} Player${betters > 1 ? 's' : ''})\n\n⚠️ Don't forget to place your bets!\n👉 Type *.bet <amount>* (Min. 25 Coins)`;
+        return `📥 @${newPlayer.pushName} has joined the room!\n👥 *Players (${numPlayers}/5):*\n${playerList.trim()}\n\n💰 *Current Pot:* Rp ${session.potAmount.toLocaleString('id-ID')} (From ${betters} Player${betters > 1 ? 's' : ''})\n\n⚠️ Don't forget to place your bets!\n👉 Type *.bet <amount>* (Min. Rp 450,000)`;
     }
 };
 

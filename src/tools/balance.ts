@@ -48,9 +48,9 @@ const balanceTool: ToolModule = {
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
 
-        let text = `💰 *Your Balance*\n\nYou currently have *${user.balance}* coins.\nKeep playing and claim your daily reward!`;
+        let text = `💰 *Your Balance*\n\nYou currently have *Rp ${Number(user.balance).toLocaleString('id-ID')}*.\nKeep playing and claim your daily reward!`;
         if (isCheckingOther) {
-            text = `💰 *User Balance*\n\n@${queryJid.split('@')[0]} currently has *${user.balance}* coins.`;
+            text = `💰 *User Balance*\n\n@${queryJid.split('@')[0]} currently has *Rp ${Number(user.balance).toLocaleString('id-ID')}*.`;
         }
 
         await sock.sendMessage(

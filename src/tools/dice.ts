@@ -36,10 +36,10 @@ const diceTool: ToolModule = {
         }
 
         const betStr = inputStr.replace(String(guess), '').trim();
-        const bet = parseBet(betStr, user.balance);
+        const bet = parseBet(betStr, Number(user.balance));
 
         if (bet === null) {
-            return `❌ Invalid bet amount. Minimum bet is 10 coins.`;
+            return `❌ Invalid bet amount. Minimum bet is Rp 180,000.`;
         }
 
         // Dice probabilities: 16% win, 84% lose. Multiplier: 5
@@ -58,15 +58,15 @@ const diceTool: ToolModule = {
         }
 
         const winMsg = result.isWin
-            ? `🎉 *You Win!* You earned *${result.winAmount}* coins!`
-            : `💀 *You Lose!* You lost *${bet}* coins.`;
+            ? `🎉 *You Win!* You earned *Rp ${result.winAmount.toLocaleString('id-ID')}*!`
+            : `💀 *You Lose!* You lost *Rp ${bet.toLocaleString('id-ID')}*.`;
 
         const text =
             `🎲 *DICE ROLL* 🎲\n\n` +
             `You guessed: *${guess}*\n` +
             `Dice rolled: *${rolled}*\n\n` +
             `${winMsg}\n` +
-            `Current Balance: *${result.newBalance}* coins`;
+            `Current Balance: *Rp ${result.newBalance.toLocaleString('id-ID')}*`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: msg });

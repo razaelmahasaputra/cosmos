@@ -19,9 +19,9 @@ const vaultTool: ToolModule = {
 
         const vault = await getHouseVault(prisma);
 
-        const income = vault.income.toString();
-        const payout = vault.payout.toString();
-        const netProfit = vault.netProfit.toString();
+        const incomeStr = Number(vault.income).toLocaleString('id-ID');
+        const payoutStr = Number(vault.payout).toLocaleString('id-ID');
+        const netProfitStr = Number(vault.netProfit).toLocaleString('id-ID');
 
         const fakeWafQuote = {
             key: {
@@ -37,9 +37,9 @@ const vaultTool: ToolModule = {
 
         const text =
             `🏦 *House Vault Statistics*\n\n` +
-            `📈 *Total Income:* ${income} coins\n` +
-            `📉 *Total Payout:* ${payout} coins\n` +
-            `💰 *Net Profit:* ${netProfit} coins`;
+            `📈 *Total Income:* Rp ${incomeStr}\n` +
+            `📉 *Total Payout:* Rp ${payoutStr}\n` +
+            `💰 *Net Profit:* Rp ${netProfitStr}`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: fakeWafQuote as any });

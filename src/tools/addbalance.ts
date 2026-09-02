@@ -46,7 +46,7 @@ const addBalanceTool: ToolModule = {
                 await tx.user.upsert({
                     where: { id: cleanTargetJid },
                     update: { balance: { increment: amount } },
-                    create: { id: cleanTargetJid, balance: 5 + amount }
+                    create: { id: cleanTargetJid, balance: 90000 + amount }
                 });
 
                 // Ensure vault exists and update
@@ -74,7 +74,7 @@ const addBalanceTool: ToolModule = {
             await sock.sendMessage(
                 msg.key.remoteJid!,
                 {
-                    text: `✅ *Balance Added!*\n\nSuccessfully added *${amount}* coins to @${targetJid.split('@')[0]} from the house vault.`,
+                    text: `✅ *Balance Added!*\n\nSuccessfully added *Rp ${amount.toLocaleString('id-ID')}* to @${targetJid.split('@')[0]} from the house vault.`,
                     mentions: [targetJid]
                 },
                 { quoted: msg }

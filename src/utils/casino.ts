@@ -107,11 +107,11 @@ export async function executeGamble(
             const user = await tx.user.findUnique({ where: { id: jid } });
             if (!user) throw new Error('User not found');
 
-            if (user.balance < bet) {
-                return { success: false, error: `Insufficient balance. Your balance: ${user.balance} Coins.` };
+            if (Number(user.balance) < bet) {
+                return { success: false, error: `Insufficient balance. Your balance: Rp ${Number(user.balance).toLocaleString('id-ID')}` };
             }
-            if (bet < 10) {
-                return { success: false, error: 'Minimum bet is 10 coins.' };
+            if (bet < 180000) {
+                return { success: false, error: 'Minimum bet is Rp 180,000.' };
             }
 
             const now = Date.now();
@@ -156,7 +156,7 @@ export async function executeGamble(
                 }
 
                 // Dynamic bet scaling (All-in or large bets)
-                if (bet >= user.balance * 0.8 && bet >= 100) {
+                if (bet >= Number(user.balance) * 0.8 && bet >= 1800000) {
                     // Large percentage of balance
                     winWeight = Math.max(1, Math.floor(winWeight * 0.5));
                 }
@@ -173,7 +173,6 @@ export async function executeGamble(
 
             const balanceChange = isWin ? winAmount - bet : -bet;
 
-            // Transaction
             const updatedUser = await tx.user.update({
                 where: { id: jid },
                 data: {
@@ -198,7 +197,7 @@ export async function executeGamble(
                 success: true as const,
                 isWin,
                 winAmount,
-                newBalance: updatedUser.balance
+                newBalance: Number(updatedUser.balance)
             };
         });
     } finally {

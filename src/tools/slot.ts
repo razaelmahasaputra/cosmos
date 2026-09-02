@@ -31,9 +31,9 @@ const slotTool: ToolModule = {
             return `❌ Please specify your bet amount. Example: .slot 100`;
         }
 
-        const bet = parseBet(inputStr, user.balance);
+        const bet = parseBet(inputStr, Number(user.balance));
         if (bet === null) {
-            return `❌ Invalid bet amount. Minimum bet is 10 coins.`;
+            return `❌ Invalid bet amount. Minimum bet is Rp 180,000.`;
         }
 
         // Slot probabilities: 20% win, 80% lose
@@ -56,14 +56,14 @@ const slotTool: ToolModule = {
         }
 
         const winMsg = result.isWin
-            ? `🎉 *JACKPOT!* You won *${result.winAmount}* coins!`
-            : `💀 *YOU LOSE!* You lost *${bet}* coins.`;
+            ? `🎉 *JACKPOT!* You won *Rp ${result.winAmount.toLocaleString('id-ID')}*!`
+            : `💀 *YOU LOSE!* You lost *Rp ${bet.toLocaleString('id-ID')}*.`;
 
         const text =
             `🎰 *SLOT MACHINE* 🎰\n\n` +
             `[ ${slot1} | ${slot2} | ${slot3} ]\n\n` +
             `${winMsg}\n` +
-            `Current Balance: *${result.newBalance}* coins`;
+            `Current Balance: *Rp ${result.newBalance.toLocaleString('id-ID')}*`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: msg });

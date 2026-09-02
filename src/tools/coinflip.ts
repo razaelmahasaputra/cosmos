@@ -50,10 +50,10 @@ const coinflipTool: ToolModule = {
 
         // Remove the guess word to parse the bet
         const betStr = inputStr.replace(/kepala|ekor|heads?|tails?|h|t/g, '').trim();
-        const bet = parseBet(betStr, user.balance);
+        const bet = parseBet(betStr, Number(user.balance));
 
         if (bet === null) {
-            return `❌ Invalid bet amount. Minimum bet is 10 coins.`;
+            return `❌ Invalid bet amount. Minimum bet is Rp 180,000.`;
         }
 
         // Coinflip probabilities: 30% win, 70% lose
@@ -67,15 +67,15 @@ const coinflipTool: ToolModule = {
         const flippedEmoji = flipped === 'heads' ? '🦅 (Heads)' : '🪙 (Tails)';
 
         const winMsg = result.isWin
-            ? `🎉 *You Win!* You earned *${result.winAmount}* coins!`
-            : `💀 *You Lose!* You lost *${bet}* coins.`;
+            ? `🎉 *You Win!* You earned *Rp ${result.winAmount.toLocaleString('id-ID')}*!`
+            : `💀 *You Lose!* You lost *Rp ${bet.toLocaleString('id-ID')}*.`;
 
         const text =
             `🪙 *COINFLIP* 🪙\n\n` +
             `You guessed: *${guess.toUpperCase()}*\n` +
             `Coin landed on: *${flippedEmoji}*\n\n` +
             `${winMsg}\n` +
-            `Current Balance: *${result.newBalance}* coins`;
+            `Current Balance: *Rp ${result.newBalance.toLocaleString('id-ID')}*`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: msg });
