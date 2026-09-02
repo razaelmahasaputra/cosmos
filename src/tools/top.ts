@@ -109,9 +109,8 @@ const topTool: ToolModule = {
                 text += `📭 There are no players registered in the database for this leaderboard yet.`;
             } else {
                 finalTopUsers.forEach((user: any, index: number) => {
-                    // Try to get domain from Baileys map first using either JID or LID. If not found, default to s.whatsapp.net for JID.
-                    const fullJid = idToJidMap.get(user.id) || idToJidMap.get(user.lid) || `${user.id}@s.whatsapp.net`;
-                    if (fullJid) mentions.push(fullJid);
+                    const domain = String(user.id).length >= 14 ? 'lid' : 's.whatsapp.net';
+                    mentions.push(`${user.id}@${domain}`);
 
                     if (isRoulette) {
                         text += `${index === 0 ? '👑' : '💀'} *${index + 1}.* @${user.id} - *${user.rouletteWins}* Wins / *${user.rouletteRounds}* Matches\n`;
