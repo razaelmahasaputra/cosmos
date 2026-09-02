@@ -137,7 +137,7 @@ const topTool: ToolModule = {
                 text += `📭 There are no players registered in the database for this leaderboard yet.`;
             } else {
                 finalTopUsers.forEach((user: any, index: number) => {
-                    mentions.push(user.mentionId);
+                    mentions.push(`${user.cleanId}@s.whatsapp.net`, `${user.cleanId}@lid`);
                     const displayName = user.pushName ? ` (${user.pushName})` : '';
 
                     if (isRoulette) {

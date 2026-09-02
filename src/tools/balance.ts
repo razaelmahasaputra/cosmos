@@ -57,7 +57,9 @@ const balanceTool: ToolModule = {
             msg.key.remoteJid!,
             {
                 text,
-                mentions: isCheckingOther && targetJid ? [targetJid] : []
+                mentions: isCheckingOther
+                    ? [`${queryJid.split('@')[0]}@s.whatsapp.net`, `${queryJid.split('@')[0]}@lid`]
+                    : []
             },
             { quoted: msg }
         );

@@ -86,14 +86,7 @@ const topGlobalTool: ToolModule = {
             text += `No players found.`;
         } else {
             topUsersList.forEach((user: any, index: number) => {
-                // If it looks like an LID (usually 14-18 digits but starting with specific prefixes) we could append @lid.
-                // But appending incorrectly causes "Unknown user". It's safer to just provide the number if we can't reliably guess,
-                // but WhatsApp requires a valid domain. We'll fallback to @s.whatsapp.net unless we know it's a LID.
-                // If we know they have a JID (which is the case if length < 14, or if it's the primary row), we use s.whatsapp.net.
-                // Actually, if it's a known LID (because the row only had `id` as LID), we could use @lid.
-                const isLid = String(user.id).length > 14;
-                const domain = isLid ? 'lid' : 's.whatsapp.net';
-                mentions.push(`${user.id}@${domain}`);
+                mentions.push(`${user.id}@s.whatsapp.net`, `${user.id}@lid`);
 
                 const displayName = user.pushName ? ` (${user.pushName})` : '';
 
