@@ -1,5 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
+import { autoMergeAccounts } from '../utils/casino.js';
 
 const topTool: ToolModule = {
     definition: {
@@ -25,16 +26,43 @@ const topTool: ToolModule = {
             const groupMetadata = await sock.groupMetadata(jid);
             const memberJids: string[] = [];
             const idToJidMap = new Map<string, string>();
+            const jidLidPairs: { jid: string; lid: string }[] = [];
+
             for (const p of groupMetadata.participants) {
                 if (p.id) {
                     const cleaned = p.id.split(':')[0].split('@')[0];
+                    const cleanedLid = (p as any).lid ? (p as any).lid.split(':')[0].split('@')[0] : null;
+
                     if (cleaned) {
                         memberJids.push(cleaned);
                         const domain = p.id.includes('@lid') ? 'lid' : 's.whatsapp.net';
                         idToJidMap.set(cleaned, `${cleaned}@${domain}`);
                     }
+
+                    if (cleaned && cleanedLid && cleaned !== cleanedLid) {
+                        jidLidPairs.push({ jid: cleaned, lid: cleanedLid });
+                        idToJidMap.set(cleanedLid, `${cleanedLid}@lid`);
+                    }
                 }
             }
+
+            // Fire-and-forget migration for old LID accounts
+            (async () => {
+                for (const pair of jidLidPairs) {
+                    try {
+                        const oldUser = await prisma.user.findUnique({ where: { id: pair.lid } });
+                        if (oldUser) {
+                            await autoMergeAccounts(pair.lid, pair.jid);
+                        }
+                        await prisma.user.updateMany({
+                            where: { id: pair.jid },
+                            data: { lid: pair.lid }
+                        });
+                    } catch {
+                        // ignore
+                    }
+                }
+            })();
 
             const category = String(args.input || '')
                 .trim()
