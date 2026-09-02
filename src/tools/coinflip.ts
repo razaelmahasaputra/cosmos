@@ -53,7 +53,7 @@ const coinflipTool: ToolModule = {
         const bet = parseBet(betStr, Number(user.balance));
 
         if (bet === null) {
-            return `❌ Invalid bet amount. Minimum bet is Rp 180,000.`;
+            return `❌ Invalid bet amount. Minimum bet is Rp 177,752.`;
         }
 
         // Coinflip probabilities: 30% win, 70% lose

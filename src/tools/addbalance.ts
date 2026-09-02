@@ -46,7 +46,7 @@ const addBalanceTool: ToolModule = {
                 await tx.user.upsert({
                     where: { id: cleanTargetJid },
                     update: { balance: { increment: amount } },
-                    create: { id: cleanTargetJid, balance: 90000 + amount }
+                    create: { id: cleanTargetJid, balance: 88876 + amount }
                 });
 
                 // Ensure vault exists and update

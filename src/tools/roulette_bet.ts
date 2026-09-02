@@ -22,8 +22,8 @@ const betTool: ToolModule = {
         const amountStr = String(args.input || '').trim();
         const amount = parseInt(amountStr);
 
-        if (isNaN(amount) || amount < 450000) {
-            return `❌ Minimum bet is Rp 450,000.`;
+        if (isNaN(amount) || amount < 444379) {
+            return `❌ Minimum bet is Rp 444,379.`;
         }
 
         const session = getSessionByChatId(jid);

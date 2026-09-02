@@ -108,10 +108,13 @@ export async function executeGamble(
             if (!user) throw new Error('User not found');
 
             if (Number(user.balance) < bet) {
-                return { success: false, error: `Insufficient balance. Your balance: Rp ${Number(user.balance).toLocaleString('id-ID')}` };
+                return {
+                    success: false,
+                    error: `Insufficient balance. Your balance: Rp ${Number(user.balance).toLocaleString('id-ID')}`
+                };
             }
-            if (bet < 180000) {
-                return { success: false, error: 'Minimum bet is Rp 180,000.' };
+            if (bet < 177752) {
+                return { success: false, error: 'Minimum bet is Rp 177,752.' };
             }
 
             const now = Date.now();
@@ -156,7 +159,7 @@ export async function executeGamble(
                 }
 
                 // Dynamic bet scaling (All-in or large bets)
-                if (bet >= Number(user.balance) * 0.8 && bet >= 1800000) {
+                if (bet >= Number(user.balance) * 0.8 && bet >= 1777515) {
                     // Large percentage of balance
                     winWeight = Math.max(1, Math.floor(winWeight * 0.5));
                 }

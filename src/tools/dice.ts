@@ -39,7 +39,7 @@ const diceTool: ToolModule = {
         const bet = parseBet(betStr, Number(user.balance));
 
         if (bet === null) {
-            return `❌ Invalid bet amount. Minimum bet is Rp 180,000.`;
+            return `❌ Invalid bet amount. Minimum bet is Rp 177,752.`;
         }
 
         // Dice probabilities: 16% win, 84% lose. Multiplier: 5

@@ -66,7 +66,7 @@ const transferTool: ToolModule = {
                 await tx.user.upsert({
                     where: { id: cleanTargetJid },
                     update: { balance: { increment: amount } },
-                    create: { id: cleanTargetJid, balance: 90000 + amount } // 90000 is starterpack
+                    create: { id: cleanTargetJid, balance: 88876 + amount } // 88876 is starterpack
                 });
 
                 await tx.user.update({

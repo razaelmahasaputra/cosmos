@@ -65,7 +65,9 @@ const topTool: ToolModule = {
             }
 
             const mergedUsers = Array.from(userMap.values());
-            mergedUsers.sort((a, b) => (isRoulette ? b.rouletteWins - a.rouletteWins : Number(b.balance) - Number(a.balance)));
+            mergedUsers.sort((a, b) =>
+                isRoulette ? b.rouletteWins - a.rouletteWins : Number(b.balance) - Number(a.balance)
+            );
 
             const finalTopUsers = mergedUsers.slice(0, 10);
 

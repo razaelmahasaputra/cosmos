@@ -33,7 +33,7 @@ const slotTool: ToolModule = {
 
         const bet = parseBet(inputStr, Number(user.balance));
         if (bet === null) {
-            return `❌ Invalid bet amount. Minimum bet is Rp 180,000.`;
+            return `❌ Invalid bet amount. Minimum bet is Rp 177,752.`;
         }
 
         // Slot probabilities: 20% win, 80% lose
