@@ -1,4 +1,4 @@
-import { prisma } from './src/db.js';
+import { prisma } from '../src/db.js';
 
 async function clear() {
     await prisma.whatsAppAuth.deleteMany({});
