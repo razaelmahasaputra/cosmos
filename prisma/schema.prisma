@@ -29,8 +29,6 @@ model TelegramPrivateChat {
   added_at   DateTime @default(now()) @updatedAt
 }
 
-
-
 model ActiveSession {
   feature    String
   jid        String
@@ -42,25 +40,25 @@ model ActiveSession {
 }
 
 model AiChatSession {
-  jid        String   @id
-  summary    String   @default("")
-  updated_at DateTime @default(now()) @updatedAt
+  jid        String          @id
+  summary    String          @default("")
+  updated_at DateTime        @default(now()) @updatedAt
   messages   AiChatMessage[]
 }
 
 model AiChatMessage {
-  id         Int      @id @default(autoincrement())
-  jid        String
-  session    AiChatSession @relation(fields: [jid], references: [jid], onDelete: Cascade)
-  role       String
-  content    String
-  timestamp  DateTime @default(now())
+  id        Int           @id @default(autoincrement())
+  jid       String
+  session   AiChatSession @relation(fields: [jid], references: [jid], onDelete: Cascade)
+  role      String
+  content   String
+  timestamp DateTime      @default(now())
 }
 
 model AutoDlSetting {
-  jid       String
-  platform  String
-  enabled   Boolean @default(true)
+  jid        String
+  platform   String
+  enabled    Boolean  @default(true)
   updated_at DateTime @default(now()) @updatedAt
 
   @@id([jid, platform])
@@ -79,10 +77,11 @@ model ScheduledDeletion {
 
 model User {
   id             String    @id // Nomor WA / JID (contoh: 628123456789@s.whatsapp.net)
-  pushName       String?   // Display Name / Nama Profil WhatsApp
+  lid            String?   @unique // Local Identifier (LID)
+  pushName       String? // Display Name / Nama Profil WhatsApp
   username       String?   @unique // Username baru WhatsApp (contoh: razael123)
   balance        BigInt    @default(88876) // Starterpack ~88,876 Rp
-  lastDailyClaim DateTime? 
+  lastDailyClaim DateTime?
   lastGambleAt   DateTime? // Cooldown permanen per user untuk minigame
   gamesPlayed    Int       @default(0)
   totalWins      Int       @default(0)
@@ -92,15 +91,15 @@ model User {
   rouletteWins   Int       @default(0)
   rouletteKills  Int       @default(0)
   rouletteAfk    Int       @default(0)
-  
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model HouseVault {
-  id          Int      @id @default(1) 
-  income      BigInt   @default(0) // Total koin masuk (kalah dari player)
-  payout      BigInt   @default(0) // Total koin keluar (diberikan ke player)
-  netProfit   BigInt   @default(0) // Keuntungan bersih bandar
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(1)
+  income    BigInt   @default(0) // Total koin masuk (kalah dari player)
+  payout    BigInt   @default(0) // Total koin keluar (diberikan ke player)
+  netProfit BigInt   @default(0) // Keuntungan bersih bandar
+  updatedAt DateTime @updatedAt
 }

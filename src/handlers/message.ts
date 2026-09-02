@@ -68,10 +68,64 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
     const botRawLid = cleanId((sock.user as any)?.lid);
     const ownerNumber = cleanId(process.env.BOT_PHONE_NUMBER);
 
-    const senderJid = msg.key.fromMe
-        ? sock.user?.id || (sock.user as any)?.lid
-        : msg.key.participant || msg.key.remoteJid;
-    const senderRaw = cleanId(senderJid);
+    const getJidAndLid = () => {
+        if (msg.key.fromMe) {
+            return {
+                jidDb: cleanId(sock.user?.id),
+                lidDb: cleanId((sock.user as any)?.lid)
+            };
+        }
+        const p = msg.key.participant || msg.key.remoteJid;
+        const pAlt =
+            msg.key.participantAlt ||
+            msg.key.remoteJidAlt ||
+            (msg.key as any).participantAlt ||
+            (msg.key as any).remoteJidAlt;
+        const out = { jidDb: null as string | null, lidDb: null as string | null };
+        if (p && p.endsWith('@lid')) {
+            out.lidDb = cleanId(p);
+            out.jidDb = pAlt ? cleanId(pAlt) : null;
+        } else {
+            out.jidDb = cleanId(p);
+            out.lidDb = pAlt ? cleanId(pAlt) : null;
+        }
+        return out;
+    };
+
+    let { jidDb: senderJidDb } = getJidAndLid();
+    const { lidDb: senderLidDb } = getJidAndLid();
+
+    if (senderLidDb && !senderJidDb) {
+        // Fallback: check DB if we only have LID but no JID in this message
+        try {
+            const existing = await prisma.user.findUnique({ where: { lid: senderLidDb } });
+            if (existing) senderJidDb = existing.id;
+        } catch {
+            /* ignore */
+        }
+    }
+
+    if (senderJidDb) {
+        // Fire and forget db upsert to ensure JID/LID mapping is saved
+        prisma.user
+            .upsert({
+                where: { id: senderJidDb },
+                update: {
+                    ...(senderLidDb ? { lid: senderLidDb } : {}),
+                    ...(msg.pushName ? { pushName: msg.pushName } : {})
+                },
+                create: {
+                    id: senderJidDb,
+                    lid: senderLidDb || null,
+                    pushName: msg.pushName || null
+                }
+            })
+            .catch(() => {
+                /* ignore */
+            });
+    }
+
+    const senderRaw = senderJidDb || senderLidDb || '';
 
     const isOwner =
         Boolean(msg.key.fromMe) ||

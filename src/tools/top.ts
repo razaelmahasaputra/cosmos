@@ -47,7 +47,7 @@ const topTool: ToolModule = {
                 for (let i = 0; i < memberJids.length; i += chunkSize) {
                     const chunk = memberJids.slice(i, i + chunkSize);
                     const usersChunk = await prisma.user.findMany({
-                        where: { id: { in: chunk } }
+                        where: { OR: [{ id: { in: chunk } }, { lid: { in: chunk } }] }
                     });
                     allUsers.push(...usersChunk);
                 }
@@ -81,7 +81,8 @@ const topTool: ToolModule = {
                 text += `📭 There are no players registered in the database for this leaderboard yet.`;
             } else {
                 finalTopUsers.forEach((user: any, index: number) => {
-                    const fullJid = idToJidMap.get(user.id);
+                    // Try to get domain from Baileys map first using either JID or LID. If not found, default to s.whatsapp.net for JID.
+                    const fullJid = idToJidMap.get(user.id) || idToJidMap.get(user.lid) || `${user.id}@s.whatsapp.net`;
                     if (fullJid) mentions.push(fullJid);
 
                     if (isRoulette) {
