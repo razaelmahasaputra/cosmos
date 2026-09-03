@@ -2,6 +2,7 @@ import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
 import { getSenderJid } from '../utils/casino.js';
 import { getUser, parseBet, executeGamble, MIN_BET } from '../utils/casino.js';
+import { formatRupiah } from '../utils/currency.js';
 import { chance } from '../utils/casino.js';
 
 const diceTool: ToolModule = {
@@ -58,15 +59,15 @@ const diceTool: ToolModule = {
         }
 
         const winMsg = result.isWin
-            ? `🎉 *You Win!* You earned *Rp ${result.winAmount.toLocaleString('id-ID')}*!`
-            : `💀 *You Lose!* You lost *Rp ${bet.toLocaleString('id-ID')}*.`;
+            ? `🎉 *You Win!* You earned *${formatRupiah(result.winAmount)}*!`
+            : `💀 *You Lose!* You lost *${formatRupiah(bet)}*.`;
 
         const text =
             `🎲 *DICE ROLL* 🎲\n\n` +
             `You guessed: *${guess}*\n` +
             `Dice rolled: *${rolled}*\n\n` +
             `${winMsg}\n` +
-            `Current Balance: *Rp ${result.newBalance.toLocaleString('id-ID')}*`;
+            `Current Balance: *${formatRupiah(result.newBalance)}*`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: msg });

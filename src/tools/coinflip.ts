@@ -2,6 +2,7 @@ import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
 import { getSenderJid } from '../utils/casino.js';
 import { getUser, parseBet, executeGamble, MIN_BET } from '../utils/casino.js';
+import { formatRupiah } from '../utils/currency.js';
 
 const coinflipTool: ToolModule = {
     definition: {
@@ -67,15 +68,15 @@ const coinflipTool: ToolModule = {
         const flippedEmoji = flipped === 'heads' ? '🦅 (Heads)' : '🪙 (Tails)';
 
         const winMsg = result.isWin
-            ? `🎉 *You Win!* You earned *Rp ${result.winAmount.toLocaleString('id-ID')}*!`
-            : `💀 *You Lose!* You lost *Rp ${bet.toLocaleString('id-ID')}*.`;
+            ? `🎉 *You Win!* You earned *${formatRupiah(result.winAmount)}*!`
+            : `💀 *You Lose!* You lost *${formatRupiah(bet)}*.`;
 
         const text =
             `🪙 *COINFLIP* 🪙\n\n` +
             `You guessed: *${guess.toUpperCase()}*\n` +
             `Coin landed on: *${flippedEmoji}*\n\n` +
             `${winMsg}\n` +
-            `Current Balance: *Rp ${result.newBalance.toLocaleString('id-ID')}*`;
+            `Current Balance: *${formatRupiah(result.newBalance)}*`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: msg });

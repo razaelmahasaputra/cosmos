@@ -1,7 +1,7 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
-import { getSenderJid, resolveId } from '../utils/casino.js';
-import { getUser } from '../utils/casino.js';
+import { getSenderJid, resolveId, getUser } from '../utils/casino.js';
+import { formatRupiah } from '../utils/currency.js';
 
 const balanceTool: ToolModule = {
     definition: {
@@ -56,9 +56,9 @@ const balanceTool: ToolModule = {
             mentionArray = [targetJid];
         }
 
-        let text = `💰 *Your Balance*\n\nYou currently have *Rp ${Number(user.balance).toLocaleString('id-ID')}*.\nKeep playing and claim your daily reward!`;
+        let text = `💰 *Your Balance*\n\nYou currently have *${formatRupiah(user.balance)}*.\nKeep playing and claim your daily reward!`;
         if (isCheckingOther) {
-            text = `💰 *User Balance*\n\n@${displayId} currently has *Rp ${Number(user.balance).toLocaleString('id-ID')}*.`;
+            text = `💰 *User Balance*\n\n@${displayId} currently has *${formatRupiah(user.balance)}*.`;
         }
 
         await sock.sendMessage(

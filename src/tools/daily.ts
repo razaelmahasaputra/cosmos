@@ -1,7 +1,7 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
-import { getSenderJid } from '../utils/casino.js';
-import { getUser } from '../utils/casino.js';
+import { getSenderJid, getUser } from '../utils/casino.js';
+import { formatRupiah } from '../utils/currency.js';
 
 const dailyTool: ToolModule = {
     definition: {
@@ -68,7 +68,7 @@ const dailyTool: ToolModule = {
         await sock.sendMessage(
             msg.key.remoteJid!,
             {
-                text: `🎉 *Daily Reward Claimed!*\n\nYou have received *Rp ${reward.toLocaleString('id-ID')}*.\nYour new balance is *Rp ${Number(updatedUser.balance).toLocaleString('id-ID')}*.`
+                text: `🎉 *Daily Reward Claimed!*\n\nYou have received *${formatRupiah(reward)}*.\nYour new balance is *${formatRupiah(updatedUser.balance)}*.`
             },
             { quoted: msg }
         );

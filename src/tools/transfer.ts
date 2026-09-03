@@ -1,7 +1,7 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
-import { getSenderJid, resolveId } from '../utils/casino.js';
-import { getUser } from '../utils/casino.js';
+import { getSenderJid, resolveId, getUser } from '../utils/casino.js';
+import { formatRupiah, parseCurrencyAmount } from '../utils/currency.js';
 import { logTransaction } from '../utils/transactionLogger.js';
 
 const transferTool: ToolModule = {
@@ -44,15 +44,14 @@ const transferTool: ToolModule = {
             cleanedInputStr = cleanedInputStr.replace(new RegExp(`@?${num}`, 'g'), '');
         }
 
-        const amountMatch = cleanedInputStr.match(/\b(\d+)\b/);
-        const amount = amountMatch ? parseInt(amountMatch[1], 10) : 0;
+        const amount = parseCurrencyAmount(cleanedInputStr, Number(user.balance));
 
-        if (isNaN(amount) || amount <= 0) {
+        if (amount === null || amount <= 0) {
             return `❌ Invalid amount. Please specify a valid amount of coins to transfer.`;
         }
 
         if (Number(user.balance) < amount) {
-            return `❌ Insufficient balance. You only have Rp ${Number(user.balance).toLocaleString('id-ID')}.`;
+            return `❌ Insufficient balance. You only have ${formatRupiah(user.balance)}.`;
         }
 
         // Anti-Miss: Transaction wrapper
@@ -82,7 +81,7 @@ const transferTool: ToolModule = {
             await sock.sendMessage(
                 msg.key.remoteJid!,
                 {
-                    text: `💸 *Transfer Successful!*\n\nYou have successfully transferred *Rp ${amount.toLocaleString('id-ID')}* to @${targetJid.split('@')[0]}.\nYour remaining balance is *Rp ${Number(Number(user.balance) - amount).toLocaleString('id-ID')}*.`,
+                    text: `💸 *Transfer Successful!*\n\nYou have successfully transferred *${formatRupiah(amount)}* to @${targetJid.split('@')[0]}.\nYour remaining balance is *${formatRupiah(Number(user.balance) - amount)}*.`,
                     mentions: [targetJid]
                 },
                 { quoted: msg }

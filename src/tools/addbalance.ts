@@ -1,6 +1,7 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
 import { resolveId, getUser } from '../utils/casino.js';
+import { formatRupiah, parseCurrencyAmount } from '../utils/currency.js';
 
 const addBalanceTool: ToolModule = {
     definition: {
@@ -32,10 +33,9 @@ const addBalanceTool: ToolModule = {
             cleanedInputStr = cleanedInputStr.replace(new RegExp(`@?${num}`, 'g'), '');
         }
 
-        const amountMatch = cleanedInputStr.match(/\b(\d+)\b/);
-        const amount = amountMatch ? parseInt(amountMatch[1], 10) : 0;
+        const amount = parseCurrencyAmount(cleanedInputStr);
 
-        if (isNaN(amount) || amount <= 0) {
+        if (amount === null || amount <= 0) {
             return `❌ Invalid amount. Please specify a valid amount of coins to add.`;
         }
 
@@ -74,7 +74,7 @@ const addBalanceTool: ToolModule = {
             await sock.sendMessage(
                 msg.key.remoteJid!,
                 {
-                    text: `✅ *Balance Added!*\n\nSuccessfully added *Rp ${amount.toLocaleString('id-ID')}* to @${targetJid.split('@')[0]} from the house vault.`,
+                    text: `✅ *Balance Added!*\n\nSuccessfully added *${formatRupiah(amount)}* to @${targetJid.split('@')[0]} from the house vault.`,
                     mentions: [targetJid]
                 },
                 { quoted: msg }

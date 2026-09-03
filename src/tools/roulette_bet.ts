@@ -1,6 +1,7 @@
 import { ToolModule, ToolContext } from './types.js';
 import { getSessionByChatId } from '../utils/roulette.js';
 import { getSenderJid, MIN_BET, MAX_BET } from '../utils/casino.js';
+import { formatRupiah, parseCurrencyAmount } from '../utils/currency.js';
 import { prisma } from '../db.js';
 
 const betTool: ToolModule = {
@@ -19,15 +20,15 @@ const betTool: ToolModule = {
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, jid } = ctx;
         const senderJid = getSenderJid(msg);
-        const amountStr = String(args.input || '').trim();
-        const amount = parseInt(amountStr);
+        const user = await prisma.user.findUnique({ where: { id: senderJid } });
+        const amount = parseCurrencyAmount(String(args.input || ''), user?.balance);
 
-        if (isNaN(amount) || amount < MIN_BET) {
-            return `❌ Minimum bet is Rp ${MIN_BET.toLocaleString('id-ID')}.`;
+        if (amount === null || isNaN(amount) || amount < MIN_BET) {
+            return `❌ Minimum bet is ${formatRupiah(MIN_BET)}.`;
         }
 
         if (amount > MAX_BET) {
-            return `❌ Maximum bet is Rp ${MAX_BET.toLocaleString('id-ID')}.`;
+            return `❌ Maximum bet is ${formatRupiah(MAX_BET)}.`;
         }
 
         const session = getSessionByChatId(jid);
@@ -49,9 +50,8 @@ const betTool: ToolModule = {
         }
 
         // Deduct from DB
-        const user = await prisma.user.findUnique({ where: { id: senderJid } });
         if (!user || Number(user.balance) < amount) {
-            return `❌ Insufficient balance. You have Rp ${Number(user?.balance || 0).toLocaleString('id-ID')}.`;
+            return `❌ Insufficient balance. You have ${formatRupiah(user?.balance || 0)}.`;
         }
 
         await prisma.user.update({
@@ -62,7 +62,7 @@ const betTool: ToolModule = {
         player.betAmount = amount;
         session.potAmount += amount;
 
-        return `💰 @${player.pushName} placed a bet of *Rp ${amount.toLocaleString('id-ID')}*.\n📊 *Current Total Pot:* Rp ${session.potAmount.toLocaleString('id-ID')} (Waiting for other players...)`;
+        return `💰 @${player.pushName} placed a bet of *${formatRupiah(amount)}*.\n📊 *Current Total Pot:* ${formatRupiah(session.potAmount)} (Waiting for other players...)`;
     }
 };
 

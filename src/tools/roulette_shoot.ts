@@ -1,6 +1,7 @@
 import { ToolModule, ToolContext } from './types.js';
 import { gameSessions, getSessionByChatId, handleElimination, nextTurn, checkReloadShells } from '../utils/roulette.js';
 import { getSenderJid, resolveId } from '../utils/casino.js';
+import { formatRupiah } from '../utils/currency.js';
 import { prisma } from '../db.js';
 
 const shootTool: ToolModule = {
@@ -110,7 +111,7 @@ const shootTool: ToolModule = {
                 });
             }
 
-            outputMsg += `\n\n🏆 *GAME OVER!* 🏆\n\nOnly one person has survived this deadly table...\nCongratulations to: *👑 @${winner.pushName}*!\n\n💰 *PRIZE AWARDED:*\nTakes the entire Pot worth **Rp ${pot.toLocaleString('id-ID')}**!\n\n\`.top roulette\` statistics have been updated.\nType *.creategame* to start a new round of madness!`;
+            outputMsg += `\n\n🏆 *GAME OVER!* 🏆\n\nOnly one person has survived this deadly table...\nCongratulations to: *👑 @${winner.pushName}*!\n\n💰 *PRIZE AWARDED:*\nTakes the entire Pot worth *${formatRupiah(pot)}*!\n\n\`.top roulette\` statistics have been updated.\nType *.creategame* to start a new round of madness!`;
 
             gameSessions.delete(session.sessionId);
         } else {

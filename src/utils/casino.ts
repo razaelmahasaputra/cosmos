@@ -1,6 +1,9 @@
 import { PrismaClient } from '../generated/prisma/client.js';
 import { prisma } from '../db.js';
 import Chance from 'chance';
+import { formatRupiah, parseCurrencyAmount } from './currency.js';
+
+export { formatRupiah, formatNumberId, parseCurrencyAmount } from './currency.js';
 
 export const chance = new Chance();
 
@@ -73,13 +76,7 @@ export async function getUser(prisma: PrismaClient, jidOrLid: string, pushName?:
 }
 
 export function parseBet(input: string, balance: number): number | null {
-    const raw = input.toLowerCase().trim();
-    if (raw === 'all' || raw === 'allin' || raw === 'all-in') {
-        return balance > 0 ? balance : null;
-    }
-    const amount = parseInt(raw, 10);
-    if (isNaN(amount) || amount <= 0) return null;
-    return amount;
+    return parseCurrencyAmount(input, balance);
 }
 
 const mutex = new Set<string>();
@@ -117,14 +114,14 @@ export async function executeGamble(
             if (Number(user.balance) < bet) {
                 return {
                     success: false,
-                    error: `Insufficient balance. Your balance: Rp ${Number(user.balance).toLocaleString('id-ID')}`
+                    error: `Insufficient balance. Your balance: ${formatRupiah(user.balance)}`
                 };
             }
             if (bet < MIN_BET) {
-                return { success: false, error: `Minimum bet is Rp ${MIN_BET.toLocaleString('id-ID')}.` };
+                return { success: false, error: `Minimum bet is ${formatRupiah(MIN_BET)}.` };
             }
             if (bet > MAX_BET) {
-                return { success: false, error: `Maximum bet is Rp ${MAX_BET.toLocaleString('id-ID')}.` };
+                return { success: false, error: `Maximum bet is ${formatRupiah(MAX_BET)}.` };
             }
 
             const now = Date.now();

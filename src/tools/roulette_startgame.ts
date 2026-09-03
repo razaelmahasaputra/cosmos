@@ -1,6 +1,7 @@
 import { ToolModule, ToolContext } from './types.js';
 import { getSessionByChatId, generateShells, getRandomItems } from '../utils/roulette.js';
 import { getSenderJid } from '../utils/casino.js';
+import { formatRupiah } from '../utils/currency.js';
 
 const startGameTool: ToolModule = {
     definition: {
@@ -52,7 +53,7 @@ const startGameTool: ToolModule = {
             player.inventory.push(...getRandomItems(2));
         }
 
-        const startMsg = `🚀 *GAME STARTED!*\nTotal Players: ${session.players.length}\n💰 *Total Bet Pot:* Rp ${session.potAmount.toLocaleString('id-ID')}\n\n*Dealer (Bot)* is preparing the table and weapons...\nGood luck! 💀`;
+        const startMsg = `🚀 *GAME STARTED!*\nTotal Players: ${session.players.length}\n💰 *Total Bet Pot:* ${formatRupiah(session.potAmount)}\n\n*Dealer (Bot)* is preparing the table and weapons...\nGood luck! 💀`;
         await sock.sendMessage(jid, { text: startMsg });
 
         // Delay before announcing round 1

@@ -1,5 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
+import { formatRupiah } from '../utils/currency.js';
 
 const topTool: ToolModule = {
     definition: {
@@ -143,7 +144,7 @@ const topTool: ToolModule = {
                     if (isRoulette) {
                         text += `${index === 0 ? '👑' : '💀'} *${index + 1}.* @${user.cleanId} - *${user.rouletteWins}* Wins / *${user.rouletteRounds}* Matches\n`;
                     } else {
-                        text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* @${user.cleanId}${displayName} - *Rp ${Number(user.balance).toLocaleString('id-ID')}*\n`;
+                        text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* @${user.cleanId}${displayName} - *${formatRupiah(user.balance)}*\n`;
                     }
                 });
             }

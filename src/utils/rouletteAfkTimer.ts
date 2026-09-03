@@ -1,5 +1,6 @@
 import { WASocket } from '@whiskeysockets/baileys';
 import { gameSessions, handleElimination, nextTurn, checkReloadShells } from './roulette.js';
+import { formatRupiah } from './currency.js';
 import { prisma } from '../db.js';
 
 let afkInterval: NodeJS.Timeout | null = null;
@@ -61,7 +62,7 @@ export function initRouletteAfkTimer(sock: WASocket) {
                         console.error('Failed to update winner stats:', err);
                     }
 
-                    outputMsg += `\n\n🏆 *GAME OVER!* 🏆\n\nOnly one person has survived this deadly table...\nCongratulations to: *👑 @${winner.userId.split('@')[0]}*!\n\n💰 *PRIZE AWARDED:*\nTakes the entire Pot worth **Rp ${pot.toLocaleString('id-ID')}**!\n\n\`.top roulette\` statistics have been updated.\nType *.creategame* to start a new round of madness!`;
+                    outputMsg += `\n\n🏆 *GAME OVER!* 🏆\n\nOnly one person has survived this deadly table...\nCongratulations to: *👑 @${winner.userId.split('@')[0]}*!\n\n💰 *PRIZE AWARDED:*\nTakes the entire Pot worth *${formatRupiah(pot)}*!\n\n\`.top roulette\` statistics have been updated.\nType *.creategame* to start a new round of madness!`;
 
                     gameSessions.delete(sessionId);
                 } else {
