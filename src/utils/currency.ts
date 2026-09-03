@@ -71,12 +71,22 @@ export function parseCurrencyAmount(input: string, currentBalance?: number | big
         return Math.floor(val * 1000000);
     }
 
-    // Handle standard dot thousands or plain numbers (e.g. 1.000.000, 10000)
-    // Strip "rp", spaces, dots (thousands)
-    const cleaned = raw
-        .replace(/^rp\.?\s*/, '')
-        .replace(/\./g, '')
-        .trim();
+    // Handle standard dot thousands, comma thousands, and decimals (e.g. 1.000.000, 1.000.000,00, 10.000)
+    let cleaned = raw.replace(/^rp\.?\s*/, '').trim();
+
+    // Check if input uses standard Indonesian local format: period as thousands separator (e.g., 1.000.000 or 1.000.000,50)
+    if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(cleaned)) {
+        cleaned = cleaned.replace(/\./g, '').replace(/,.*$/, '');
+    }
+    // Check if input uses international format: comma as thousands separator (e.g., 1,000,000 or 1,000,000.50)
+    else if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(cleaned)) {
+        cleaned = cleaned.replace(/,/g, '').replace(/\..*$/, '');
+    }
+    // Fallback: strip dots if there are multiple dots or dot followed by 3 digits
+    else {
+        cleaned = cleaned.replace(/\./g, '').replace(/,.*$/, '').trim();
+    }
+
     const parsed = parseInt(cleaned, 10);
     if (isNaN(parsed) || parsed <= 0) return null;
     return parsed;

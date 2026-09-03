@@ -8,7 +8,7 @@ import { chance } from '../utils/casino.js';
 const diceTool: ToolModule = {
     definition: {
         name: 'dice',
-        description: 'Play dice. Example: .dice 6 100',
+        description: 'Play dice. Example: .dice 6 1.000.000',
         category: 'Casino',
         parameters: {
             type: 'object',
@@ -33,14 +33,14 @@ const diceTool: ToolModule = {
         const guess = match ? parseInt(match[1], 10) : null;
 
         if (!guess) {
-            return `❌ Please specify your guess (1-6). Example: .dice 6 100`;
+            return `❌ Please specify your guess (1-6). Example: .dice 6 1.000.000`;
         }
 
-        const betStr = inputStr.replace(String(guess), '').trim();
+        const betStr = inputStr.replace(new RegExp(`\\b${guess}\\b`), '').trim();
         const bet = parseBet(betStr, Number(user.balance));
 
         if (bet === null) {
-            return `❌ Invalid bet amount. Minimum bet is Rp ${MIN_BET.toLocaleString('id-ID')}.`;
+            return `❌ Invalid bet amount. Minimum bet is ${formatRupiah(MIN_BET)}.`;
         }
 
         // Dice probabilities: 16% win, 84% lose. Multiplier: 5

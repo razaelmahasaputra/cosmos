@@ -10,7 +10,7 @@ const SLOTS = ['🍒', '🍋', '🔔', '💎', '7️⃣'];
 const slotTool: ToolModule = {
     definition: {
         name: 'slot',
-        description: 'Play the slot machine. Example: .slot 100 or .slot all',
+        description: 'Play the slot machine. Example: .slot 1.000.000 or .slot all',
         category: 'Casino',
         parameters: {
             type: 'object',
@@ -29,12 +29,12 @@ const slotTool: ToolModule = {
 
         const inputStr = String(args.bet || '').trim();
         if (!inputStr) {
-            return `❌ Please specify your bet amount. Example: .slot 100`;
+            return `❌ Please specify your bet amount. Example: .slot 1.000.000`;
         }
 
         const bet = parseBet(inputStr, Number(user.balance));
         if (bet === null) {
-            return `❌ Invalid bet amount. Minimum bet is Rp ${MIN_BET.toLocaleString('id-ID')}.`;
+            return `❌ Invalid bet amount. Minimum bet is ${formatRupiah(MIN_BET)}.`;
         }
 
         // Slot probabilities: 20% win, 80% lose
