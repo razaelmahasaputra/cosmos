@@ -145,9 +145,9 @@ export async function executeGamble(
             let loseWeight = baseLoseWeight;
 
             if (isFeverTime()) {
-                // Fever Time: consistent jackpot, very low loss rate, bypass anti-win streak
-                winWeight = 99;
-                loseWeight = 1;
+                // Fever Time: boosted win rate, bypass anti-win streak
+                winWeight = 60;
+                loseWeight = 40;
             } else {
                 // Balanced anti-win streak: gentle penalty if player is far ahead
                 if (user.totalWins > user.totalLosses + 15) {
