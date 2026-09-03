@@ -112,3 +112,8 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 ### K. Pencegahan Eksekusi Pesan Ganda
 
 - **Message Processing Cache:** WhatsApp Baileys sering mengirimkan event message secara berulang (misal: `notify` disusul `append` saat sync). WAJIB menggunakan metode `isMessageProcessed` dan `markMessageProcessed` (dari `messageCache.ts`) pada level tertinggi handler (`handleMessage`) untuk memfilter ID pesan agar tidak ada fitur, minigame, atau auto-response yang tereksekusi dua kali pada satu pesan yang sama.
+
+### L. Format Mata Uang Rupiah (IDR Currency Standards)
+
+- **Rupiah Formatting Convention:** Setiap kali menampilkan atau memproses nilai mata uang Rupiah (saldo, taruhan, reward, payout, harga), **WAJIB** menggunakan konvensi lokal Indonesia (`Rp` tepat di depan angka tanpa spasi, pemisah ribuan berupa titik `.`, dan tanpa desimal secara default, misal: `Rp10.000`, `Rp1.000.000`).
+- **Global Currency Utility:** **WAJIB** menggunakan fungsi global `formatRupiah` dan `parseCurrencyAmount` dari `src/utils/currency.ts`. Dilarang memformat string mata uang manual secara terpecah-pecah atau menggunakan `parseInt` mentah yang merusak titik ribuan (rujuk panduan di `.agents/skills/rupiah-currency-formatting/SKILL.md`).
