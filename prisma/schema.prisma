@@ -80,7 +80,7 @@ model User {
   lid            String?   @unique // Local Identifier (LID)
   pushName       String? // Display Name / Nama Profil WhatsApp
   username       String?   @unique // Username baru WhatsApp (contoh: razael123)
-  balance        BigInt    @default(88876) // Starterpack ~88,876 Rp
+  balance        BigInt    @default(10000) // Starterpack 10,000 Rp
   lastDailyClaim DateTime?
   lastGambleAt   DateTime? // Cooldown permanen per user untuk minigame
   gamesPlayed    Int       @default(0)

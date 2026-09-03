@@ -41,7 +41,7 @@ const topGlobalTool: ToolModule = {
                 if (isRoulette) {
                     if (user.rouletteRounds === 0 && user.rouletteWins === 0) continue;
                 } else {
-                    if (user.gamesPlayed === 0 && Number(user.balance) === 88876) continue;
+                    if (user.gamesPlayed === 0 && Number(user.balance) === 10000) continue;
                 }
 
                 // Determine the primary key: use user.lid if we somehow indexed by LID?

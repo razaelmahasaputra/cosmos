@@ -87,6 +87,9 @@ const mutex = new Set<string>();
 type GambleResult =
     { success: true; isWin: boolean; winAmount: number; newBalance: number } | { success: false; error: string };
 
+export const MIN_BET = 18000;
+export const MAX_BET = 1500000;
+
 export async function executeGamble(
     prisma: PrismaClient,
     jid: string,
@@ -117,8 +120,11 @@ export async function executeGamble(
                     error: `Insufficient balance. Your balance: Rp ${Number(user.balance).toLocaleString('id-ID')}`
                 };
             }
-            if (bet < 177752) {
-                return { success: false, error: 'Minimum bet is Rp 177,752.' };
+            if (bet < MIN_BET) {
+                return { success: false, error: `Minimum bet is Rp ${MIN_BET.toLocaleString('id-ID')}.` };
+            }
+            if (bet > MAX_BET) {
+                return { success: false, error: `Maximum bet is Rp ${MAX_BET.toLocaleString('id-ID')}.` };
             }
 
             const now = Date.now();
@@ -146,26 +152,20 @@ export async function executeGamble(
                 winWeight = 99;
                 loseWeight = 1;
             } else {
-                // Anti-win streak: if won many games recently or total wins > total losses heavily
-                if (user.totalWins > user.totalLosses + 10) {
-                    winWeight = Math.max(1, winWeight - 15);
+                // Balanced anti-win streak: gentle penalty if player is far ahead
+                if (user.totalWins > user.totalLosses + 15) {
+                    winWeight = Math.max(5, winWeight - 5);
                 }
 
-                // Global RTP
+                // Global RTP adjustment: soft moderation instead of forced instant lose
                 const netProfit = Number(vault.netProfit);
-                if (netProfit < 0 && bet > 500) {
-                    // Force Lose
-                    winWeight = 1;
-                    loseWeight = 99;
-                } else if (netProfit > 5000 && bet <= 50) {
-                    // Breadcrumbing
-                    winWeight += 40;
+                if (netProfit < -1000000 && bet > 500000) {
+                    winWeight = Math.max(5, winWeight - 10);
                 }
 
-                // Dynamic bet scaling (All-in or large bets)
-                if (bet >= Number(user.balance) * 0.8 && bet >= 1777515) {
-                    // Large percentage of balance
-                    winWeight = Math.max(1, Math.floor(winWeight * 0.5));
+                // Dynamic high-stakes scaling: gentle moderation for high-percentage bets
+                if (bet >= Number(user.balance) * 0.9 && bet >= 1000000) {
+                    winWeight = Math.max(5, Math.floor(winWeight * 0.8));
                 }
             }
 

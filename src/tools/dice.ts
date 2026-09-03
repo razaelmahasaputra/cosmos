@@ -1,7 +1,7 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
 import { getSenderJid } from '../utils/casino.js';
-import { getUser, parseBet, executeGamble } from '../utils/casino.js';
+import { getUser, parseBet, executeGamble, MIN_BET } from '../utils/casino.js';
 import { chance } from '../utils/casino.js';
 
 const diceTool: ToolModule = {
@@ -39,7 +39,7 @@ const diceTool: ToolModule = {
         const bet = parseBet(betStr, Number(user.balance));
 
         if (bet === null) {
-            return `❌ Invalid bet amount. Minimum bet is Rp 177,752.`;
+            return `❌ Invalid bet amount. Minimum bet is Rp ${MIN_BET.toLocaleString('id-ID')}.`;
         }
 
         // Dice probabilities: 16% win, 84% lose. Multiplier: 5

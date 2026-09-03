@@ -109,8 +109,8 @@ const topTool: ToolModule = {
                     if (isRoulette) {
                         if (rouletteRounds === 0 && rouletteWins === 0) continue;
                     } else {
-                        // 88876 is the starter pack. Filter if they haven't played and balance is untouched.
-                        if (gamesPlayed === 0 && balance === 88876n) continue;
+                        // 10000 is the starter pack. Filter if they haven't played and balance is untouched.
+                        if (gamesPlayed === 0 && balance === 10000n) continue;
                     }
 
                     participantStats.push({

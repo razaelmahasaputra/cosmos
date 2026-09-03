@@ -1,6 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { getSessionByChatId } from '../utils/roulette.js';
-import { getSenderJid } from '../utils/casino.js';
+import { getSenderJid, MIN_BET, MAX_BET } from '../utils/casino.js';
 import { prisma } from '../db.js';
 
 const betTool: ToolModule = {
@@ -22,8 +22,12 @@ const betTool: ToolModule = {
         const amountStr = String(args.input || '').trim();
         const amount = parseInt(amountStr);
 
-        if (isNaN(amount) || amount < 444379) {
-            return `❌ Minimum bet is Rp 444,379.`;
+        if (isNaN(amount) || amount < MIN_BET) {
+            return `❌ Minimum bet is Rp ${MIN_BET.toLocaleString('id-ID')}.`;
+        }
+
+        if (amount > MAX_BET) {
+            return `❌ Maximum bet is Rp ${MAX_BET.toLocaleString('id-ID')}.`;
         }
 
         const session = getSessionByChatId(jid);

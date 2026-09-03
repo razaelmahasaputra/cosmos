@@ -55,7 +55,7 @@ const dailyTool: ToolModule = {
             }
         }
 
-        const reward = 888758;
+        const reward = 30000;
         const updatedUser = await prisma.user.update({
             where: { id: senderJid },
             data: {
