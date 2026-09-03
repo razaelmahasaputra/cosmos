@@ -5,7 +5,13 @@ import { getUser, parseBet, executeGamble, MIN_BET } from '../utils/casino.js';
 import { formatRupiah } from '../utils/currency.js';
 import { chance } from '../utils/casino.js';
 
-const SLOTS = ['🍒', '🍋', '🔔', '💎', '7️⃣'];
+const SLOT_ITEMS = [
+    { symbol: '🍒', multiplier: 2, weight: 50 },
+    { symbol: '🍋', multiplier: 3, weight: 30 },
+    { symbol: '🔔', multiplier: 5, weight: 12 },
+    { symbol: '💎', multiplier: 10, weight: 6 },
+    { symbol: '7️⃣', multiplier: 20, weight: 2 }
+];
 
 const slotTool: ToolModule = {
     definition: {
@@ -37,27 +43,34 @@ const slotTool: ToolModule = {
             return `❌ Invalid bet amount. Minimum bet is ${formatRupiah(MIN_BET)}.`;
         }
 
+        // Pre-roll the winning symbol to determine the multiplier
+        const winItem = chance.weighted(
+            SLOT_ITEMS,
+            SLOT_ITEMS.map((item) => item.weight)
+        );
+
         // Slot probabilities: 20% win, 80% lose
-        const result = await executeGamble(prisma, senderJid, bet, 3, 20, 80, sock, msg);
+        const result = await executeGamble(prisma, senderJid, bet, winItem.multiplier, 20, 80, sock, msg);
 
         if (!result.success) {
             return `❌ ${result.error}`;
         }
 
         let slot1, slot2, slot3;
+        const symbols = SLOT_ITEMS.map((item) => item.symbol);
+        
         if (result.isWin) {
-            const winSymbol = chance.pickone(SLOTS);
-            slot1 = slot2 = slot3 = winSymbol;
+            slot1 = slot2 = slot3 = winItem.symbol;
         } else {
-            slot1 = chance.pickone(SLOTS);
-            slot2 = chance.pickone(SLOTS);
+            slot1 = chance.pickone(symbols);
+            slot2 = chance.pickone(symbols);
             do {
-                slot3 = chance.pickone(SLOTS);
+                slot3 = chance.pickone(symbols);
             } while (slot1 === slot2 && slot2 === slot3); // Ensure they don't match
         }
 
         const winMsg = result.isWin
-            ? `🎉 *JACKPOT!* You won *${formatRupiah(result.winAmount)}*!`
+            ? `🎉 *JACKPOT!* You got 3 ${winItem.symbol} (${winItem.multiplier}x) and won *${formatRupiah(result.winAmount)}*!`
             : `💀 *YOU LOSE!* You lost *${formatRupiah(bet)}*.`;
 
         const text =
