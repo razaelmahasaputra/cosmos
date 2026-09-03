@@ -6,11 +6,11 @@ import { formatRupiah } from '../utils/currency.js';
 import { chance } from '../utils/casino.js';
 
 const SLOT_ITEMS = [
-    { symbol: '🍒', multiplier: 2, weight: 50 },
-    { symbol: '🍋', multiplier: 3, weight: 30 },
-    { symbol: '🔔', multiplier: 5, weight: 12 },
-    { symbol: '💎', multiplier: 10, weight: 6 },
-    { symbol: '7️⃣', multiplier: 20, weight: 2 }
+    { symbol: '🍒', multiplier: 2, bonus: 100000, weight: 50 },
+    { symbol: '🍋', multiplier: 3, bonus: 200000, weight: 30 },
+    { symbol: '🔔', multiplier: 5, bonus: 500000, weight: 12 },
+    { symbol: '7️⃣', multiplier: 10, bonus: 1000000, weight: 6 },
+    { symbol: '💎', multiplier: 20, bonus: 2000000, weight: 2 }
 ];
 
 const slotTool: ToolModule = {
@@ -50,7 +50,17 @@ const slotTool: ToolModule = {
         );
 
         // Slot probabilities: 20% win, 80% lose
-        const result = await executeGamble(prisma, senderJid, bet, winItem.multiplier, 20, 80, sock, msg);
+        const result = await executeGamble(
+            prisma,
+            senderJid,
+            bet,
+            winItem.multiplier,
+            20,
+            80,
+            sock,
+            msg,
+            winItem.bonus
+        );
 
         if (!result.success) {
             return `❌ ${result.error}`;
@@ -58,7 +68,7 @@ const slotTool: ToolModule = {
 
         let slot1, slot2, slot3;
         const symbols = SLOT_ITEMS.map((item) => item.symbol);
-        
+
         if (result.isWin) {
             slot1 = slot2 = slot3 = winItem.symbol;
         } else {
@@ -70,7 +80,7 @@ const slotTool: ToolModule = {
         }
 
         const winMsg = result.isWin
-            ? `🎉 *JACKPOT!* You got 3 ${winItem.symbol} (${winItem.multiplier}x) and won *${formatRupiah(result.winAmount)}*!`
+            ? `🎉 *JACKPOT!* You got 3 ${winItem.symbol} (${winItem.multiplier}x + ${formatRupiah(winItem.bonus)} Bonus) and won *${formatRupiah(result.winAmount)}*!`
             : `💀 *YOU LOSE!* You lost *${formatRupiah(bet)}*.`;
 
         const text =

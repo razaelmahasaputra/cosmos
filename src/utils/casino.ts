@@ -95,7 +95,8 @@ export async function executeGamble(
     baseWinWeight: number,
     baseLoseWeight: number,
     sock?: any,
-    msg?: any
+    msg?: any,
+    fixedBonus: number = 0
 ): Promise<GambleResult> {
     if (mutex.has(jid)) {
         return { success: false, error: 'Please wait, transaction is being processed.' };
@@ -169,10 +170,12 @@ export async function executeGamble(
             const isWin = chance.weighted([true, false], [winWeight, loseWeight]);
 
             let winAmount = 0;
-            const profitChange = isWin ? BigInt(-1) * BigInt(Math.floor(bet * winMultiplier) - bet) : BigInt(bet);
+            const profitChange = isWin
+                ? BigInt(-1) * BigInt(Math.floor(bet * winMultiplier) + fixedBonus - bet)
+                : BigInt(bet);
 
             if (isWin) {
-                winAmount = Math.floor(bet * winMultiplier);
+                winAmount = Math.floor(bet * winMultiplier) + fixedBonus;
             }
 
             const balanceChange = isWin ? winAmount - bet : -bet;
