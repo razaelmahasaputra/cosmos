@@ -108,7 +108,7 @@ export async function executeGamble(
 
     try {
         return await prisma.$transaction(async (tx) => {
-            const user = await tx.user.findUnique({ where: { id: jid } });
+            const user = await tx.user.findFirst({ where: { OR: [{ id: jid }, { lid: jid }] } });
             if (!user) throw new Error('User not found');
 
             if (Number(user.balance) < bet) {
@@ -178,7 +178,7 @@ export async function executeGamble(
             const balanceChange = isWin ? winAmount - bet : -bet;
 
             const updatedUser = await tx.user.update({
-                where: { id: jid },
+                where: { id: user.id },
                 data: {
                     balance: { increment: balanceChange },
                     lastGambleAt: new Date(now),
@@ -247,7 +247,14 @@ export const resolveId = async (
     return resolved;
 };
 
-export const getSenderJid = (msg: any): string => {
+export const getSenderJid = (msg: any, sock?: any): string => {
+    // When the bot sends a command to itself (fromMe in a DM with its own number),
+    // msg.key.participant is empty and msg.key.remoteJid is the chat partner's JID,
+    // NOT the bot's own JID. Detect this case and return the bot's own cleaned JID.
+    if (msg.key.fromMe && !msg.key.participant && sock?.user?.id) {
+        return cleanId(sock.user.id);
+    }
+
     let jid = msg.key.participant || msg.key.remoteJid;
     if (jid && jid.endsWith('@lid')) {
         const alt =

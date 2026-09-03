@@ -10,7 +10,7 @@ const createGameTool: ToolModule = {
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
-        const senderJid = getSenderJid(msg);
+        const senderJid = getSenderJid(msg, sock);
 
         // Check if there is already a game in this group
         for (const session of gameSessions.values()) {

@@ -19,7 +19,7 @@ const shootTool: ToolModule = {
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
-        const senderJid = getSenderJid(msg);
+        const senderJid = getSenderJid(msg, sock);
         const inputStr = String(args.input || '')
             .trim()
             .toLowerCase();

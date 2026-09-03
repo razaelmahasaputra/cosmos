@@ -20,7 +20,7 @@ const diceTool: ToolModule = {
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
-        const senderJid = getSenderJid(msg);
+        const senderJid = getSenderJid(msg, sock);
 
         const pushName = msg.pushName || undefined;
         const user = await getUser(prisma, senderJid, pushName);

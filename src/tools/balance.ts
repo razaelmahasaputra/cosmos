@@ -18,7 +18,7 @@ const balanceTool: ToolModule = {
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock } = ctx;
-        const senderJid = getSenderJid(msg);
+        const senderJid = getSenderJid(msg, sock);
 
         const mentionedJidList = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
         const targetJid = mentionedJidList.length > 0 ? mentionedJidList[0] : null;

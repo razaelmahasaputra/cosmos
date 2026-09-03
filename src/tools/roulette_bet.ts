@@ -18,9 +18,9 @@ const betTool: ToolModule = {
         }
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
-        const { msg, jid } = ctx;
-        const senderJid = getSenderJid(msg);
-        const user = await prisma.user.findUnique({ where: { id: senderJid } });
+        const { msg, sock, jid } = ctx;
+        const senderJid = getSenderJid(msg, sock);
+        const user = await prisma.user.findFirst({ where: { OR: [{ id: senderJid }, { lid: senderJid }] } });
         const amount = parseCurrencyAmount(String(args.input || ''), user?.balance);
 
         if (amount === null || isNaN(amount) || amount < MIN_BET) {

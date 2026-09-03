@@ -17,8 +17,8 @@ const joinGameTool: ToolModule = {
         }
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
-        const { msg } = ctx;
-        const senderJid = getSenderJid(msg);
+        const { msg, sock } = ctx;
+        const senderJid = getSenderJid(msg, sock);
         const sessionId = String(args.input || '')
             .trim()
             .toUpperCase();
