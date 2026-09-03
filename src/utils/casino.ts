@@ -157,8 +157,13 @@ export async function executeGamble(
 
                 // Global RTP adjustment: soft moderation instead of forced instant lose
                 const netProfit = Number(vault.netProfit);
-                if (netProfit < -1000000 && bet > 500000) {
+                const potentialWin = bet * winMultiplier + fixedBonus;
+                
+                if (netProfit < -1000000 && (bet > 500000 || potentialWin > 500000)) {
                     winWeight = Math.max(5, winWeight - 10);
+                }
+                if (netProfit < -5000000 && (bet > 1000000 || potentialWin > 1000000)) {
+                    winWeight = Math.max(1, winWeight - 15);
                 }
 
                 // Dynamic high-stakes scaling: gentle moderation for high-percentage bets
