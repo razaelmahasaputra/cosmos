@@ -37,6 +37,14 @@ const propertySellTool: ToolModule = {
         let propertyName = args.property_name;
         let negotiationText = args.negotiation;
 
+        const user = await prisma.user.findFirst({
+            where: {
+                OR: [{ id: userJid }, { lid: userJid }]
+            }
+        });
+
+        const actualUserId = user ? user.id : userJid;
+
         if (!propertyName) {
             const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
             const match = text.match(/^[./!#](sell|pawn)\s+([^|]+)(?:\|(.*))?$/i);
@@ -57,7 +65,7 @@ const propertySellTool: ToolModule = {
 
         let inventoryItem = await prisma.userInventory.findFirst({
             where: {
-                userId: userJid,
+                userId: actualUserId,
                 name: propertyName,
                 ownershipStatus: 'Owned'
             }
@@ -66,7 +74,7 @@ const propertySellTool: ToolModule = {
         if (!inventoryItem) {
             const allItems = await prisma.userInventory.findMany({
                 where: {
-                    userId: userJid,
+                    userId: actualUserId,
                     ownershipStatus: 'Owned'
                 }
             });
@@ -175,7 +183,7 @@ You must call the 'finalize_deal' function to return your response.`;
         await prisma.$transaction(async (tx) => {
             // Add funds to user
             await tx.user.update({
-                where: { id: userJid },
+                where: { id: actualUserId },
                 data: { balance: { increment: BigInt(finalDealPrice) } }
             });
 
@@ -188,7 +196,7 @@ You must call the 'finalize_deal' function to return your response.`;
             // Log transaction
             await tx.propertyTransaction.create({
                 data: {
-                    userId: userJid,
+                    userId: actualUserId,
                     propertyId: inventoryItem.propertyId,
                     transactionType: 'Sell',
                     amount: BigInt(finalDealPrice),

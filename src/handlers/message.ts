@@ -259,7 +259,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
                                             const jidNum = searchJid.split('@')[0];
                                             replacement = `@${jidNum}`; // phone fallback
                                             try {
-                                                const user = await prisma.user.findUnique({ where: { id: searchJid } });
+                                                const user = await prisma.user.findUnique({ where: { id: jidNum } });
                                                 if (user && user.pushName) {
                                                     replacement = `@${user.pushName}`;
                                                 }

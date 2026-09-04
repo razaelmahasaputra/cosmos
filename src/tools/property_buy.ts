@@ -28,7 +28,11 @@ const propertyBuyTool: ToolModule = {
         let propertyName = args.property_name;
 
         // Ensure user exists
-        let user = await prisma.user.findUnique({ where: { id: userJid } });
+        let user = await prisma.user.findFirst({
+            where: {
+                OR: [{ id: userJid }, { lid: userJid }]
+            }
+        });
         if (!user) {
             user = await prisma.user.create({ data: { id: userJid, balance: BigInt(10000) } });
         }
@@ -76,7 +80,7 @@ const propertyBuyTool: ToolModule = {
             await sock.sendMessage(
                 jid,
                 {
-                    text: `You do not have enough funds to purchase ${targetProp.name}. You need ${formatRupiah(Number(targetProp.basePrice))}.`
+                    text: `You do not have enough funds to purchase ${targetProp.name}. The property costs ${formatRupiah(Number(targetProp.basePrice))}, but your current balance is only ${formatRupiah(Number(user.balance))}.`
                 },
                 { quoted: msg }
             );
@@ -87,14 +91,14 @@ const propertyBuyTool: ToolModule = {
         await prisma.$transaction(async (tx) => {
             // Deduct balance
             await tx.user.update({
-                where: { id: userJid },
+                where: { id: user.id },
                 data: { balance: { decrement: targetProp.basePrice } }
             });
 
             // Create inventory
             await tx.userInventory.create({
                 data: {
-                    userId: userJid,
+                    userId: user.id,
                     propertyId: targetProp.id,
                     name: targetProp.name,
                     typeCategory: targetProp.typeCategory,
@@ -106,7 +110,7 @@ const propertyBuyTool: ToolModule = {
             // Create transaction history
             await tx.propertyTransaction.create({
                 data: {
-                    userId: userJid,
+                    userId: user.id,
                     propertyId: targetProp.id,
                     transactionType: 'Buy',
                     amount: targetProp.basePrice

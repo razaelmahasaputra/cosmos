@@ -40,15 +40,20 @@ const joinGameTool: ToolModule = {
             return `❌ The room is full (Maximum 5 players).`;
         }
 
-        if (session.players.find((p) => p.userId === senderJid)) {
+        const user = await prisma.user.findFirst({
+            where: {
+                OR: [{ id: senderJid }, { lid: senderJid }]
+            }
+        });
+        const roundCount = user?.rouletteRounds || 0;
+        const actualUserId = user ? user.id : senderJid;
+
+        if (session.players.find((p) => p.userId === actualUserId || p.userId === senderJid)) {
             return `❌ You are already in this room!`;
         }
 
-        const user = await prisma.user.findUnique({ where: { id: senderJid } });
-        const roundCount = user?.rouletteRounds || 0;
-
         const newPlayer: Player = {
-            userId: senderJid,
+            userId: actualUserId,
             pushName: msg.pushName || senderJid.split('@')[0],
             hp: 5,
             inventory: [],
@@ -62,13 +67,17 @@ const joinGameTool: ToolModule = {
         session.players.push(newPlayer);
 
         const creator = session.players[0];
-        const creatorData = await prisma.user.findUnique({ where: { id: creator.userId } });
+        const creatorData = await prisma.user.findFirst({
+            where: {
+                OR: [{ id: creator.userId }, { lid: creator.userId }]
+            }
+        });
         const creatorRounds = creatorData?.rouletteRounds || 0;
 
         let playerList = '';
         session.players.forEach((p, idx) => {
             const prefix = idx === 0 ? '👑 ' : '';
-            const rounds = idx === 0 ? creatorRounds : p.userId === senderJid ? roundCount : 0; // Quick hack to show rounds
+            const rounds = idx === 0 ? creatorRounds : p.userId === actualUserId ? roundCount : 0; // Quick hack to show rounds
             playerList += `${idx + 1}. ${prefix}@${p.pushName} (${rounds} Rounds)\n`;
         });
 

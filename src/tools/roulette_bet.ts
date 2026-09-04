@@ -55,7 +55,7 @@ const betTool: ToolModule = {
         }
 
         await prisma.user.update({
-            where: { id: senderJid },
+            where: { id: user.id },
             data: { balance: { decrement: amount } }
         });
 

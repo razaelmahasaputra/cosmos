@@ -15,8 +15,16 @@ const propertyInventoryTool: ToolModule = {
         const userJid = getSenderJid(msg, sock);
         if (!userJid) return;
 
+        const user = await prisma.user.findFirst({
+            where: {
+                OR: [{ id: userJid }, { lid: userJid }]
+            }
+        });
+
+        const actualUserId = user ? user.id : userJid;
+
         const inventory = await prisma.userInventory.findMany({
-            where: { userId: userJid }
+            where: { userId: actualUserId }
         });
 
         if (inventory.length === 0) {

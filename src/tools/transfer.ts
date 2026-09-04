@@ -57,7 +57,7 @@ const transferTool: ToolModule = {
         // Anti-Miss: Transaction wrapper
         try {
             await prisma.$transaction(async (tx) => {
-                const sender = await tx.user.findUnique({ where: { id: senderJid } });
+                const sender = await tx.user.findUnique({ where: { id: user.id } });
                 if (!sender || Number(sender.balance) < amount) {
                     throw new Error('Insufficient balance');
                 }
@@ -69,7 +69,7 @@ const transferTool: ToolModule = {
                 });
 
                 await tx.user.update({
-                    where: { id: senderJid },
+                    where: { id: user.id },
                     data: { balance: { decrement: amount } }
                 });
             });
