@@ -12,7 +12,9 @@ const propertyCatalogTool: ToolModule = {
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
 
-        const properties = await prisma.propertyCatalog.findMany();
+        const properties = await prisma.propertyCatalog.findMany({
+            orderBy: [{ basePrice: 'asc' }, { name: 'asc' }]
+        });
 
         if (properties.length === 0) {
             await sock.sendMessage(jid, { text: 'The property catalog is currently empty.' }, { quoted: msg });

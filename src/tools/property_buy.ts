@@ -54,10 +54,17 @@ const propertyBuyTool: ToolModule = {
         }
 
         let targetProp = null;
-        const allProperties = await prisma.propertyCatalog.findMany();
+        const allProperties = await prisma.propertyCatalog.findMany({
+            orderBy: [{ basePrice: 'asc' }, { name: 'asc' }]
+        });
 
         const propertyIndex = parseInt(propertyName, 10);
-        if (/^\d+$/.test(propertyName) && !isNaN(propertyIndex) && propertyIndex > 0 && propertyIndex <= allProperties.length) {
+        if (
+            /^\d+$/.test(propertyName) &&
+            !isNaN(propertyIndex) &&
+            propertyIndex > 0 &&
+            propertyIndex <= allProperties.length
+        ) {
             targetProp = allProperties[propertyIndex - 1];
         }
 
