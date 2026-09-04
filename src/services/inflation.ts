@@ -15,7 +15,7 @@ export function startInflationCron(sock: any) {
             const response = await axios.get(
                 `https://eodhd.com/api/real-time/USDIDR.FOREX?api_token=${apiKey}&fmt=json`
             );
-            
+
             const idrRate = response.data.close;
             if (typeof idrRate !== 'number' || isNaN(idrRate)) {
                 throw new Error(`Invalid rate received from EODHD: ${JSON.stringify(response.data)}`);
