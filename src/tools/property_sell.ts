@@ -134,7 +134,8 @@ You must call the 'finalize_deal' function to return your response.`;
                                         },
                                         broker_message: {
                                             type: 'string',
-                                            description: 'Your response to the user in formal English explaining why you accept or reject their terms.'
+                                            description:
+                                                'Your response to the user in formal English explaining why you accept or reject their terms.'
                                         }
                                     },
                                     required: ['deal_price', 'broker_message']
