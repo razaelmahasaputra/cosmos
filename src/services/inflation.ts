@@ -10,14 +10,16 @@ export function startInflationCron(sock: any) {
             console.log('Fetching daily exchange rate...');
 
             // 1. Fetch data
-            const response = await axios.get('https://api.exchangerate-api.com/v4/latest/USD');
-            const idrRate = response.data.rates.IDR;
+            const apiKey = process.env.EODHD_API_KEY;
+            if (!apiKey) throw new Error('EODHD_API_KEY is not configured');
+            const response = await axios.get(`https://eodhd.com/api/real-time/USDIDR.FOREX?api_token=${apiKey}&fmt=json`);
+            const idrRate = response.data.close;
 
             // 2. Save to database for persistence
             await prisma.exchangeRateLog.create({
                 data: {
                     rate: idrRate,
-                    source: 'ExchangeRate-API'
+                    source: 'EODHD'
                 }
             });
 

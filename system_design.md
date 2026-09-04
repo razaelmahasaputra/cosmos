@@ -17,7 +17,7 @@ _Note: All new models below are to be appended to the **existing** `prisma/schem
 model ExchangeRateLog {
   id        Int      @id @default(autoincrement())
   rate      Float    // Example: 15500.50 (USD to IDR) - stored as float, displayed as Rp15.500
-  source    String   // e.g., "ExchangeRate-API"
+  source    String   // e.g., "EODHD"
   createdAt DateTime @default(now())
 }
 
@@ -50,14 +50,15 @@ cron.schedule('0 0 * * *', async () => {
         console.log('Fetching daily exchange rate...');
 
         // 1. Fetch data
-        const response = await axios.get('https://api.exchangerate-api.com/v4/latest/USD');
-        const idrRate = response.data.rates.IDR;
+        const apiKey = process.env.EODHD_API_KEY;
+        const response = await axios.get(`https://eodhd.com/api/real-time/USDIDR.FOREX?api_token=${apiKey}&fmt=json`);
+        const idrRate = response.data.close;
 
         // 2. Save to database for persistence
         await prisma.exchangeRateLog.create({
             data: {
                 rate: idrRate,
-                source: 'ExchangeRate-API'
+                source: 'EODHD'
             }
         });
 
