@@ -103,3 +103,17 @@ model HouseVault {
   netProfit BigInt   @default(0) // Keuntungan bersih bandar
   updatedAt DateTime @updatedAt
 }
+
+model ExchangeRateLog {
+  id        Int      @id @default(autoincrement())
+  rate      Float
+  source    String
+  createdAt DateTime @default(now())
+}
+
+model EconomyMultiplier {
+  id         Int      @id @default(autoincrement())
+  multiplier Float
+  reasoning  String?
+  appliedAt  DateTime @default(now())
+}

@@ -158,7 +158,7 @@ export async function executeGamble(
                 // Global RTP adjustment: soft moderation instead of forced instant lose
                 const netProfit = Number(vault.netProfit);
                 const potentialWin = bet * winMultiplier + fixedBonus;
-                
+
                 if (netProfit < -1000000 && (bet > 500000 || potentialWin > 500000)) {
                     winWeight = Math.max(5, winWeight - 10);
                 }

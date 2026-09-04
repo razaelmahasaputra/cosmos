@@ -98,6 +98,9 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
 
                 const { initRouletteAfkTimer } = await import('./rouletteAfkTimer.js');
                 initRouletteAfkTimer(sock);
+
+                const { startInflationCron } = await import('../services/inflation.js');
+                startInflationCron(sock);
             }
             if (onConnected) onConnected();
         }
