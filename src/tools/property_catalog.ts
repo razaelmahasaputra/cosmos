@@ -1,0 +1,36 @@
+import { ToolModule, ToolContext } from './types.js';
+import { prisma } from '../db.js';
+import { formatRupiah } from '../utils/currency.js';
+
+const propertyCatalogTool: ToolModule = {
+    definition: {
+        name: 'catalog',
+        aliases: ['propertycatalog', 'shop'],
+        description: 'View the property catalog to purchase real-world assets.',
+        category: 'Economy'
+    },
+    execute: async (args: Record<string, any>, ctx: ToolContext) => {
+        const { msg, sock, jid } = ctx;
+
+        const properties = await prisma.propertyCatalog.findMany();
+
+        if (properties.length === 0) {
+            await sock.sendMessage(jid, { text: 'The property catalog is currently empty.' }, { quoted: msg });
+            return;
+        }
+
+        let text = `*🏬 WAF Property Catalog*\n\n`;
+        properties.forEach((p, index) => {
+            text += `${index + 1}. *${p.name}*\n`;
+            text += `   Type: ${p.typeCategory}\n`;
+            text += `   Price: ${formatRupiah(Number(p.basePrice))}\n`;
+            text += `   Depreciation: ${p.baseDepreciationRate * 100}%\n\n`;
+        });
+
+        text += `_Use the "buy" command to purchase a property._`;
+
+        await sock.sendMessage(jid, { text }, { quoted: msg });
+    }
+};
+
+export default propertyCatalogTool;
