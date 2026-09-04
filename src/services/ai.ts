@@ -20,21 +20,46 @@ export async function analyzeEconomyWithAI(currentRate: number, sock?: any) {
         messages: [
             {
                 role: 'system',
-                content: 'You are an economic AI for a bot. Output ONLY valid JSON.'
+                content:
+                    'You are an economic AI for a bot. Use the Native Function Calling API. DILARANG KERAS mengetik tag XML seperti <function=...> secara manual di dalam teks balasan Anda! All output strings must be in formal English.'
             },
             {
                 role: 'user',
-                content: `Recent USD to IDR rates: ${ratesList}. Current rate: ${currentRate}. Calculate the inflation multiplier and provide a short reasoning. Example format: {"multiplier": 1.02, "reasoning": "Slight IDR inflation."}`
+                content: `Recent USD to IDR rates: ${ratesList}. Current rate: ${currentRate}. Calculate the inflation multiplier and provide a short reasoning.`
             }
         ],
         model: 'llama3-8b-8192',
-        response_format: { type: 'json_object' }
+        temperature: 0.1,
+        tools: [
+            {
+                type: 'function',
+                function: {
+                    name: 'set_inflation_multiplier',
+                    description: 'Set the inflation multiplier for the bot economy.',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            multiplier: {
+                                type: 'number',
+                                description: 'The calculated inflation multiplier (e.g., 1.02)'
+                            },
+                            reasoning: {
+                                type: 'string',
+                                description: 'Short reasoning for the chosen multiplier.'
+                            }
+                        },
+                        required: ['multiplier', 'reasoning']
+                    }
+                }
+            }
+        ],
+        tool_choice: { type: 'function', function: { name: 'set_inflation_multiplier' } }
     });
 
-    const content = completion.choices[0]?.message?.content;
-    if (!content) throw new Error('Empty response from Groq');
+    const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
+    if (!toolCall) throw new Error('Empty or invalid response from Groq');
 
-    const aiResponse = JSON.parse(content);
+    const aiResponse = JSON.parse(toolCall.function.arguments);
 
     // 3. Check if multiplier changed to avoid spamming
     const lastMultiplierData = await prisma.economyMultiplier.findFirst({
