@@ -42,12 +42,14 @@ const topTool: ToolModule = {
                     if (cleaned && cleanedLid && cleaned !== cleanedLid) {
                         jidLidPairs.push({ jid: cleaned, lid: cleanedLid });
                         idToJidMap.set(cleanedLid, `${cleanedLid}@lid`);
+
+                        // Fire background merge so the database stays in sync with top's aggregation
+                        import('../utils/casino.js').then(({ autoMergeAccounts }) => {
+                            autoMergeAccounts(cleanedLid, cleaned).catch(() => {});
+                        });
                     }
                 }
             }
-
-            // Remove old LID-JID background migration since it's unreliable here.
-
             const category = String(args.input || '')
                 .trim()
                 .toLowerCase();
@@ -65,13 +67,17 @@ const topTool: ToolModule = {
 
             if (idsArray.length > 0) {
                 const chunkSize = 500;
+                const userMap = new Map<string, any>();
                 for (let i = 0; i < idsArray.length; i += chunkSize) {
                     const chunk = idsArray.slice(i, i + chunkSize);
                     const usersChunk = await prisma.user.findMany({
                         where: { OR: [{ id: { in: chunk } }, { lid: { in: chunk } }] }
                     });
-                    allUsers.push(...usersChunk);
+                    for (const u of usersChunk) {
+                        userMap.set(u.id, u);
+                    }
                 }
+                allUsers.push(...Array.from(userMap.values()));
             }
 
             // Map DB rows to actual participants to avoid duplicates and resolve mentions perfectly
