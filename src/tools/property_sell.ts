@@ -55,13 +55,23 @@ const propertySellTool: ToolModule = {
             }
         }
 
-        const inventoryItem = await prisma.userInventory.findFirst({
+        let inventoryItem = await prisma.userInventory.findFirst({
             where: {
                 userId: userJid,
                 name: propertyName,
                 ownershipStatus: 'Owned'
             }
         });
+
+        if (!inventoryItem) {
+            const allItems = await prisma.userInventory.findMany({
+                where: {
+                    userId: userJid,
+                    ownershipStatus: 'Owned'
+                }
+            });
+            inventoryItem = allItems.find((p) => p.name.toLowerCase() === propertyName.toLowerCase()) || null;
+        }
 
         if (!inventoryItem) {
             await sock.sendMessage(
@@ -101,9 +111,7 @@ const propertySellTool: ToolModule = {
 The original price was ${originalPrice}. The standard base offer is ${baseOffer}. The maximum you can ever offer is ${hardCap}.
 The user will try to negotiate a better deal. Evaluate their persuasion tactics. 
 You can concede slightly if their argument is good, but you must NEVER exceed ${hardCap}.
-Respond in JSON format with two keys:
-1. "deal_price": An integer representing the final agreed price in Rupiah.
-2. "broker_message": Your response to the user in formal English explaining why you accept or reject their terms.`;
+You must call the 'finalize_deal' function to return your response.`;
 
                 const completion = await groq.chat.completions.create({
                     model: 'llama3-8b-8192',
@@ -111,15 +119,39 @@ Respond in JSON format with two keys:
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: negotiationText }
                     ],
-                    response_format: { type: 'json_object' }
+                    tools: [
+                        {
+                            type: 'function',
+                            function: {
+                                name: 'finalize_deal',
+                                description: 'Finalize the deal price and provide a message to the user.',
+                                parameters: {
+                                    type: 'object',
+                                    properties: {
+                                        deal_price: {
+                                            type: 'integer',
+                                            description: 'The final agreed price in Rupiah.'
+                                        },
+                                        broker_message: {
+                                            type: 'string',
+                                            description: 'Your response to the user in formal English explaining why you accept or reject their terms.'
+                                        }
+                                    },
+                                    required: ['deal_price', 'broker_message']
+                                }
+                            }
+                        }
+                    ],
+                    tool_choice: { type: 'function', function: { name: 'finalize_deal' } },
+                    temperature: 0.1
                 });
 
-                const responseContent = completion.choices[0]?.message?.content;
-                if (responseContent) {
-                    const parsed = JSON.parse(responseContent);
+                const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
+                if (toolCall && toolCall.function.name === 'finalize_deal') {
+                    const parsed = JSON.parse(toolCall.function.arguments);
                     finalDealPrice = parseInt(parsed.deal_price);
                     aiMessage = parsed.broker_message;
-                    aiLog = responseContent;
+                    aiLog = toolCall.function.arguments;
 
                     // Enforce Hard Cap explicitly in code
                     if (finalDealPrice > hardCap) {
@@ -129,6 +161,8 @@ Respond in JSON format with two keys:
                         // Sanity check lowballing
                         finalDealPrice = baseOffer;
                     }
+                } else {
+                    throw new Error('Groq did not return the expected tool call.');
                 }
             } catch (err) {
                 console.error('Groq negotiation failed:', err);

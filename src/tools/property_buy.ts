@@ -49,30 +49,20 @@ const propertyBuyTool: ToolModule = {
             }
         }
 
-        const property = await prisma.propertyCatalog.findFirst({
+        let targetProp = await prisma.propertyCatalog.findFirst({
             where: {
                 name: {
                     equals: propertyName
                 }
-            } // Prisma sqlite does not support mode: 'insensitive' in some cases, so we might need a workaround, but let's assume exact match or close enough for now. Wait, exact match is safer, we can try to do a case-insensitive search by fetching all or using a specific search query. Let's just use exact match for now.
+            }
         });
 
-        if (!property) {
+        if (!targetProp) {
             // Try fetching all and doing a loose match
             const allProperties = await prisma.propertyCatalog.findMany();
-            const looseMatch = allProperties.find((p) => p.name.toLowerCase() === propertyName.toLowerCase());
-            if (!looseMatch) {
-                await sock.sendMessage(
-                    jid,
-                    { text: `Property "${propertyName}" not found in the catalog.` },
-                    { quoted: msg }
-                );
-                return;
-            }
-            Object.assign(property || {}, looseMatch);
+            targetProp = allProperties.find((p) => p.name.toLowerCase() === propertyName.toLowerCase()) || null;
         }
 
-        const targetProp = property || (await prisma.propertyCatalog.findFirst({ where: { name: propertyName } }));
         if (!targetProp) {
             await sock.sendMessage(
                 jid,
