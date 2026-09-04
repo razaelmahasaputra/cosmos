@@ -93,3 +93,10 @@ storage/telegram_session.txt
 
 # PM2 log files
 storage/logs/
+
+# Dynamic storage data
+storage/scheduled_stories/*
+!storage/scheduled_stories/.gitkeep
+storage/active_sessions.json
+storage/transaction/*
+!storage/transaction/.gitkeep
