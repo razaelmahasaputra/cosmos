@@ -14,7 +14,7 @@ const propertyBuyTool: ToolModule = {
             properties: {
                 property_name: {
                     type: 'string',
-                    description: 'The name of the property you want to buy.'
+                    description: 'The name or ID of the property you want to buy.'
                 }
             },
             required: ['property_name']
@@ -53,17 +53,20 @@ const propertyBuyTool: ToolModule = {
             }
         }
 
-        let targetProp = await prisma.propertyCatalog.findFirst({
-            where: {
-                name: {
-                    equals: propertyName
-                }
-            }
-        });
+        let targetProp = null;
+        const allProperties = await prisma.propertyCatalog.findMany();
+
+        const propertyIndex = parseInt(propertyName, 10);
+        if (/^\d+$/.test(propertyName) && !isNaN(propertyIndex) && propertyIndex > 0 && propertyIndex <= allProperties.length) {
+            targetProp = allProperties[propertyIndex - 1];
+        }
+
+        if (!targetProp) {
+            targetProp = allProperties.find((p) => p.name === propertyName) || null;
+        }
 
         if (!targetProp) {
             // Try fetching all and doing a loose match
-            const allProperties = await prisma.propertyCatalog.findMany();
             targetProp = allProperties.find((p) => p.name.toLowerCase() === propertyName.toLowerCase()) || null;
         }
 
