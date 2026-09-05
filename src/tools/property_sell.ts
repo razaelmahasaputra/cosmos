@@ -72,12 +72,17 @@ const propertySellTool: ToolModule = {
         if (propertyName && typeof propertyName === 'string') {
             const firstPart = propertyName.trim().split(' ')[0];
             const possibleId = parseInt(firstPart, 10);
-            
-            if (!isNaN(possibleId) && possibleId.toString() === firstPart && possibleId > 0 && possibleId <= fullInventory.length) {
+
+            if (
+                !isNaN(possibleId) &&
+                possibleId.toString() === firstPart &&
+                possibleId > 0 &&
+                possibleId <= fullInventory.length
+            ) {
                 const mappedItem = fullInventory[possibleId - 1];
                 if (mappedItem && mappedItem.ownershipStatus === 'Owned') {
                     inventoryItem = mappedItem;
-                    
+
                     if (!negotiationText && propertyName.trim().length > firstPart.length) {
                         negotiationText = propertyName.trim().substring(firstPart.length).trim();
                     }
