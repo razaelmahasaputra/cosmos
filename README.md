@@ -1,6 +1,6 @@
-# 🚀 WAF - WhatsApp Bot Framework
+# 🚀 Cosmos - WhatsApp Bot Framework
 
-**WAF (WhatsApp Bot Framework)** is a modern, enterprise-grade WhatsApp Bot framework built with **TypeScript**, **@whiskeysockets/baileys v7**, **Groq AI SDK**, and **Prisma ORM (SQLite)**.
+**Cosmos** is a modern, enterprise-grade WhatsApp Bot framework built with **TypeScript**, **@whiskeysockets/baileys v7**, **Groq AI SDK**, and **Prisma ORM (SQLite)**.
 
 ---
 
@@ -57,8 +57,8 @@ pnpm prisma generate
 ### 1. Clone & Install Dependencies
 
 ```bash
-git clone <repository-url>
-cd waf
+git clone git@github.com:razaelmahasaputra/cosmos.git
+cd cosmos
 pnpm install
 ```
 
@@ -151,7 +151,7 @@ sudo journalctl -u waf-bot -f
 ## 📁 Directory Structure
 
 ```text
-waf/
+cosmos/
 ├── src/
 │   ├── index.ts                  # Application entry point
 │   ├── db.ts                     # Prisma database client

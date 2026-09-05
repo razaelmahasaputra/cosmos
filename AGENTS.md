@@ -1,12 +1,12 @@
 # AGENTS.md - Panduan & Peraturan untuk AI Coding Agent
 
-Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agent yang bekerja pada repositori **WAF** (WhatsApp Bot Framework). Semua AI Agent wajib membaca dan mematuhi dokumen ini sebelum melakukan perubahan kode atau menjalankan tugas.
+Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agent yang bekerja pada repositori **Cosmos** (WhatsApp Bot Framework). Semua AI Agent wajib membaca dan mematuhi dokumen ini sebelum melakukan perubahan kode atau menjalankan tugas.
 
 ---
 
 ## 1. Ringkasan Proyek
 
-- **Nama Proyek:** WAF (WhatsApp Bot Framework)
+- **Nama Proyek:** Cosmos (WhatsApp Bot Framework)
 - **Package Manager:** **PNPM** (`pnpm-lock.yaml`, `pnpm-workspace.yaml`). **DILARANG** menggunakan `npm` atau `yarn` untuk menginstall dependency atau menjalankan script!
 - **Bahasa Utama:** TypeScript (ESNext / Node.js ES Modules, `tsconfig.json`)
 - **Library Utama:**
@@ -106,7 +106,7 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 
 ### J. Database & Persistensi (Prisma SQLite)
 
-- **Local Persistence:** WAF menggunakan Prisma ORM dengan SQLite untuk menyimpan state, kredensial Baileys, konfigurasi auto-dl, dan antrean `ScheduledDeletion`.
+- **Local Persistence:** Cosmos menggunakan Prisma ORM dengan SQLite untuk menyimpan state, kredensial Baileys, konfigurasi auto-dl, dan antrean `ScheduledDeletion`.
 - **Auto-Delete Queue:** Segala bentuk task _auto-delete_ untuk pesan harus diintegrasikan dengan database Prisma (tabel `ScheduledDeletion`) agar antrean tidak hilang saat server di-restart atau crash. Jangan menggunakan `setTimeout` in-memory.
 
 ### K. Pencegahan Eksekusi Pesan Ganda
@@ -120,4 +120,4 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 
 ### M. Bot Prefix (Command Prefix)
 
-- **Standard Prefix:** WAF menggunakan titik (`.`) sebagai prefix untuk setiap command bot. **DILARANG** menggunakan tanda seru (`!`), slash (`/`), atau karakter lain sebagai prefix saat menuliskan panduan, rencana, atau merespons pengguna mengenai fitur bot (misal: gunakan `.shop` alih-alih `!shop`).
+- **Standard Prefix:** Cosmos menggunakan titik (`.`) sebagai prefix untuk setiap command bot. **DILARANG** menggunakan tanda seru (`!`), slash (`/`), atau karakter lain sebagai prefix saat menuliskan panduan, rencana, atau merespons pengguna mengenai fitur bot (misal: gunakan `.shop` alih-alih `!shop`).
