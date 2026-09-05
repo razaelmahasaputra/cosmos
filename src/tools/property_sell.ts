@@ -37,6 +37,27 @@ const propertySellTool: ToolModule = {
         let propertyName = args.property_name;
         let negotiationText = args.negotiation;
 
+        if (propertyName && typeof propertyName === 'string' && !negotiationText) {
+            if (propertyName.includes('|')) {
+                const parts = propertyName.split('|');
+                propertyName = parts[0].trim();
+                negotiationText = parts.slice(1).join('|').trim();
+            } else {
+                propertyName = propertyName.trim();
+            }
+        }
+
+        if (!propertyName) {
+            await sock.sendMessage(
+                jid,
+                {
+                    text: 'Please specify the property name to sell. Format: /sell <property_name> | <optional_negotiation>'
+                },
+                { quoted: msg }
+            );
+            return;
+        }
+
         const user = await prisma.user.findFirst({
             where: {
                 OR: [{ id: userJid }, { lid: userJid }]
@@ -44,24 +65,6 @@ const propertySellTool: ToolModule = {
         });
 
         const actualUserId = user ? user.id : userJid;
-
-        if (!propertyName) {
-            const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
-            const match = text.match(/^[./!#](sell|pawn)\s+([^|]+)(?:\|(.*))?$/i);
-            if (match) {
-                propertyName = match[2].trim();
-                negotiationText = match[3] ? match[3].trim() : undefined;
-            } else {
-                await sock.sendMessage(
-                    jid,
-                    {
-                        text: 'Please specify the property name to sell. Format: /sell <property_name> | <optional_negotiation>'
-                    },
-                    { quoted: msg }
-                );
-                return;
-            }
-        }
 
         let inventoryItem = await prisma.userInventory.findFirst({
             where: {
