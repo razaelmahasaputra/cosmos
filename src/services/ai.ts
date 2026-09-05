@@ -28,7 +28,7 @@ export async function analyzeEconomyWithAI(currentRate: number, sock?: any) {
                 content: `Recent USD to IDR rates: ${ratesList}. Current rate: ${currentRate}. Calculate the inflation multiplier and provide a short reasoning.`
             }
         ],
-        model: process.env.GROQ_MODEL || 'llama3-8b-8192',
+        model: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
         temperature: 0.1,
         tools: [
             {

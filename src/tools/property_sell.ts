@@ -135,7 +135,7 @@ You can concede slightly if their argument is good, but you must NEVER exceed ${
 You must call the 'finalize_deal' function to return your response.`;
 
                 const completion = await groq.chat.completions.create({
-                    model: 'llama3-8b-8192',
+                    model: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
                     messages: [
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: negotiationText }
