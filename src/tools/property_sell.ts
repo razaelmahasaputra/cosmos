@@ -56,20 +56,34 @@ const propertySellTool: ToolModule = {
 
         const actualUserId = user ? user.id : userJid;
 
-        const allItems = await prisma.userInventory.findMany({
-            where: {
-                userId: actualUserId,
-                ownershipStatus: 'Owned'
-            },
-            orderBy: [{ purchaseDate: 'asc' }, { id: 'asc' }]
-        });
+        const allItems = (
+            await prisma.userInventory.findMany({
+                where: {
+                    userId: actualUserId,
+                    ownershipStatus: 'Owned',
+                    propertyId: { not: null }
+                },
+                orderBy: [{ purchaseDate: 'asc' }, { id: 'asc' }]
+            })
+        ).filter(
+            (item): item is typeof item & { propertyId: string; name: string; originalPrice: bigint } =>
+                item.propertyId !== null && item.name !== null && item.originalPrice !== null
+        );
 
-        const fullInventory = await prisma.userInventory.findMany({
-            where: { userId: actualUserId },
-            orderBy: [{ purchaseDate: 'asc' }, { id: 'asc' }]
-        });
+        const fullInventory = (
+            await prisma.userInventory.findMany({
+                where: {
+                    userId: actualUserId,
+                    propertyId: { not: null }
+                },
+                orderBy: [{ purchaseDate: 'asc' }, { id: 'asc' }]
+            })
+        ).filter(
+            (item): item is typeof item & { propertyId: string; name: string; originalPrice: bigint } =>
+                item.propertyId !== null && item.name !== null && item.originalPrice !== null
+        );
 
-        let inventoryItem = null;
+        let inventoryItem: (typeof allItems)[number] | null = null;
 
         if (propertyName && typeof propertyName === 'string') {
             const firstPart = propertyName.trim().split(' ')[0];

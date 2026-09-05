@@ -131,27 +131,43 @@ model PropertyCatalog {
   transactions         PropertyTransaction[]
 }
 
+model Item {
+  id          String          @id @default(uuid())
+  shortId     String          @unique
+  name        String
+  description String
+  price       BigInt
+  type        String
+  isAvailable Boolean         @default(true)
+  inventories UserInventory[]
+}
+
 model UserInventory {
-  id              String          @id @default(uuid())
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String           @id @default(uuid())
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId          String
-  property        PropertyCatalog @relation(fields: [propertyId], references: [id])
-  propertyId      String
-  name            String
-  typeCategory    String
-  originalPrice   BigInt
-  ownershipStatus String          @default("Owned") // 'Owned', 'Pawned', 'Sold'
-  purchaseDate    DateTime        @default(now())
+  item            Item?            @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId          String?
+  quantity        Int              @default(1)
+  property        PropertyCatalog? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  propertyId      String?
+  name            String?
+  typeCategory    String?
+  originalPrice   BigInt?
+  ownershipStatus String           @default("Owned") // 'Owned', 'Pawned', 'Sold'
+  purchaseDate    DateTime         @default(now())
+
+  @@unique([userId, itemId])
 }
 
 model PropertyTransaction {
-  id                 String          @id @default(uuid())
-  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId             String
-  property           PropertyCatalog @relation(fields: [propertyId], references: [id])
-  propertyId         String
-  transactionType    String          // 'Buy', 'Sell', 'Pawn'
-  amount             BigInt
-  timestamp          DateTime        @default(now())
-  aiNegotiationLog   String?
+  id               String          @id @default(uuid())
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  property         PropertyCatalog @relation(fields: [propertyId], references: [id])
+  propertyId       String
+  transactionType  String // 'Buy', 'Sell', 'Pawn'
+  amount           BigInt
+  timestamp        DateTime        @default(now())
+  aiNegotiationLog String?
 }

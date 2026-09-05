@@ -5,7 +5,7 @@ import { formatRupiah } from '../utils/currency.js';
 const propertyCatalogTool: ToolModule = {
     definition: {
         name: 'catalog',
-        aliases: ['propertycatalog', 'shop'],
+        aliases: ['propertycatalog', 'properties'],
         description: 'View the property catalog to purchase real-world assets.',
         category: 'Economy'
     },

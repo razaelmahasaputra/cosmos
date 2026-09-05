@@ -117,3 +117,7 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 
 - **Rupiah Formatting Convention:** Setiap kali menampilkan atau memproses nilai mata uang Rupiah (saldo, taruhan, reward, payout, harga), **WAJIB** menggunakan konvensi lokal Indonesia (`Rp` tepat di depan angka tanpa spasi, pemisah ribuan berupa titik `.`, dan tanpa desimal secara default, misal: `Rp10.000`, `Rp1.000.000`).
 - **Global Currency Utility:** **WAJIB** menggunakan fungsi global `formatRupiah` dan `parseCurrencyAmount` dari `src/utils/currency.ts`. Dilarang memformat string mata uang manual secara terpecah-pecah atau menggunakan `parseInt` mentah yang merusak titik ribuan (rujuk panduan di `.agents/skills/rupiah-currency-formatting/SKILL.md`).
+
+### M. Bot Prefix (Command Prefix)
+
+- **Standard Prefix:** WAF menggunakan titik (`.`) sebagai prefix untuk setiap command bot. **DILARANG** menggunakan tanda seru (`!`), slash (`/`), atau karakter lain sebagai prefix saat menuliskan panduan, rencana, atau merespons pengguna mengenai fitur bot (misal: gunakan `.shop` alih-alih `!shop`).

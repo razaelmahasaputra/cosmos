@@ -2,22 +2,27 @@ import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
 import { formatRupiah } from '../utils/currency.js';
 import { getSenderJid } from '../utils/casino.js';
+import { purchaseItem } from '../services/shopService.js';
 
-const propertyBuyTool: ToolModule = {
+const buyTool: ToolModule = {
     definition: {
         name: 'buy',
         aliases: ['purchase'],
-        description: 'Purchase a property from the catalog.',
+        description: 'Purchase an item or property from the shop using your balance.',
         category: 'Economy',
         parameters: {
             type: 'object',
             properties: {
-                property_name: {
+                item_name: {
                     type: 'string',
-                    description: 'The name or ID of the property you want to buy.'
+                    description: 'The shortId or name of the item/property you want to buy.'
+                },
+                quantity: {
+                    type: 'integer',
+                    description: 'The quantity to purchase (defaults to 1).'
                 }
             },
-            required: ['property_name']
+            required: ['item_name']
         }
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
@@ -25,9 +30,7 @@ const propertyBuyTool: ToolModule = {
         const userJid = getSenderJid(msg, sock);
         if (!userJid) return;
 
-        let propertyName = args.property_name;
-
-        // Ensure user exists
+        // Ensure user exists in database
         let user = await prisma.user.findFirst({
             where: {
                 OR: [{ id: userJid }, { lid: userJid }]
@@ -37,30 +40,91 @@ const propertyBuyTool: ToolModule = {
             user = await prisma.user.create({ data: { id: userJid, balance: BigInt(10000) } });
         }
 
-        if (!propertyName) {
-            // Attempt to parse from message text if not provided as structured args (e.g. text message instead of AI tool)
+        let inputTarget = args.item_name;
+        let inputQuantity = args.quantity ? parseInt(args.quantity, 10) : 1;
+
+        if (!inputTarget) {
+            // Attempt to parse from message text (e.g. .buy <short_id> [quantity])
             const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
-            const match = text.match(/^[./!#]buy\s+(.+)$/i);
+            const match = text.match(/^[./!#](?:buy|purchase)\s+(.+)$/i);
             if (match) {
-                propertyName = match[1].trim();
+                const parts = match[1].trim().split(/\s+/);
+                // Check if last part is a quantity number
+                if (parts.length > 1 && /^\d+$/.test(parts[parts.length - 1])) {
+                    inputQuantity = parseInt(parts.pop()!, 10);
+                    inputTarget = parts.join(' ').trim();
+                } else {
+                    inputTarget = parts.join(' ').trim();
+                }
             } else {
                 await sock.sendMessage(
                     jid,
-                    { text: 'Please specify the name of the property you want to buy.' },
+                    {
+                        text: 'Please specify the item or property you want to buy. Format: `.buy <short_id> [quantity]`'
+                    },
                     { quoted: msg }
                 );
                 return;
             }
         }
 
-        let targetProp = null;
+        if (isNaN(inputQuantity) || inputQuantity <= 0) {
+            inputQuantity = 1;
+        }
+
+        const normalizedTarget = String(inputTarget).trim();
+
+        // 1. First check if target matches an Item (by shortId or name)
+        const matchedItem = await prisma.item.findFirst({
+            where: {
+                OR: [
+                    { shortId: normalizedTarget.toLowerCase() },
+                    { name: { equals: normalizedTarget } },
+                    { id: normalizedTarget }
+                ]
+            }
+        });
+
+        if (matchedItem) {
+            const purchaseResult = await purchaseItem(user.id, matchedItem.shortId, inputQuantity);
+
+            if (!purchaseResult.success) {
+                if (purchaseResult.message.includes('Insufficient balance')) {
+                    const totalCost = matchedItem.price * BigInt(inputQuantity);
+                    await sock.sendMessage(
+                        jid,
+                        {
+                            text: `You do not have enough funds to purchase ${inputQuantity}x *${matchedItem.name}*. Total cost: ${formatRupiah(totalCost)}, but your current balance is ${formatRupiah(user.balance)}.`
+                        },
+                        { quoted: msg }
+                    );
+                    return;
+                }
+                await sock.sendMessage(jid, { text: purchaseResult.message }, { quoted: msg });
+                return;
+            }
+
+            const totalFormatted = formatRupiah(purchaseResult.totalCost || 0);
+            const remainingFormatted = formatRupiah(purchaseResult.remainingBalance || 0);
+            await sock.sendMessage(
+                jid,
+                {
+                    text: `🎉 Purchase successful! You bought *${purchaseResult.quantity}x ${matchedItem.name}* for *${totalFormatted}*.\nRemaining balance: *${remainingFormatted}*.`
+                },
+                { quoted: msg }
+            );
+            return;
+        }
+
+        // 2. If not found as Item, check if target matches a Property in PropertyCatalog
         const allProperties = await prisma.propertyCatalog.findMany({
             orderBy: [{ basePrice: 'asc' }, { name: 'asc' }]
         });
 
-        const propertyIndex = parseInt(propertyName, 10);
+        let targetProp = null;
+        const propertyIndex = parseInt(normalizedTarget, 10);
         if (
-            /^\d+$/.test(propertyName) &&
+            /^\d+$/.test(normalizedTarget) &&
             !isNaN(propertyIndex) &&
             propertyIndex > 0 &&
             propertyIndex <= allProperties.length
@@ -69,23 +133,26 @@ const propertyBuyTool: ToolModule = {
         }
 
         if (!targetProp) {
-            targetProp = allProperties.find((p) => p.name === propertyName) || null;
+            targetProp = allProperties.find((p) => p.name.toLowerCase() === normalizedTarget.toLowerCase()) || null;
         }
 
         if (!targetProp) {
-            // Try fetching all and doing a loose match
-            targetProp = allProperties.find((p) => p.name.toLowerCase() === propertyName.toLowerCase()) || null;
+            targetProp =
+                allProperties.find((p) => p.name.toLowerCase().includes(normalizedTarget.toLowerCase())) || null;
         }
 
         if (!targetProp) {
             await sock.sendMessage(
                 jid,
-                { text: `Property "${propertyName}" not found in the catalog.` },
+                {
+                    text: `Item or property "${normalizedTarget}" was not found. Use \`.shop\` to view available items.`
+                },
                 { quoted: msg }
             );
             return;
         }
 
+        // Handle property purchase (properties are unique, quantity is 1)
         if (user.balance < targetProp.basePrice) {
             await sock.sendMessage(
                 jid,
@@ -97,33 +164,29 @@ const propertyBuyTool: ToolModule = {
             return;
         }
 
-        // Process transaction
         await prisma.$transaction(async (tx) => {
-            // Deduct balance
             await tx.user.update({
-                where: { id: user.id },
-                data: { balance: { decrement: targetProp.basePrice } }
+                where: { id: user!.id },
+                data: { balance: { decrement: targetProp!.basePrice } }
             });
 
-            // Create inventory
             await tx.userInventory.create({
                 data: {
-                    userId: user.id,
-                    propertyId: targetProp.id,
-                    name: targetProp.name,
-                    typeCategory: targetProp.typeCategory,
-                    originalPrice: targetProp.basePrice,
+                    userId: user!.id,
+                    propertyId: targetProp!.id,
+                    name: targetProp!.name,
+                    typeCategory: targetProp!.typeCategory,
+                    originalPrice: targetProp!.basePrice,
                     ownershipStatus: 'Owned'
                 }
             });
 
-            // Create transaction history
             await tx.propertyTransaction.create({
                 data: {
-                    userId: user.id,
-                    propertyId: targetProp.id,
+                    userId: user!.id,
+                    propertyId: targetProp!.id,
                     transactionType: 'Buy',
-                    amount: targetProp.basePrice
+                    amount: targetProp!.basePrice
                 }
             });
         });
@@ -138,4 +201,4 @@ const propertyBuyTool: ToolModule = {
     }
 };
 
-export default propertyBuyTool;
+export default buyTool;
