@@ -37,6 +37,17 @@ const propertySellTool: ToolModule = {
         let propertyName = args.property_name;
         let negotiationText = args.negotiation;
 
+        if (!propertyName) {
+            await sock.sendMessage(
+                jid,
+                {
+                    text: 'Please specify the property name to sell. Format: /sell <property_name> <optional_negotiation>'
+                },
+                { quoted: msg }
+            );
+            return;
+        }
+
         const user = await prisma.user.findFirst({
             where: {
                 OR: [{ id: userJid }, { lid: userJid }]
@@ -45,39 +56,41 @@ const propertySellTool: ToolModule = {
 
         const actualUserId = user ? user.id : userJid;
 
-        if (!propertyName) {
-            const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
-            const match = text.match(/^[./!#](sell|pawn)\s+([^|]+)(?:\|(.*))?$/i);
-            if (match) {
-                propertyName = match[2].trim();
-                negotiationText = match[3] ? match[3].trim() : undefined;
-            } else {
-                await sock.sendMessage(
-                    jid,
-                    {
-                        text: 'Please specify the property name to sell. Format: /sell <property_name> | <optional_negotiation>'
-                    },
-                    { quoted: msg }
-                );
-                return;
-            }
-        }
-
-        let inventoryItem = await prisma.userInventory.findFirst({
+        const allItems = await prisma.userInventory.findMany({
             where: {
                 userId: actualUserId,
-                name: propertyName,
                 ownershipStatus: 'Owned'
             }
         });
 
-        if (!inventoryItem) {
-            const allItems = await prisma.userInventory.findMany({
-                where: {
-                    userId: actualUserId,
-                    ownershipStatus: 'Owned'
+        let inventoryItem = null;
+
+        if (propertyName && typeof propertyName === 'string' && !negotiationText) {
+            propertyName = propertyName.trim();
+            const sortedItems = [...allItems].sort((a, b) => b.name.length - a.name.length);
+
+            for (const item of sortedItems) {
+                if (propertyName.toLowerCase().startsWith(item.name.toLowerCase())) {
+                    inventoryItem = item;
+                    const remaining = propertyName.slice(item.name.length).trim();
+                    if (remaining.length > 0) {
+                        negotiationText = remaining;
+                    }
+                    propertyName = item.name;
+                    break;
                 }
-            });
+            }
+
+            if (!inventoryItem) {
+                const firstSpace = propertyName.indexOf(' ');
+                if (firstSpace !== -1) {
+                    negotiationText = propertyName.slice(firstSpace + 1).trim();
+                    propertyName = propertyName.slice(0, firstSpace).trim();
+                }
+            }
+        }
+
+        if (!inventoryItem && propertyName) {
             inventoryItem = allItems.find((p) => p.name.toLowerCase() === propertyName.toLowerCase()) || null;
         }
 
@@ -215,7 +228,7 @@ You must call the 'finalize_deal' function to return your response.`;
             responseText += `*Broker says:* "${aiMessage}"`;
         } else {
             responseText += `Final Deal Price: ${formatRupiah(finalDealPrice)}\n\n`;
-            responseText += `_You can negotiate the price by using: /sell ${propertyName} | <your persuasion message>_`;
+            responseText += `_You can negotiate the price by using: /sell ${propertyName} <your persuasion message>_`;
         }
 
         await sock.sendMessage(jid, { text: responseText }, { quoted: msg });
