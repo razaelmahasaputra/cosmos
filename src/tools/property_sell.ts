@@ -1,6 +1,6 @@
 import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
-import { formatRupiah } from '../utils/currency.js';
+import { formatRupiah, parseCurrencyAmount } from '../utils/currency.js';
 import { getSenderJid } from '../utils/casino.js';
 import { Groq } from 'groq-sdk';
 
@@ -63,9 +63,30 @@ const propertySellTool: ToolModule = {
             }
         });
 
+        const fullInventory = await prisma.userInventory.findMany({
+            where: { userId: actualUserId }
+        });
+
         let inventoryItem = null;
 
-        if (propertyName && typeof propertyName === 'string' && !negotiationText) {
+        if (propertyName && typeof propertyName === 'string') {
+            const firstPart = propertyName.trim().split(' ')[0];
+            const possibleId = parseInt(firstPart, 10);
+            
+            if (!isNaN(possibleId) && possibleId.toString() === firstPart && possibleId > 0 && possibleId <= fullInventory.length) {
+                const mappedItem = fullInventory[possibleId - 1];
+                if (mappedItem && mappedItem.ownershipStatus === 'Owned') {
+                    inventoryItem = mappedItem;
+                    
+                    if (!negotiationText && propertyName.trim().length > firstPart.length) {
+                        negotiationText = propertyName.trim().substring(firstPart.length).trim();
+                    }
+                    propertyName = inventoryItem.name;
+                }
+            }
+        }
+
+        if (!inventoryItem && propertyName && typeof propertyName === 'string' && !negotiationText) {
             propertyName = propertyName.trim();
             const sortedItems = [...allItems].sort((a, b) => b.name.length - a.name.length);
 
@@ -126,6 +147,20 @@ const propertySellTool: ToolModule = {
         let aiMessage = '';
 
         if (negotiationText) {
+            const parsedAmount = parseCurrencyAmount(negotiationText);
+            if (parsedAmount) {
+                negotiationText = `I want to sell this for ${formatRupiah(parsedAmount)}.`;
+            } else {
+                const words = negotiationText.split(' ');
+                for (let i = 0; i < words.length; i++) {
+                    const val = parseCurrencyAmount(words[i]);
+                    if (val) {
+                        words[i] = formatRupiah(val);
+                    }
+                }
+                negotiationText = words.join(' ');
+            }
+
             try {
                 const groq = getGroqClient();
                 const systemPrompt = `You are a pawn shop broker for WAF Casino. A user wants to sell their ${propertyName}.
