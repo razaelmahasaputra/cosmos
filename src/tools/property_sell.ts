@@ -38,12 +38,11 @@ const propertySellTool: ToolModule = {
         let negotiationText = args.negotiation;
 
         if (propertyName && typeof propertyName === 'string' && !negotiationText) {
-            if (propertyName.includes('|')) {
-                const parts = propertyName.split('|');
-                propertyName = parts[0].trim();
-                negotiationText = parts.slice(1).join('|').trim();
-            } else {
-                propertyName = propertyName.trim();
+            propertyName = propertyName.trim();
+            const firstSpace = propertyName.indexOf(' ');
+            if (firstSpace !== -1) {
+                negotiationText = propertyName.slice(firstSpace + 1).trim();
+                propertyName = propertyName.slice(0, firstSpace).trim();
             }
         }
 
@@ -51,7 +50,7 @@ const propertySellTool: ToolModule = {
             await sock.sendMessage(
                 jid,
                 {
-                    text: 'Please specify the property name to sell. Format: /sell <property_name> | <optional_negotiation>'
+                    text: 'Please specify the property name to sell. Format: /sell <property_name> <optional_negotiation>'
                 },
                 { quoted: msg }
             );
@@ -218,7 +217,7 @@ You must call the 'finalize_deal' function to return your response.`;
             responseText += `*Broker says:* "${aiMessage}"`;
         } else {
             responseText += `Final Deal Price: ${formatRupiah(finalDealPrice)}\n\n`;
-            responseText += `_You can negotiate the price by using: /sell ${propertyName} | <your persuasion message>_`;
+            responseText += `_You can negotiate the price by using: /sell ${propertyName} <your persuasion message>_`;
         }
 
         await sock.sendMessage(jid, { text: responseText }, { quoted: msg });
