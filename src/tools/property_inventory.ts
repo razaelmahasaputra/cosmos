@@ -24,7 +24,8 @@ const propertyInventoryTool: ToolModule = {
         const actualUserId = user ? user.id : userJid;
 
         const inventory = await prisma.userInventory.findMany({
-            where: { userId: actualUserId }
+            where: { userId: actualUserId },
+            orderBy: [{ purchaseDate: 'asc' }, { id: 'asc' }]
         });
 
         if (inventory.length === 0) {

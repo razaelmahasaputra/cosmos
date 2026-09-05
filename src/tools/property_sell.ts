@@ -60,11 +60,13 @@ const propertySellTool: ToolModule = {
             where: {
                 userId: actualUserId,
                 ownershipStatus: 'Owned'
-            }
+            },
+            orderBy: [{ purchaseDate: 'asc' }, { id: 'asc' }]
         });
 
         const fullInventory = await prisma.userInventory.findMany({
-            where: { userId: actualUserId }
+            where: { userId: actualUserId },
+            orderBy: [{ purchaseDate: 'asc' }, { id: 'asc' }]
         });
 
         let inventoryItem = null;
@@ -158,9 +160,21 @@ const propertySellTool: ToolModule = {
             } else {
                 const words = negotiationText.split(' ');
                 for (let i = 0; i < words.length; i++) {
-                    const val = parseCurrencyAmount(words[i]);
-                    if (val) {
-                        words[i] = formatRupiah(val);
+                    const match = words[i].match(/^([^\w]*)(.*?)([^\w]*)$/);
+                    if (match) {
+                        const pre = match[1];
+                        const core = match[2];
+                        const post = match[3];
+                        const val = parseCurrencyAmount(core);
+                        if (val) {
+                            words[i] = `${pre}${formatRupiah(val)}${post}`;
+                        } else {
+                            const valFull = parseCurrencyAmount(words[i]);
+                            if (valFull) words[i] = formatRupiah(valFull);
+                        }
+                    } else {
+                        const val = parseCurrencyAmount(words[i]);
+                        if (val) words[i] = formatRupiah(val);
                     }
                 }
                 negotiationText = words.join(' ');
