@@ -2,11 +2,11 @@
 module.exports = {
     apps: [
         {
-            name: 'waf-bot',
+            name: 'cosmos-bot',
             script: 'dist/index.js',
             watch: ['dist'],
-            out_file: './storage/logs/waf-bot-out.log',
-            error_file: './storage/logs/waf-bot-error.log',
+            out_file: './storage/logs/cosmos-bot-out.log',
+            error_file: './storage/logs/cosmos-bot-error.log',
             merge_logs: true,
             time: true,
             node_args: '--max-old-space-size=256',

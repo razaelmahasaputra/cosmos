@@ -1,7 +1,11 @@
 {
     "name": "cosmos",
     "version": "1.0.0",
-    "description": "",
+    "description": "A modern, enterprise-grade WhatsApp Bot framework",
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:razaelmahasaputra/cosmos.git"
+    },
     "main": "src/index.ts",
     "type": "module",
     "imports": {
