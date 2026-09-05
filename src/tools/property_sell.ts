@@ -37,15 +37,6 @@ const propertySellTool: ToolModule = {
         let propertyName = args.property_name;
         let negotiationText = args.negotiation;
 
-        if (propertyName && typeof propertyName === 'string' && !negotiationText) {
-            propertyName = propertyName.trim();
-            const firstSpace = propertyName.indexOf(' ');
-            if (firstSpace !== -1) {
-                negotiationText = propertyName.slice(firstSpace + 1).trim();
-                propertyName = propertyName.slice(0, firstSpace).trim();
-            }
-        }
-
         if (!propertyName) {
             await sock.sendMessage(
                 jid,
@@ -65,21 +56,41 @@ const propertySellTool: ToolModule = {
 
         const actualUserId = user ? user.id : userJid;
 
-        let inventoryItem = await prisma.userInventory.findFirst({
+        const allItems = await prisma.userInventory.findMany({
             where: {
                 userId: actualUserId,
-                name: propertyName,
                 ownershipStatus: 'Owned'
             }
         });
 
-        if (!inventoryItem) {
-            const allItems = await prisma.userInventory.findMany({
-                where: {
-                    userId: actualUserId,
-                    ownershipStatus: 'Owned'
+        let inventoryItem = null;
+
+        if (propertyName && typeof propertyName === 'string' && !negotiationText) {
+            propertyName = propertyName.trim();
+            const sortedItems = [...allItems].sort((a, b) => b.name.length - a.name.length);
+
+            for (const item of sortedItems) {
+                if (propertyName.toLowerCase().startsWith(item.name.toLowerCase())) {
+                    inventoryItem = item;
+                    const remaining = propertyName.slice(item.name.length).trim();
+                    if (remaining.length > 0) {
+                        negotiationText = remaining;
+                    }
+                    propertyName = item.name;
+                    break;
                 }
-            });
+            }
+
+            if (!inventoryItem) {
+                const firstSpace = propertyName.indexOf(' ');
+                if (firstSpace !== -1) {
+                    negotiationText = propertyName.slice(firstSpace + 1).trim();
+                    propertyName = propertyName.slice(0, firstSpace).trim();
+                }
+            }
+        }
+
+        if (!inventoryItem && propertyName) {
             inventoryItem = allItems.find((p) => p.name.toLowerCase() === propertyName.toLowerCase()) || null;
         }
 
