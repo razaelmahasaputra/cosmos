@@ -41,7 +41,8 @@ const buyTool: ToolModule = {
         }
 
         let inputTarget = args.item_name;
-        let inputQuantity = args.quantity ? parseInt(args.quantity, 10) : 1;
+        let inputQuantity =
+            args.quantity !== undefined && args.quantity !== null ? parseInt(String(args.quantity), 10) : undefined;
 
         if (!inputTarget) {
             // Attempt to parse from message text (e.g. .buy <short_id> [quantity])
@@ -66,9 +67,18 @@ const buyTool: ToolModule = {
                 );
                 return;
             }
+        } else if (inputQuantity === undefined) {
+            // If item_name was provided as a combined string like "gorengan 2" without explicit quantity parameter
+            const parts = String(inputTarget).trim().split(/\s+/);
+            if (parts.length > 1 && /^\d+$/.test(parts[parts.length - 1])) {
+                inputQuantity = parseInt(parts.pop()!, 10);
+                inputTarget = parts.join(' ').trim();
+            } else {
+                inputQuantity = 1;
+            }
         }
 
-        if (isNaN(inputQuantity) || inputQuantity <= 0) {
+        if (inputQuantity === undefined || isNaN(inputQuantity) || inputQuantity <= 0) {
             inputQuantity = 1;
         }
 
@@ -91,10 +101,12 @@ const buyTool: ToolModule = {
             if (!purchaseResult.success) {
                 if (purchaseResult.message.includes('Insufficient balance')) {
                     const totalCost = matchedItem.price * BigInt(inputQuantity);
+                    const freshUser = await prisma.user.findUnique({ where: { id: user.id } });
+                    const currentBalance = freshUser ? freshUser.balance : user.balance;
                     await sock.sendMessage(
                         jid,
                         {
-                            text: `You do not have enough funds to purchase ${inputQuantity}x *${matchedItem.name}*. Total cost: ${formatRupiah(totalCost)}, but your current balance is ${formatRupiah(user.balance)}.`
+                            text: `You do not have enough funds to purchase ${inputQuantity}x *${matchedItem.name}*. Total cost: ${formatRupiah(totalCost)}, but your current balance is ${formatRupiah(currentBalance)}.`
                         },
                         { quoted: msg }
                     );
@@ -152,52 +164,104 @@ const buyTool: ToolModule = {
             return;
         }
 
-        // Handle property purchase (properties are unique, quantity is 1)
-        if (user.balance < targetProp.basePrice) {
+        // Check if user already owns this property
+        const existingProperty = await prisma.userInventory.findFirst({
+            where: {
+                userId: user.id,
+                propertyId: targetProp.id,
+                ownershipStatus: 'Owned'
+            }
+        });
+
+        if (existingProperty) {
             await sock.sendMessage(
                 jid,
                 {
-                    text: `You do not have enough funds to purchase ${targetProp.name}. The property costs ${formatRupiah(Number(targetProp.basePrice))}, but your current balance is only ${formatRupiah(Number(user.balance))}.`
+                    text: `You already own *${targetProp.name}*. You cannot purchase the same property more than once.`
                 },
                 { quoted: msg }
             );
             return;
         }
 
-        await prisma.$transaction(async (tx) => {
-            await tx.user.update({
-                where: { id: user!.id },
-                data: { balance: { decrement: targetProp!.basePrice } }
-            });
+        // Handle property purchase (properties are unique, quantity is 1)
+        const freshUser = await prisma.user.findUnique({ where: { id: user.id } });
+        const userBalance = freshUser ? freshUser.balance : user.balance;
 
-            await tx.userInventory.create({
-                data: {
-                    userId: user!.id,
-                    propertyId: targetProp!.id,
-                    name: targetProp!.name,
-                    typeCategory: targetProp!.typeCategory,
-                    originalPrice: targetProp!.basePrice,
-                    ownershipStatus: 'Owned'
+        if (userBalance < targetProp.basePrice) {
+            await sock.sendMessage(
+                jid,
+                {
+                    text: `You do not have enough funds to purchase ${targetProp.name}. The property costs ${formatRupiah(targetProp.basePrice)}, but your current balance is only ${formatRupiah(userBalance)}.`
+                },
+                { quoted: msg }
+            );
+            return;
+        }
+
+        try {
+            await prisma.$transaction(async (tx) => {
+                const currentUser = await tx.user.findUnique({
+                    where: { id: user!.id }
+                });
+
+                if (!currentUser || currentUser.balance < targetProp!.basePrice) {
+                    throw new Error('INSUFFICIENT_FUNDS');
                 }
+
+                await tx.user.update({
+                    where: { id: user!.id },
+                    data: { balance: { decrement: targetProp!.basePrice } }
+                });
+
+                await tx.userInventory.create({
+                    data: {
+                        userId: user!.id,
+                        propertyId: targetProp!.id,
+                        name: targetProp!.name,
+                        typeCategory: targetProp!.typeCategory,
+                        originalPrice: targetProp!.basePrice,
+                        ownershipStatus: 'Owned'
+                    }
+                });
+
+                await tx.propertyTransaction.create({
+                    data: {
+                        userId: user!.id,
+                        propertyId: targetProp!.id,
+                        transactionType: 'Buy',
+                        amount: targetProp!.basePrice
+                    }
+                });
             });
 
-            await tx.propertyTransaction.create({
-                data: {
-                    userId: user!.id,
-                    propertyId: targetProp!.id,
-                    transactionType: 'Buy',
-                    amount: targetProp!.basePrice
-                }
-            });
-        });
-
-        await sock.sendMessage(
-            jid,
-            {
-                text: `🎉 Congratulations! You have successfully purchased *${targetProp.name}* for ${formatRupiah(Number(targetProp.basePrice))}.`
-            },
-            { quoted: msg }
-        );
+            await sock.sendMessage(
+                jid,
+                {
+                    text: `🎉 Congratulations! You have successfully purchased *${targetProp.name}* for ${formatRupiah(targetProp.basePrice)}.`
+                },
+                { quoted: msg }
+            );
+        } catch (err: any) {
+            if (err.message === 'INSUFFICIENT_FUNDS') {
+                const latestUser = await prisma.user.findUnique({ where: { id: user.id } });
+                const currentBal = latestUser ? latestUser.balance : BigInt(0);
+                await sock.sendMessage(
+                    jid,
+                    {
+                        text: `You do not have enough funds to purchase ${targetProp.name}. The property costs ${formatRupiah(targetProp.basePrice)}, but your current balance is only ${formatRupiah(currentBal)}.`
+                    },
+                    { quoted: msg }
+                );
+                return;
+            }
+            console.error('Error during property purchase:', err);
+            await sock.sendMessage(
+                jid,
+                { text: 'A database error occurred while processing the property purchase.' },
+                { quoted: msg }
+            );
+        }
     }
 };
 
