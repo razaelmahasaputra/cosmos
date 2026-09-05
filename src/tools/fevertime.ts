@@ -23,11 +23,11 @@ const feverTimeTool: ToolModule = {
             key: {
                 remoteJid: '0@s.whatsapp.net',
                 fromMe: false,
-                id: 'WAF_FEVER_MSG',
+                id: 'COSMOS_FEVER_MSG',
                 participant: '0@s.whatsapp.net'
             },
             message: {
-                conversation: '🔥 WAF EVENT ANNOUNCEMENT 🔥'
+                conversation: '🔥 Cosmos EVENT ANNOUNCEMENT 🔥'
             }
         };
 

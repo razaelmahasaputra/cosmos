@@ -21,7 +21,7 @@ const propertyCatalogTool: ToolModule = {
             return;
         }
 
-        let text = `*🏬 WAF Property Catalog*\n\n`;
+        let text = `*🏬 Cosmos Property Catalog*\n\n`;
         properties.forEach((p, index) => {
             text += `${index + 1}. *${p.name}*\n`;
             text += `   Type: ${p.typeCategory}\n`;

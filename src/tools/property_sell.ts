@@ -182,7 +182,7 @@ const propertySellTool: ToolModule = {
 
             try {
                 const groq = getGroqClient();
-                const systemPrompt = `You are a pawn shop broker for WAF Casino. A user wants to sell their ${propertyName}.
+                const systemPrompt = `You are a pawn shop broker for Cosmos Casino. A user wants to sell their ${propertyName}.
 The original price was ${originalPrice}. The standard base offer is ${baseOffer}. The maximum you can ever offer is ${hardCap}.
 The user will try to negotiate a better deal. Evaluate their persuasion tactics. 
 You can concede slightly if their argument is good, but you must NEVER exceed ${hardCap}.

@@ -24,11 +24,11 @@ const vaultTool: ToolModule = {
             key: {
                 remoteJid: '0@s.whatsapp.net',
                 fromMe: false,
-                id: 'WAF_VAULT_MSG',
+                id: 'COSMOS_VAULT_MSG',
                 participant: '0@s.whatsapp.net'
             },
             message: {
-                conversation: '🏦 WAF Global Vault System'
+                conversation: '🏦 Cosmos Global Vault System'
             }
         };
 

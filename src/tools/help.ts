@@ -71,7 +71,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         );
 
         if (matchedCategory) {
-            let menuText = `*WAF - ${matchedCategory.toUpperCase()} MENU*\n\n`;
+            let menuText = `*Cosmos - ${matchedCategory.toUpperCase()} MENU*\n\n`;
             const toolsInCategory = categorizedTools[matchedCategory];
 
             toolsInCategory.forEach((t, tIndex) => {
@@ -98,7 +98,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         }
     }
 
-    let menuText = `*WAF - COMMAND CATEGORIES*\n\n`;
+    let menuText = `*Cosmos - COMMAND CATEGORIES*\n\n`;
     categories.forEach((cat) => {
         menuText += `\`\`\`${cmdPrefix} ${cat}\`\`\`\n`;
     });
