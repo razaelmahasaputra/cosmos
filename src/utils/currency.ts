@@ -55,8 +55,11 @@ export function parseCurrencyAmount(input: string, currentBalance?: number | big
         return balanceNum > 0 ? balanceNum : null;
     }
 
+    // Strip "rp" prefix before processing shorthands
+    const cleanedRaw = raw.replace(/^rp\.?\s*/, '').trim();
+
     // Handle "k" (thousands) - e.g. 10k, 1.5k, 500k
-    const kMatch = raw.match(/^([0-9]+(?:[.,][0-9]+)?)\s*k$/);
+    const kMatch = cleanedRaw.match(/^([0-9]+(?:[.,][0-9]+)?)\s*k$/);
     if (kMatch) {
         const val = parseFloat(kMatch[1].replace(',', '.'));
         if (isNaN(val) || val <= 0) return null;
@@ -64,7 +67,7 @@ export function parseCurrencyAmount(input: string, currentBalance?: number | big
     }
 
     // Handle "m" / "jt" / "juta" (millions) - e.g. 1m, 1.5m, 2jt
-    const mMatch = raw.match(/^([0-9]+(?:[.,][0-9]+)?)\s*(?:m|jt|juta)$/);
+    const mMatch = cleanedRaw.match(/^([0-9]+(?:[.,][0-9]+)?)\s*(?:m|jt|juta)$/);
     if (mMatch) {
         const val = parseFloat(mMatch[1].replace(',', '.'));
         if (isNaN(val) || val <= 0) return null;
@@ -72,7 +75,7 @@ export function parseCurrencyAmount(input: string, currentBalance?: number | big
     }
 
     // Handle standard dot thousands, comma thousands, and decimals (e.g. 1.000.000, 1.000.000,00, 10.000)
-    let cleaned = raw.replace(/^rp\.?\s*/, '').trim();
+    let cleaned = cleanedRaw;
 
     // Check if input uses standard Indonesian local format: period as thousands separator (e.g., 1.000.000 or 1.000.000,50)
     if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(cleaned)) {
