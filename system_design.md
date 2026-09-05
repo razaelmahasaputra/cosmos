@@ -144,7 +144,7 @@ export async function broadcastEconomicUpdate(sock: WASocket, multiplier: number
     const groups = await prisma.whitelistedGroup.findMany();
 
     const message =
-        `*🏦 WAF Central Bank Update*\n\n` +
+        `*🏦 Cosmos Central Bank Update*\n\n` +
         `*Current Exchange Rate:* $1 = ${formatRupiah(rate)}\n` +
         `*Market Trend:* 📉 AI Evaluated\n\n` +
         `*🔄 Economic Adjustments:*\n` +

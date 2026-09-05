@@ -22,7 +22,7 @@ This is the message sent automatically to whitelisted groups when the daily cron
 **Message Design:**
 
 ```whatsapp
-*🏦 WAF Central Bank Update*
+*🏦 Cosmos Central Bank Update*
 
 *Current Exchange Rate:* $1 = Rp15.520
 *Market Trend:* 📉 IDR Weakening

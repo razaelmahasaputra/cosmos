@@ -20,7 +20,7 @@ const vaultTool: ToolModule = {
 
         const vault = await getHouseVault(prisma);
 
-        const fakeWafQuote = {
+        const fakeCosmosQuote = {
             key: {
                 remoteJid: '0@s.whatsapp.net',
                 fromMe: false,
@@ -39,7 +39,7 @@ const vaultTool: ToolModule = {
             `💰 *Net Profit:* ${formatRupiah(vault.netProfit)}`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
-        await sock.sendMessage(jid, { text }, { quoted: fakeWafQuote as any });
+        await sock.sendMessage(jid, { text }, { quoted: fakeCosmosQuote as any });
     }
 };
 

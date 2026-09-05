@@ -2,7 +2,7 @@
 
 ## 1. Overview & Objectives
 
-The "Property/Item Ownership" system introduces a realistic asset economy into the WAF Casino ecosystem. Users will be able to purchase, pawn, or sell real-world items (properties) using their in-game casino funds. The primary objective is to create a dynamic liquidity system where users can store their wealth in assets and liquidate them when needed, driven by an AI-assisted negotiation and depreciation logic. This bridges the gap between gambling winnings and tangible in-game asset accumulation.
+The "Property/Item Ownership" system introduces a realistic asset economy into the Cosmos Casino ecosystem. Users will be able to purchase, pawn, or sell real-world items (properties) using their in-game casino funds. The primary objective is to create a dynamic liquidity system where users can store their wealth in assets and liquidate them when needed, driven by an AI-assisted negotiation and depreciation logic. This bridges the gap between gambling winnings and tangible in-game asset accumulation.
 
 ## 2. Core Mechanics
 
@@ -15,7 +15,7 @@ The "Property/Item Ownership" system introduces a realistic asset economy into t
 
 ### Selling & Pawning Mechanics (Depreciation System)
 
-- **Liquidity Options**: Users facing a shortage of funds or wishing to liquidate assets can sell or pawn their properties back to the "Bank" or the "WAF Casino Operator".
+- **Liquidity Options**: Users facing a shortage of funds or wishing to liquidate assets can sell or pawn their properties back to the "Bank" or the "Cosmos Casino Operator".
 - **Depreciation Rule**: The core economic rule is that selling or pawning a property will _always_ yield a lower return than the original purchase price, simulating real-world depreciation and transaction fees.
 - **Automated Calculation**: An automated calculation system determines the baseline deal price based on variable depreciation rates (e.g., 1%, 1.5%, or 2% applied dynamically based on asset type, market conditions, or holding period).
 
@@ -74,7 +74,7 @@ The baseline offer price before negotiation is calculated as:
 
 ### AI Negotiation Logic
 
-1.  **System Prompt Boundaries**: The AI is strictly prompted to act as a pawn shop broker for WAF Casino.
+1.  **System Prompt Boundaries**: The AI is strictly prompted to act as a pawn shop broker for Cosmos Casino.
 2.  **Hard Programmatic Cap (Crucial Rule Enforcement)**: To ensure the selling/pawning price is _always_ lower than the original purchase price (regardless of AI hallucination or prompt injection), the system enforces a strict programmatic cap. The final `Deal Price` can _never_ exceed `Original Price * 0.99` (enforcing at least a 1% depreciation).
 3.  **Haggling Dynamics**: The AI starts at the `Base Offer`. If the user negotiates, the AI evaluates the user's prompt (e.g., persuasion tactics) and can concede slightly, up to the Hard Cap.
 

@@ -19,7 +19,7 @@ const feverTimeTool: ToolModule = {
         const durationMs = 15 * 60 * 1000;
         casinoState.feverTimeEnd = Date.now() + durationMs;
 
-        const fakeWafQuote = {
+        const fakeCosmosQuote = {
             key: {
                 remoteJid: '0@s.whatsapp.net',
                 fromMe: false,
@@ -41,7 +41,7 @@ const feverTimeTool: ToolModule = {
 
         const whitelistedGroups = await getAllWhitelistedGroups();
         for (const groupJid of whitelistedGroups) {
-            await sock.sendMessage(groupJid, { text }, { quoted: fakeWafQuote as any }).catch(() => {});
+            await sock.sendMessage(groupJid, { text }, { quoted: fakeCosmosQuote as any }).catch(() => {});
         }
 
         // React to acknowledge success without sending output text to the triggerer (if in PM)
