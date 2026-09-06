@@ -169,8 +169,22 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         return;
     }
 
+    // Ignore programmatic bot responses from being processed as registration step input
+    let isQuotingCommand = false;
+    if (msg.key.fromMe && msg.message) {
+        const qMsg =
+            msg.message.videoMessage?.contextInfo?.quotedMessage ||
+            msg.message.imageMessage?.contextInfo?.quotedMessage ||
+            msg.message.documentMessage?.contextInfo?.quotedMessage ||
+            msg.message.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (qMsg) {
+            const qText = qMsg.conversation || qMsg.extendedTextMessage?.text || '';
+            if (qText.trim().startsWith('.')) isQuotingCommand = true;
+        }
+    }
+
     // Check if sender is currently in an active ID Card registration flow in this chat
-    if (senderRaw && isUserRegistering(senderRaw, jid)) {
+    if (senderRaw && !isQuotingCommand && isUserRegistering(senderRaw, jid)) {
         if (!trimmedText.startsWith('.')) {
             const handled = await processRegistrationStep(sock, msg, senderRaw, jid, trimmedText);
             if (handled) return;
@@ -360,7 +374,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
 
     // Auto sticker processing if enabled for this chat and message contains direct media
     // Ignore programmatic bot responses (which usually start with ✅, ⏳, or ❌, or quote a command) to prevent loops
-    let isQuotingCommand = false;
+    isQuotingCommand = false;
     if (msg.key.fromMe && msg.message) {
         const qMsg =
             msg.message.videoMessage?.contextInfo?.quotedMessage ||

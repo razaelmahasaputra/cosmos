@@ -269,10 +269,9 @@ export const resolveId = async (
 };
 
 export const getSenderJid = (msg: any, sock?: any): string => {
-    // When the bot sends a command to itself (fromMe in a DM with its own number),
-    // msg.key.participant is empty and msg.key.remoteJid is the chat partner's JID,
-    // NOT the bot's own JID. Detect this case and return the bot's own cleaned JID.
-    if (msg.key.fromMe && !msg.key.participant && sock?.user?.id) {
+    // When the bot sends a command or message (fromMe in a DM or group),
+    // always return the bot's own cleaned JID.
+    if (msg.key.fromMe && sock?.user?.id) {
         return cleanId(sock.user.id);
     }
 

@@ -1,5 +1,5 @@
 import { prisma } from '#/db.js';
-import { cleanId } from '#/utils/casino.js';
+import { cleanId, lidToPnMap } from '#/utils/casino.js';
 import { WASocket, WAMessage } from '@whiskeysockets/baileys';
 import { generateIdCardImage, fetchUserProfilePic, IdCardData } from '#/utils/imageProcessing.js';
 import { registerCancellableSession, unregisterCancellableSessionByUser } from '#/utils/cancellationManager.js';
@@ -235,17 +235,40 @@ export function calculateAge(dateOfBirthStr: string): number {
     return age;
 }
 
+function isSameChat(chatA?: string, chatB?: string): boolean {
+    if (!chatA || !chatB) return true;
+    if (chatA === chatB) return true;
+    return cleanId(chatA) === cleanId(chatB);
+}
+
+function findRegistrationSession(userKey: string): RegistrationSession | undefined {
+    const cleaned = cleanId(userKey);
+    if (registrationSessions.has(cleaned)) {
+        return registrationSessions.get(cleaned);
+    }
+    const mapped = lidToPnMap.get(cleaned);
+    if (mapped && registrationSessions.has(mapped)) {
+        return registrationSessions.get(mapped);
+    }
+    for (const [lid, pn] of lidToPnMap.entries()) {
+        if (pn === cleaned && registrationSessions.has(lid)) {
+            return registrationSessions.get(lid);
+        }
+    }
+    return undefined;
+}
+
 /**
- * Checks if a user has an active registration session in the given chat.
+ * Checks whether a user is currently in the middle of a registration session.
  */
 export function isUserRegistering(userKey: string, remoteJid?: string): boolean {
-    const session = registrationSessions.get(cleanId(userKey));
+    const session = findRegistrationSession(userKey);
     if (!session) return false;
     if (Date.now() - session.lastActivity > SESSION_TIMEOUT_MS) {
-        registrationSessions.delete(cleanId(userKey));
+        registrationSessions.delete(session.userKey);
         return false;
     }
-    if (remoteJid && session.remoteJid !== remoteJid) {
+    if (remoteJid && !isSameChat(session.remoteJid, remoteJid)) {
         return false;
     }
     return true;
@@ -255,16 +278,16 @@ export function isUserRegistering(userKey: string, remoteJid?: string): boolean 
  * Cancels an active registration session.
  */
 export function cancelRegistrationSession(userKey: string, remoteJid?: string): boolean {
-    const cleaned = cleanId(userKey);
-    const session = registrationSessions.get(cleaned);
-    if (session && remoteJid && session.remoteJid !== remoteJid) {
+    const session = findRegistrationSession(userKey);
+    if (!session) return false;
+    if (remoteJid && !isSameChat(session.remoteJid, remoteJid)) {
         return false;
     }
-    const chatJid = remoteJid || session?.remoteJid;
+    const chatJid = remoteJid || session.remoteJid;
     if (chatJid) {
-        unregisterCancellableSessionByUser(cleaned, chatJid);
+        unregisterCancellableSessionByUser(session.userKey, chatJid);
     }
-    return registrationSessions.delete(cleaned);
+    return registrationSessions.delete(session.userKey);
 }
 
 /**
@@ -499,12 +522,12 @@ export async function processRegistrationStep(
     remoteJid: string,
     input: string
 ): Promise<boolean> {
-    const cleaned = cleanId(userKey);
-    const session = registrationSessions.get(cleaned);
+    const session = findRegistrationSession(userKey);
     if (!session) return false;
+    const cleaned = session.userKey;
 
     // Chat isolation: only process in the chat where registration was initiated
-    if (session.remoteJid !== remoteJid) {
+    if (!isSameChat(session.remoteJid, remoteJid)) {
         return false;
     }
 
