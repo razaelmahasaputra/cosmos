@@ -70,3 +70,85 @@ Due to the large volume of tools (~55+) and utility files, the refactoring shoul
 1. **Formatting Rules (Currency)**: As per `AGENTS.md`, strict Rupiah formatting globally (`Rp`) will be maintained. The currency will remain exclusively Indonesian Rupiah (IDR), and its formatting will not change regardless of the user's selected language.
 2. **Dynamic Database Content**: The database will remain in its current state. Original property and item names stored in the database cannot be changed or translated, so they will be displayed as-is (in their original language) when fetched from the database.
 3. **Offline AI Responder**: The AI responder (`src/utils/offlineAi.ts`) generates natural language responses. We will need to pass the resolved group/user language string directly into the AI's system prompt so its generated text output matches the chat's local preference.
+
+## 9. Translation File Checklist
+Below is a categorized checklist of files that require string translation, ordered by importance. This should be used by the coding agent as a reference:
+
+### Priority 1: Core Systems & Handlers
+- [ ] `src/handlers/message.ts`
+- [ ] `src/tools/handler.ts`
+
+### Priority 2: Utilities (User-facing output)
+- [ ] `src/utils/idCard.ts`
+- [ ] `src/utils/casino.ts`
+- [ ] `src/utils/roulette.ts`
+- [ ] `src/utils/rouletteAfkTimer.ts`
+- [ ] `src/utils/lyricsPlayer.ts`
+- [ ] `src/utils/autoSticker.ts`
+- [ ] `src/utils/autoDelete.ts`
+- [ ] `src/utils/autodl.ts`
+
+### Priority 3: Core & Admin Tools
+- [ ] `src/tools/help.ts`
+- [ ] `src/tools/cancel.ts`
+- [ ] `src/tools/addbalance.ts`
+- [ ] `src/tools/forceupdate.ts`
+- [ ] `src/tools/system_info.ts`
+
+### Priority 4: Minigame & Economy Tools
+- [ ] `src/tools/balance.ts`
+- [ ] `src/tools/daily.ts`
+- [ ] `src/tools/coinflip.ts`
+- [ ] `src/tools/dice.ts`
+- [ ] `src/tools/slot.ts`
+- [ ] `src/tools/transfer.ts`
+- [ ] `src/tools/loan.ts`
+- [ ] `src/tools/vault.ts`
+- [ ] `src/tools/top.ts`
+- [ ] `src/tools/topglobal.ts`
+- [ ] `src/tools/apply_job.ts`
+- [ ] `src/tools/apply_license.ts`
+- [ ] `src/tools/market.ts`
+- [ ] `src/tools/shop.ts`
+
+### Priority 5: Buckshot Roulette Tools
+- [ ] `src/tools/roulette_creategame.ts`
+- [ ] `src/tools/roulette_joingame.ts`
+- [ ] `src/tools/roulette_startgame.ts`
+- [ ] `src/tools/roulette_shoot.ts`
+- [ ] `src/tools/roulette_use.ts`
+- [ ] `src/tools/roulette_bet.ts`
+
+### Priority 6: Properties & Inventory Tools
+- [ ] `src/tools/property_buy.ts`
+- [ ] `src/tools/property_catalog.ts`
+- [ ] `src/tools/property_inventory.ts`
+- [ ] `src/tools/property_sell.ts`
+
+### Priority 7: Media & Downloader Tools
+- [ ] `src/tools/ytdl.ts`
+- [ ] `src/tools/tiktokdl.ts`
+- [ ] `src/tools/telegramdl.ts`
+- [ ] `src/tools/pinterestdl.ts`
+- [ ] `src/tools/play.ts`
+- [ ] `src/tools/playlyrics.ts`
+- [ ] `src/tools/stoplyrics.ts`
+
+### Priority 8: Sticker & Processing Tools
+- [ ] `src/tools/sticker_maker.ts`
+- [ ] `src/tools/togglesticker.ts`
+- [ ] `src/tools/stoptogglesticker.ts`
+- [ ] `src/tools/getprofilephoto.ts`
+- [ ] `src/tools/quoted.ts`
+- [ ] `src/tools/readviewonce.ts`
+
+### Priority 9: AI & Misc Tools
+- [ ] `src/tools/stt.ts`
+- [ ] `src/tools/idcard.ts`
+- [ ] `src/tools/toggleofflineai.ts`
+- [ ] `src/tools/startautocorrection.ts`
+- [ ] `src/tools/stopautocorrection.ts`
+- [ ] `src/tools/toggleautocorrection.ts`
+- [ ] `src/tools/tgadd.ts`
+- [ ] `src/tools/tgdel.ts`
+- [ ] `src/tools/tglist.ts`
