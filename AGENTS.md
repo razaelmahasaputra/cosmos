@@ -121,3 +121,8 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 ### M. Bot Prefix (Command Prefix)
 
 - **Standard Prefix:** Cosmos menggunakan titik (`.`) sebagai prefix untuk setiap command bot. **DILARANG** menggunakan tanda seru (`!`), slash (`/`), atau karakter lain sebagai prefix saat menuliskan panduan, rencana, atau merespons pengguna mengenai fitur bot (misal: gunakan `.shop` alih-alih `!shop`).
+
+### N. Pembatalan Global & Alur Interaktif (Global Cancellation System)
+
+- **Global Cancellation Registry:** Seluruh fitur interaktif yang memiliki alur percakapan bertingkat (_multi-step conversational flow_), dialog konfirmasi aksi berisiko, atau sesi tunggu/lobby game (seperti Buckshot Roulette atau pendaftaran Virtual ID/KTP) **WAJIB** diintegrasikan ke dalam `src/utils/cancellationManager.ts` menggunakan fungsi `registerCancellableSession`.
+- **Dukungan Command `.cancel`:** Pengguna harus selalu dapat membatalkan proses dengan mengetikkan `.cancel` (atau `cancel`, `.batal`, `batal`, `.abort`, `abort`). Handler pembatalan wajib membersihkan state, timeout/timer, atau mengembalikan saldo/taruhan jika ada, lalu membatalkan pendaftaran sesi (`unregisterCancellableSession` atau `unregisterCancellableSessionByUser`). Rujuk panduan lengkap di `.agents/skills/global-cancellation-manager/SKILL.md`.
