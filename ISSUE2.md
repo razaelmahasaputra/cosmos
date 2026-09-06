@@ -6,20 +6,20 @@ This issue outlines the step-by-step plan to update the bot to support multiple 
 - Install `i18next` as the core internationalization library, along with `i18next-fs-backend` for loading files from the disk: `pnpm add i18next i18next-fs-backend` (this combination seamlessly handles JSON parsing, interpolation, and loading locales from the file system).
 - Create a new directory for translations: `src/locales/`.
 - Initialize translation JSON files:
-  - `src/locales/en.json` (This will be the source of truth).
-  - `src/locales/id.json` (For Indonesian translations).
+  - `src/locales/id.json` (This will be the source of truth, as Indonesian is the default).
+  - `src/locales/en.json` (For English translations).
 
 ## 2. Update Database Schema
 Modify `prisma/schema.prisma` to track language preferences. It is critical to store language preferences for both Users and Groups, to avoid confusing mixed-language replies in group chats where bot features trigger automatically.
 ```prisma
 model User {
   // ... existing fields
-  language       String    @default("en") 
+  language       String    @default("id") 
 }
 
 model WhitelistedGroup {
   // ... existing fields
-  language       String    @default("en")
+  language       String    @default("id")
 }
 ```
 - Apply the changes via `pnpm prisma generate` and `pnpm prisma db push` (or `pnpm prisma migrate dev`).
@@ -61,14 +61,14 @@ Due to the large volume of tools (~55+) and utility files, the refactoring shoul
 - Create `src/tools/setgrouplang.ts`: Command `.setgrouplang <lang>` (Admin only) to update the `WhitelistedGroup`'s default language.
 
 ## 8. Crowdin Integration Setup
-- Create a `crowdin.yml` configuration file in the project root to map the source file (`src/locales/en.json`) to the translation files (`src/locales/%two_letters_code%.json`).
+- Create a `crowdin.yml` configuration file in the project root to map the source file (`src/locales/id.json`) to the translation files (`src/locales/%two_letters_code%.json`).
 - Link the Crowdin project to the GitHub repository to enable automatic bi-directional sync for translators.
 
 ---
 
 ### Resolved Considerations for Implementation
 1. **Formatting Rules (Currency)**: As per `AGENTS.md`, strict Rupiah formatting globally (`Rp`) will be maintained. The currency will remain exclusively Indonesian Rupiah (IDR), and its formatting will not change regardless of the user's selected language.
-2. **Dynamic Database Content**: The database will remain in its current state. Original property and item names stored in the database cannot be changed or translated, so they will be displayed as-is (in their original language) when fetched from the database.
+2. **Dynamic Database Content**: Database strings (like item names and properties) will be refactored to store static translation keys (e.g., `item_pedang_emas`) rather than literal strings. This ensures they can be fully translated when fetched and displayed by the bot.
 3. **Offline AI Responder**: The AI responder (`src/utils/offlineAi.ts`) generates natural language responses. We will need to pass the resolved group/user language string directly into the AI's system prompt so its generated text output matches the chat's local preference.
 
 ## 9. Translation File Checklist
