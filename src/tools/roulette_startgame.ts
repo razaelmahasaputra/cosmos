@@ -2,6 +2,7 @@ import { ToolModule, ToolContext } from './types.js';
 import { getSessionByChatId, generateShells, getRandomItems } from '../utils/roulette.js';
 import { getSenderJid } from '../utils/casino.js';
 import { formatRupiah } from '../utils/currency.js';
+import { unregisterCancellableSession } from '../utils/cancellationManager.js';
 
 const startGameTool: ToolModule = {
     definition: {
@@ -42,6 +43,8 @@ const startGameTool: ToolModule = {
             clearTimeout(session.timeoutId);
             session.timeoutId = undefined;
         }
+
+        unregisterCancellableSession(`roulette_${session.sessionId}`);
 
         session.status = 'PLAYING';
         session.shells = generateShells();

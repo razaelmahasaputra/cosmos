@@ -12,7 +12,7 @@ export const definition: ToolDefinition = {
     name: 'idcard',
     title: 'Virtual ID Card',
     category: 'General',
-    aliases: ['register-id', 'registerid', 'ktp', 'myid', 'check-id', 'cancel'],
+    aliases: ['register-id', 'registerid', 'ktp', 'myid', 'check-id'],
     description: 'View your Virtual ID Card or register a new identity card.',
     parameters: {
         type: 'object',
@@ -41,7 +41,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         actionArg === 'register' ||
         actionArg === 'daftar';
 
-    const isCancelCommand = commandPart === '.cancel' || actionArg === 'cancel' || actionArg === 'batal';
+    const isCancelCommand = actionArg === 'cancel' || actionArg === 'batal';
 
     if (isCancelCommand) {
         if (isUserRegistering(senderJid, ctx.jid)) {

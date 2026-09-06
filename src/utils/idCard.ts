@@ -2,6 +2,7 @@ import { prisma } from '#/db.js';
 import { cleanId } from '#/utils/casino.js';
 import { WASocket, WAMessage } from '@whiskeysockets/baileys';
 import { generateIdCardImage, fetchUserProfilePic, IdCardData } from '#/utils/imageProcessing.js';
+import { registerCancellableSession, unregisterCancellableSessionByUser } from '#/utils/cancellationManager.js';
 
 export interface RegistrationSession {
     userKey: string;
@@ -253,8 +254,17 @@ export function isUserRegistering(userKey: string, remoteJid?: string): boolean 
 /**
  * Cancels an active registration session.
  */
-export function cancelRegistrationSession(userKey: string): boolean {
-    return registrationSessions.delete(cleanId(userKey));
+export function cancelRegistrationSession(userKey: string, remoteJid?: string): boolean {
+    const cleaned = cleanId(userKey);
+    const session = registrationSessions.get(cleaned);
+    if (session && remoteJid && session.remoteJid !== remoteJid) {
+        return false;
+    }
+    const chatJid = remoteJid || session?.remoteJid;
+    if (chatJid) {
+        unregisterCancellableSessionByUser(cleaned, chatJid);
+    }
+    return registrationSessions.delete(cleaned);
 }
 
 /**
@@ -268,6 +278,18 @@ export function startRegistrationSession(userKey: string, remoteJid: string): st
         step: 1,
         data: {},
         lastActivity: Date.now()
+    });
+
+    registerCancellableSession({
+        sessionId: `idcard_${cleaned}`,
+        feature: 'idcard',
+        userJid: cleaned,
+        chatJid: remoteJid,
+        description: 'Virtual ID card registration',
+        onCancel: async () => {
+            registrationSessions.delete(cleaned);
+            return 'Virtual ID card registration has been cancelled.';
+        }
     });
 
     return "Welcome to the Cosmos Identity System. Let's create your virtual ID card. Please reply with your *Full Name*.\n\nType *.cancel* at any time to abort the registration.";
@@ -493,9 +515,12 @@ export async function processRegistrationStep(
     if (
         trimmed.toLowerCase() === '.cancel' ||
         trimmed.toLowerCase() === 'cancel' ||
-        trimmed.toLowerCase() === '.batal'
+        trimmed.toLowerCase() === '.batal' ||
+        trimmed.toLowerCase() === 'batal' ||
+        trimmed.toLowerCase() === '.abort' ||
+        trimmed.toLowerCase() === 'abort'
     ) {
-        registrationSessions.delete(cleaned);
+        cancelRegistrationSession(cleaned, remoteJid);
         await sock.sendMessage(
             remoteJid,
             { text: 'Virtual ID card registration has been cancelled.' },
@@ -675,6 +700,7 @@ export async function processRegistrationStep(
             }
 
             session.data.occupation = trimmed;
+            unregisterCancellableSessionByUser(cleaned, remoteJid);
             registrationSessions.delete(cleaned);
 
             await sock.sendMessage(

@@ -8,6 +8,7 @@ import { processAutoDl } from '#/utils/autodl.js';
 import { handleOfflineAiResponder } from '#/utils/offlineAi.js';
 import { isUserRegistering, processRegistrationStep } from '#/utils/idCard.js';
 import { formatMentions } from '#/utils/casino.js';
+import { hasCancellableSession, cancelActiveSession } from '#/utils/cancellationManager.js';
 
 function getUnwrappedMessage(m: any): any {
     if (!m) return null;
@@ -150,13 +151,27 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         }
     }
 
+    // Global cancellation check: if user sends a cancel keyword (.cancel, cancel, .batal, batal, .abort, abort)
+    const lowerText = trimmedText.toLowerCase();
+    const isCancelKeyword =
+        lowerText === '.cancel' ||
+        lowerText === 'cancel' ||
+        lowerText === '.batal' ||
+        lowerText === 'batal' ||
+        lowerText === '.abort' ||
+        lowerText === 'abort';
+
+    if (senderRaw && isCancelKeyword && hasCancellableSession(senderRaw, jid)) {
+        const cancelMsg = await cancelActiveSession(senderRaw, jid, sock, msg);
+        if (cancelMsg && typeof cancelMsg === 'string' && cancelMsg.trim().length > 0) {
+            await sock.sendMessage(jid, { text: cancelMsg }, { quoted: msg });
+        }
+        return;
+    }
+
     // Check if sender is currently in an active ID Card registration flow in this chat
     if (senderRaw && isUserRegistering(senderRaw, jid)) {
-        if (
-            trimmedText.toLowerCase() === '.cancel' ||
-            trimmedText.toLowerCase() === 'cancel' ||
-            !trimmedText.startsWith('.')
-        ) {
+        if (!trimmedText.startsWith('.')) {
             const handled = await processRegistrationStep(sock, msg, senderRaw, jid, trimmedText);
             if (handled) return;
         }
