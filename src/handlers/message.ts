@@ -7,6 +7,7 @@ import { isMessageProcessed, markMessageProcessed } from '#/utils/messageCache.j
 import { processAutoDl } from '#/utils/autodl.js';
 import { handleOfflineAiResponder } from '#/utils/offlineAi.js';
 import { isUserRegistering, processRegistrationStep } from '#/utils/idCard.js';
+import { formatMentions } from '#/utils/casino.js';
 
 function getUnwrappedMessage(m: any): any {
     if (!m) return null;
@@ -149,8 +150,8 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         }
     }
 
-    // Check if sender is currently in an active ID Card registration flow
-    if (senderRaw && isUserRegistering(senderRaw)) {
+    // Check if sender is currently in an active ID Card registration flow in this chat
+    if (senderRaw && isUserRegistering(senderRaw, jid)) {
         if (
             trimmedText.toLowerCase() === '.cancel' ||
             trimmedText.toLowerCase() === 'cancel' ||
@@ -294,15 +295,8 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
             await sock.sendPresenceUpdate('composing', jid);
             const result = await toolsHandler.execute(commandName, args, { sock, msg, jid });
             if (result && typeof result === 'string' && result.trim().length > 0) {
-                const mentions: string[] = [];
                 const matches = result.match(/@(\d+)/g);
-                if (matches) {
-                    for (const match of matches) {
-                        const num = match.substring(1);
-                        mentions.push(`${num}@s.whatsapp.net`);
-                        mentions.push(`${num}@lid`);
-                    }
-                }
+                const mentions = matches ? formatMentions(matches.map((m) => m.substring(1))) : [];
                 await sock.sendMessage(jid, { text: result, mentions }, { quoted: msg });
             }
             return;

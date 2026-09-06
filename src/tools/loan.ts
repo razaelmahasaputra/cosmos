@@ -1,5 +1,6 @@
 import { ToolDefinition, ToolContext, ToolModule } from './types.js';
-import { getSenderJid, formatRupiah, parseCurrencyAmount } from '#/utils/casino.js';
+import { getSenderJid } from '#/utils/casino.js';
+import { formatRupiah, parseCurrencyAmount } from '#/utils/currency.js';
 import { requireIdCard } from '#/utils/idCard.js';
 
 export const definition: ToolDefinition = {

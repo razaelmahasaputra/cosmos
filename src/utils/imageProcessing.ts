@@ -22,6 +22,13 @@ export interface IdCardData {
 let cachedFontBold: opentype.Font | null = null;
 let cachedFontMedium: opentype.Font | null = null;
 
+function toArrayBuffer(buf: Buffer): ArrayBuffer {
+    const ab = new ArrayBuffer(buf.byteLength);
+    const view = new Uint8Array(ab);
+    view.set(buf);
+    return ab;
+}
+
 function loadFonts(): { fontBold: opentype.Font; fontMedium: opentype.Font } {
     if (cachedFontBold && cachedFontMedium) {
         return { fontBold: cachedFontBold, fontMedium: cachedFontMedium };
@@ -37,12 +44,20 @@ function loadFonts(): { fontBold: opentype.Font; fontMedium: opentype.Font } {
     const bufBold = fs.readFileSync(boldPath);
     const bufMedium = fs.readFileSync(mediumPath);
 
-    cachedFontBold = opentype.parse(bufBold.buffer.slice(bufBold.byteOffset, bufBold.byteOffset + bufBold.byteLength));
-    cachedFontMedium = opentype.parse(
-        bufMedium.buffer.slice(bufMedium.byteOffset, bufMedium.byteOffset + bufMedium.byteLength)
-    );
+    cachedFontBold = opentype.parse(toArrayBuffer(bufBold));
+    cachedFontMedium = opentype.parse(toArrayBuffer(bufMedium));
 
     return { fontBold: cachedFontBold, fontMedium: cachedFontMedium };
+}
+
+function getTextWidth(font: opentype.Font, text: string, fontSize: number): number {
+    const scale = (1 / font.unitsPerEm) * fontSize;
+    let width = 0;
+    for (let i = 0; i < text.length; i++) {
+        const glyph = font.charToGlyph(text[i]);
+        width += (glyph.advanceWidth || font.unitsPerEm) * scale;
+    }
+    return width;
 }
 
 function renderTextPath(
@@ -50,15 +65,24 @@ function renderTextPath(
     text: string,
     startX: number,
     baselineY: number,
-    fontSize: number
+    fontSize: number,
+    maxWidth?: number
 ): string {
-    const scale = (1 / font.unitsPerEm) * fontSize;
+    let effectiveFontSize = fontSize;
+    if (maxWidth) {
+        const currentWidth = getTextWidth(font, text, fontSize);
+        if (currentWidth > maxWidth) {
+            effectiveFontSize = Math.max(14, Math.floor(fontSize * (maxWidth / currentWidth)));
+        }
+    }
+
+    const scale = (1 / font.unitsPerEm) * effectiveFontSize;
     const p = new opentype.Path();
     let x = startX;
 
     for (let i = 0; i < text.length; i++) {
         const glyph = font.charToGlyph(text[i]);
-        const glyphPath = glyph.getPath(x, baselineY, fontSize);
+        const glyphPath = glyph.getPath(x, baselineY, effectiveFontSize);
         p.commands.push(...glyphPath.commands);
         x += (glyph.advanceWidth || font.unitsPerEm) * scale;
     }
@@ -86,8 +110,19 @@ export async function createPlaceholderPhotoBuffer(): Promise<Buffer> {
  * Returns null if the profile picture is hidden, private, or not available.
  */
 export async function fetchUserProfilePic(sock: WASocket, userJidOrLid: string): Promise<Buffer | null> {
+    if (!sock || typeof sock.profilePictureUrl !== 'function' || !userJidOrLid) {
+        return null;
+    }
+
     try {
-        const url = await sock.profilePictureUrl(userJidOrLid, 'image');
+        const cleaned = userJidOrLid.split(':')[0].split('@')[0];
+        const normalizedJid = userJidOrLid.includes('@')
+            ? userJidOrLid
+            : cleaned.length > 14
+              ? `${cleaned}@lid`
+              : `${cleaned}@s.whatsapp.net`;
+
+        const url = await sock.profilePictureUrl(normalizedJid, 'image');
         if (!url) return null;
 
         const response = await axios.get(url, {
@@ -116,41 +151,41 @@ export async function generateIdCardImage(data: IdCardData, profilePicBuffer?: B
 
     const { fontBold, fontMedium } = loadFonts();
 
-    // Prepare text paths
+    // Prepare text paths (text column has max width ~480 before hitting pas-foto at x=916)
     const paths: string[] = [];
 
     // NIK (bold, large)
-    paths.push(renderTextPath(fontBold, String(data.nik).toUpperCase(), 340, 206, 36));
+    paths.push(renderTextPath(fontBold, String(data.nik).toUpperCase(), 340, 206, 36, 540));
 
     // Full Name (bold)
-    paths.push(renderTextPath(fontBold, String(data.fullName).toUpperCase(), 420, 268, 25));
+    paths.push(renderTextPath(fontBold, String(data.fullName).toUpperCase(), 420, 268, 25, 480));
 
     // Place and Date of Birth
     const birthStr = `${data.placeOfBirth}, ${data.dateOfBirth}`.toUpperCase();
-    paths.push(renderTextPath(fontMedium, birthStr, 420, 311, 24));
+    paths.push(renderTextPath(fontMedium, birthStr, 420, 311, 24, 480));
 
     // Gender
-    paths.push(renderTextPath(fontMedium, String(data.gender).toUpperCase(), 420, 355, 24));
+    paths.push(renderTextPath(fontMedium, String(data.gender).toUpperCase(), 420, 355, 24, 480));
 
     // Address
-    paths.push(renderTextPath(fontMedium, String(data.address).toUpperCase(), 420, 398, 24));
+    paths.push(renderTextPath(fontMedium, String(data.address).toUpperCase(), 420, 398, 24, 480));
 
     // Religion
-    paths.push(renderTextPath(fontMedium, String(data.religion).toUpperCase(), 420, 441, 24));
+    paths.push(renderTextPath(fontMedium, String(data.religion).toUpperCase(), 420, 441, 24, 480));
 
     // Marital Status
-    paths.push(renderTextPath(fontMedium, String(data.maritalStatus).toUpperCase(), 420, 485, 24));
+    paths.push(renderTextPath(fontMedium, String(data.maritalStatus).toUpperCase(), 420, 485, 24, 480));
 
     // Occupation
-    paths.push(renderTextPath(fontMedium, String(data.occupation).toUpperCase(), 420, 528, 24));
+    paths.push(renderTextPath(fontMedium, String(data.occupation).toUpperCase(), 420, 528, 24, 480));
 
     // Citizenship (default "WNI")
     const citizenship = (data.citizenship || 'WNI').toUpperCase();
-    paths.push(renderTextPath(fontMedium, citizenship, 420, 572, 24));
+    paths.push(renderTextPath(fontMedium, citizenship, 420, 572, 24, 480));
 
     // Valid Until (default "SEUMUR HIDUP")
     const validUntil = (data.validUntil || 'SEUMUR HIDUP').toUpperCase();
-    paths.push(renderTextPath(fontMedium, validUntil, 420, 616, 24));
+    paths.push(renderTextPath(fontMedium, validUntil, 420, 616, 24, 480));
 
     const textSvg = `<svg width="1264" height="848" xmlns="http://www.w3.org/2000/svg">${paths.join('')}</svg>`;
 

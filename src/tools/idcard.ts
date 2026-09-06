@@ -44,11 +44,11 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     const isCancelCommand = commandPart === '.cancel' || actionArg === 'cancel' || actionArg === 'batal';
 
     if (isCancelCommand) {
-        if (isUserRegistering(senderJid)) {
+        if (isUserRegistering(senderJid, ctx.jid)) {
             cancelRegistrationSession(senderJid);
             return 'Virtual ID card registration has been cancelled.';
         }
-        return 'You do not have an active ID card registration session.';
+        return 'You do not have an active ID card registration session in this chat.';
     }
 
     if (isRegisterCommand) {
@@ -75,14 +75,17 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     `*Date of Birth:* ${existing.dateOfBirth}\n` +
                     `*Gender:* ${existing.gender}\n` +
                     `*Citizenship:* ${existing.citizenship}\n` +
-                    `*Valid Until:* ${existing.validUntil}\n` +
-                    `*Status:* WNI: SEUMUR HIDUP`;
+                    `*Valid Until:* ${existing.validUntil}`;
 
                 await ctx.sock.sendMessage(ctx.jid, { image: imageBuffer, caption }, { quoted: ctx.msg });
             } catch (err) {
                 console.error('[IdCard] Error fetching existing card image:', err);
             }
             return;
+        }
+
+        if (isUserRegistering(senderJid, ctx.jid)) {
+            return 'You already have an active registration in progress. Please reply to the prompt or type *.cancel* to abort.';
         }
 
         const prompt = startRegistrationSession(senderJid, ctx.jid);
@@ -114,8 +117,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             `*Marital Status:* ${existing.maritalStatus}\n` +
             `*Occupation:* ${existing.occupation}\n` +
             `*Citizenship:* ${existing.citizenship}\n` +
-            `*Valid Until:* ${existing.validUntil}\n` +
-            `*Status:* WNI: SEUMUR HIDUP`;
+            `*Valid Until:* ${existing.validUntil}`;
 
         await ctx.sock.sendMessage(ctx.jid, { image: imageBuffer, caption }, { quoted: ctx.msg });
     } catch (err) {

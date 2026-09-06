@@ -32,7 +32,10 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         return auth.message!;
     }
 
-    const role = (args.role || 'Developer').trim();
+    const role = (args.role || '').trim();
+    if (!role) {
+        return 'Please specify the job position you are applying for (e.g., .apply-job Developer).';
+    }
 
     return `Your application has been submitted. The contract for '${role}' has been registered under the name ${auth.idCard.fullName}, residing at ${auth.idCard.address}.`;
 }

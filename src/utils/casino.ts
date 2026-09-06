@@ -222,19 +222,15 @@ export const cleanId = (idStr: string | null | undefined): string => {
     return idStr.split(':')[0].split('@')[0];
 };
 
-/**
- * Safely generates a mentions array for a given user ID (or array of IDs).
- * By pushing both the @s.whatsapp.net and @lid variants, WhatsApp will guarantee
- * a match and render a valid green mention regardless of whether the ID is a JID or a LID.
- */
 export const formatMentions = (ids: string | string[]): string[] => {
     const idArray = Array.isArray(ids) ? ids : [ids];
     const mentions: string[] = [];
     for (const id of idArray) {
+        if (!id) continue;
         const cleaned = cleanId(id);
-        if (cleaned) {
-            mentions.push(`${cleaned}@s.whatsapp.net`, `${cleaned}@lid`);
-        }
+        if (!cleaned) continue;
+        const isLid = id.includes('@lid') || cleaned.length > 14;
+        mentions.push(isLid ? `${cleaned}@lid` : `${cleaned}@s.whatsapp.net`);
     }
     return mentions;
 };
