@@ -66,7 +66,7 @@ Due to the large volume of tools (~55+) and utility files, the refactoring shoul
 
 ---
 
-### Open Questions & Considerations for Implementation
-1. **Formatting Rules (Currency)**: `AGENTS.md` mandates strict Rupiah formatting globally (`Rp`). If a user switches to English (`en`), we need to decide if currency formats should adapt (e.g., USD format) or strictly remain in IDR standard formatting.
-2. **Dynamic Database Content**: Item names (e.g., Properties, Inventory) are stored dynamically in the database. The current i18n JSON plan covers static UI/command strings. A strategy will be needed if we want to translate dynamic database enums/values.
+### Resolved Considerations for Implementation
+1. **Formatting Rules (Currency)**: As per `AGENTS.md`, strict Rupiah formatting globally (`Rp`) will be maintained. The currency will remain exclusively Indonesian Rupiah (IDR), and its formatting will not change regardless of the user's selected language.
+2. **Dynamic Database Content**: The database will remain in its current state. Original property and item names stored in the database cannot be changed or translated, so they will be displayed as-is (in their original language) when fetched from the database.
 3. **Offline AI Responder**: The AI responder (`src/utils/offlineAi.ts`) generates natural language responses. We will need to pass the resolved group/user language string directly into the AI's system prompt so its generated text output matches the chat's local preference.
