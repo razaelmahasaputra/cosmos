@@ -3,7 +3,7 @@
 This issue outlines the step-by-step plan to update the bot to support multiple languages using JSON files. This approach will allow us to easily manage translations and integrate with translation platforms like Crowdin.
 
 ## 1. Setup Locales Directory and Dependencies
-- Install `i18next` as the core internationalization library: `pnpm add i18next` (it's lightweight and handles JSON parsing, interpolation, and pluralization natively).
+- Install `i18next` as the core internationalization library, along with `i18next-fs-backend` for loading files from the disk: `pnpm add i18next i18next-fs-backend` (this combination seamlessly handles JSON parsing, interpolation, and loading locales from the file system).
 - Create a new directory for translations: `src/locales/`.
 - Initialize translation JSON files:
   - `src/locales/en.json` (This will be the source of truth).
