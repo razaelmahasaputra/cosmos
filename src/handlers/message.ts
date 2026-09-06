@@ -6,6 +6,7 @@ import { isAutoCorrectionEnabled, analyzeAndCorrectText } from '#/utils/autoCorr
 import { isMessageProcessed, markMessageProcessed } from '#/utils/messageCache.js';
 import { processAutoDl } from '#/utils/autodl.js';
 import { handleOfflineAiResponder } from '#/utils/offlineAi.js';
+import { isUserRegistering, processRegistrationStep } from '#/utils/idCard.js';
 
 function getUnwrappedMessage(m: any): any {
     if (!m) return null;
@@ -145,6 +146,18 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
             if (quotedText.toLowerCase().includes('reply with a number') && quotedText.includes('results for')) {
                 isPlayReply = true;
             }
+        }
+    }
+
+    // Check if sender is currently in an active ID Card registration flow
+    if (senderRaw && isUserRegistering(senderRaw)) {
+        if (
+            trimmedText.toLowerCase() === '.cancel' ||
+            trimmedText.toLowerCase() === 'cancel' ||
+            !trimmedText.startsWith('.')
+        ) {
+            const handled = await processRegistrationStep(sock, msg, senderRaw, jid, trimmedText);
+            if (handled) return;
         }
     }
 

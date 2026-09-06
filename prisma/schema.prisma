@@ -97,6 +97,7 @@ model User {
 
   inventories          UserInventory[]
   propertyTransactions PropertyTransaction[]
+  idCard               IdCard?
 }
 
 model HouseVault {
@@ -170,4 +171,23 @@ model PropertyTransaction {
   amount           BigInt
   timestamp        DateTime        @default(now())
   aiNegotiationLog String?
+}
+
+model IdCard {
+  nik           String   @id // 16-digit Nomor Induk Kependudukan
+  userJid       String   @unique
+  fullName      String
+  placeOfBirth  String
+  dateOfBirth   String
+  gender        String
+  address       String
+  religion      String
+  maritalStatus String
+  occupation    String
+  citizenship   String   @default("WNI")
+  validUntil    String   @default("SEUMUR HIDUP")
+  issuedAt      DateTime @default(now())
+
+  // Relation to the main User model
+  user          User     @relation(fields: [userJid], references: [id], onDelete: Cascade)
 }
