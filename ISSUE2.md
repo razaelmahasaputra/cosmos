@@ -5,9 +5,9 @@ This issue outlines the step-by-step plan to update the bot to support multiple 
 ## 1. Setup Locales Directory and Dependencies
 - Install `i18next` as the core internationalization library, along with `i18next-fs-backend` for loading files from the disk: `pnpm add i18next i18next-fs-backend` (this combination seamlessly handles JSON parsing, interpolation, and loading locales from the file system).
 - Create a new directory for translations: `src/locales/`.
-- Initialize translation JSON files:
-  - `src/locales/id.json` (This will be the source of truth, as Indonesian is the default).
-  - `src/locales/en.json` (For English translations).
+- Initialize translation JSON files in language-specific subdirectories to separate core and tool strings:
+  - `src/locales/id/core.json` and `src/locales/id/tools.json` (Source of truth, as Indonesian is the default).
+  - `src/locales/en/core.json` and `src/locales/en/tools.json` (For English translations).
 
 ## 2. Update Database Schema
 Modify `prisma/schema.prisma` to track language preferences. It is critical to store language preferences for both Users and Groups, to avoid confusing mixed-language replies in group chats where bot features trigger automatically.
@@ -61,7 +61,7 @@ Due to the large volume of tools (~55+) and utility files, the refactoring shoul
 - Create `src/tools/setgrouplang.ts`: Command `.setgrouplang <lang>` (Admin only) to update the `WhitelistedGroup`'s default language.
 
 ## 8. Crowdin Integration Setup
-- Create a `crowdin.yml` configuration file in the project root to map the source file (`src/locales/id.json`) to the translation files (`src/locales/%two_letters_code%.json`).
+- Create a `crowdin.yml` configuration file in the project root to map the source files (`src/locales/id/*.json`) to the translation files (`src/locales/%two_letters_code%/%original_file_name%`).
 - Link the Crowdin project to the GitHub repository to enable automatic bi-directional sync for translators.
 
 ---
