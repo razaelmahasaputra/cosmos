@@ -1,7 +1,7 @@
 import { ToolDefinition, ToolContext, ToolModule } from './types.js';
-import { getSenderJid } from '#/utils/casino.js';
-import { requireIdCard, calculateAge } from '#/utils/idCard.js';
-import { getTranslator } from '#/utils/i18n.js';
+import { getSenderJid } from '#utils/casino.js';
+import { requireIdCard, calculateAge } from '#utils/idCard.js';
+import { getTranslator } from '#utils/i18n.js';
 
 export const definition: ToolDefinition = {
     name: 'apply-license',

@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { prisma } from '#/db.js';
+import { prisma } from '#db.js';
 
 const STORAGE_DIR = path.resolve(process.cwd(), 'storage');
 const LOCAL_FILE = path.join(STORAGE_DIR, 'active_sessions.json');

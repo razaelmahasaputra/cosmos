@@ -1,4 +1,4 @@
-import { cleanId } from '#/utils/casino.js';
+import { cleanId } from '#utils/casino.js';
 
 export interface CancellableSession {
     /** Unique identifier for this cancellable session */

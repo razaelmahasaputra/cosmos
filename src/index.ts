@@ -1,13 +1,13 @@
 import dns from 'dns';
 import dotenv from 'dotenv';
-import { loadAutoDlSettings } from '#/utils/autodl.js';
-import toolsHandler from '#/tools/handler.js';
+import { loadAutoDlSettings } from '#utils/autodl.js';
+import toolsHandler from '#tools/handler.js';
 
-import { startAutoBackup } from '#/utils/backup.js';
-import { connectToWhatsApp } from '#/utils/connectionManager.js';
-import { getTelegramClient, isTelegramConfigured } from '#/utils/telegramClient.js';
-import { seedItems } from '#/seed_item.js';
-import { prisma } from '#/db.js';
+import { startAutoBackup } from '#utils/backup.js';
+import { connectToWhatsApp } from '#utils/connectionManager.js';
+import { getTelegramClient, isTelegramConfigured } from '#utils/telegramClient.js';
+import { seedItems } from '#seed_item.js';
+import { prisma } from '#db.js';
 
 dns.setDefaultResultOrder('ipv4first');
 

@@ -1,5 +1,5 @@
 import { ToolDefinition, ToolContext } from './types.js';
-import { disableAutoSticker, isAutoStickerEnabled } from '#/utils/autoSticker.js';
+import { disableAutoSticker, isAutoStickerEnabled } from '#utils/autoSticker.js';
 
 export const definition: ToolDefinition = {
     name: 'stoptogglesticker',

@@ -1,5 +1,5 @@
 import { ToolDefinition, ToolContext } from './types.js';
-import { listTelegramPrivateChats } from '#/db.js';
+import { listTelegramPrivateChats } from '#db.js';
 
 export const definition: ToolDefinition = {
     name: 'tglist',

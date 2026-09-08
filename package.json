@@ -9,7 +9,7 @@
     "main": "src/index.ts",
     "type": "module",
     "imports": {
-        "#/*": "./dist/*"
+        "#*": "./dist/*"
     },
     "scripts": {
         "dev": "tsx src/index.ts",

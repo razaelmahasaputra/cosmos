@@ -1,6 +1,6 @@
-import { stopLyrics } from '#/utils/lyricsPlayer.js';
+import { stopLyrics } from '#utils/lyricsPlayer.js';
 import { ToolDefinition, ToolContext } from './types.js';
-import { getTranslator } from '#/utils/i18n.js';
+import { getTranslator } from '#utils/i18n.js';
 
 export const definition: ToolDefinition = {
     name: 'stoplyrics',

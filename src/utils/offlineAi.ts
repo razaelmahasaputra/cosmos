@@ -1,10 +1,10 @@
 import { Groq } from 'groq-sdk';
 import { WASocket, WAMessage, downloadContentFromMessage } from '@whiskeysockets/baileys';
 import dotenv from 'dotenv';
-import { isGroupWhitelisted } from '#/db.js';
-import { addMessageToHistory, getConversationContext } from '#/utils/aiHistory.js';
-import toolsHandler from '#/tools/handler.js';
-import { getTranslator } from '#/utils/i18n.js';
+import { isGroupWhitelisted } from '#db.js';
+import { addMessageToHistory, getConversationContext } from '#utils/aiHistory.js';
+import toolsHandler from '#tools/handler.js';
+import { getTranslator } from '#utils/i18n.js';
 
 dotenv.config();
 

@@ -1,6 +1,6 @@
 import { ToolDefinition, ToolContext } from './types.js';
-import { addTelegramPrivateChat, findTelegramChatByInviteLink, isTelegramChatRegistered } from '#/db.js';
-import { joinChatViaInvite, parseTelegramPrivateRef, resolveChatTitle } from '#/utils/telegramClient.js';
+import { addTelegramPrivateChat, findTelegramChatByInviteLink, isTelegramChatRegistered } from '#db.js';
+import { joinChatViaInvite, parseTelegramPrivateRef, resolveChatTitle } from '#utils/telegramClient.js';
 
 export const definition: ToolDefinition = {
     name: 'tgadd',

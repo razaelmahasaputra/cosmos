@@ -1,8 +1,8 @@
 import { ToolDefinition, ToolContext, ToolModule } from './types.js';
-import { getSenderJid } from '#/utils/casino.js';
-import { formatRupiah, parseCurrencyAmount } from '#/utils/currency.js';
-import { requireIdCard } from '#/utils/idCard.js';
-import { getTranslator } from '#/utils/i18n.js';
+import { getSenderJid } from '#utils/casino.js';
+import { formatRupiah, parseCurrencyAmount } from '#utils/currency.js';
+import { requireIdCard } from '#utils/idCard.js';
+import { getTranslator } from '#utils/i18n.js';
 
 export const definition: ToolDefinition = {
     name: 'loan',

@@ -1,13 +1,13 @@
 import { ToolDefinition, ToolContext, ToolModule } from './types.js';
-import { getSenderJid } from '#/utils/casino.js';
+import { getSenderJid } from '#utils/casino.js';
 import {
     getIdCardByUser,
     startRegistrationSession,
     isUserRegistering,
     cancelRegistrationSession
-} from '#/utils/idCard.js';
-import { generateIdCardImage, fetchUserProfilePic } from '#/utils/imageProcessing.js';
-import { getTranslator } from '#/utils/i18n.js';
+} from '#utils/idCard.js';
+import { generateIdCardImage, fetchUserProfilePic } from '#utils/imageProcessing.js';
+import { getTranslator } from '#utils/i18n.js';
 
 export const definition: ToolDefinition = {
     name: 'idcard',

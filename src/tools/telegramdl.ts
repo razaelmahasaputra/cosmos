@@ -10,9 +10,9 @@ import {
     parseTelegramPrivateRef,
     PrivateMediaFile,
     TelegramPostRef
-} from '#/utils/telegramClient.js';
-import { isTelegramChatRegistered, findTelegramChatByInviteLink } from '#/db.js';
-import { sendTelegramBotNotification } from '#/utils/backup.js';
+} from '#utils/telegramClient.js';
+import { isTelegramChatRegistered, findTelegramChatByInviteLink } from '#db.js';
+import { sendTelegramBotNotification } from '#utils/backup.js';
 
 const execAsync = promisify(exec);
 

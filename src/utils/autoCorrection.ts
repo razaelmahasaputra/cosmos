@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-import { isSessionActive, activateSession, deactivateSession, toggleSession } from '#/utils/sessionStore.js';
+import { isSessionActive, activateSession, deactivateSession, toggleSession } from '#utils/sessionStore.js';
 
 const FEATURE_NAME = 'autocorrection';
 let isGlobalAutoCorrectionEnabled = false;

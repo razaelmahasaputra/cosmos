@@ -1,8 +1,8 @@
-import { prisma } from '#/db.js';
-import { cleanId, lidToPnMap } from '#/utils/casino.js';
+import { prisma } from '#db.js';
+import { cleanId, lidToPnMap } from '#utils/casino.js';
 import { WASocket, WAMessage } from '@whiskeysockets/baileys';
-import { generateIdCardImage, fetchUserProfilePic, IdCardData } from '#/utils/imageProcessing.js';
-import { registerCancellableSession, unregisterCancellableSessionByUser } from '#/utils/cancellationManager.js';
+import { generateIdCardImage, fetchUserProfilePic, IdCardData } from '#utils/imageProcessing.js';
+import { registerCancellableSession, unregisterCancellableSessionByUser } from '#utils/cancellationManager.js';
 
 export interface RegistrationSession {
     userKey: string;

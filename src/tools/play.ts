@@ -4,7 +4,7 @@ import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs';
 import ffmpeg from 'ffmpeg-static';
-import { playLyrics } from '#/utils/lyricsPlayer.js';
+import { playLyrics } from '#utils/lyricsPlayer.js';
 
 const execAsync = promisify(exec);
 

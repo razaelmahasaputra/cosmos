@@ -1,5 +1,5 @@
 import { ToolDefinition, ToolContext } from './types.js';
-import { toggleAutoSticker } from '#/utils/autoSticker.js';
+import { toggleAutoSticker } from '#utils/autoSticker.js';
 
 export const definition: ToolDefinition = {
     name: 'togglesticker',

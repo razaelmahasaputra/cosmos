@@ -1,6 +1,6 @@
 import { Groq } from 'groq-sdk';
 import axios from 'axios';
-import { prisma } from '#/db.js';
+import { prisma } from '#db.js';
 
 const TWO_HOURS = 2 * 60 * 60 * 1000;
 const MAX_MESSAGES_BEFORE_SUMMARY = 10;

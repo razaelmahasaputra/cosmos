@@ -7,7 +7,7 @@ import {
     SignalDataTypeMap,
     SignalDataSet
 } from '@whiskeysockets/baileys';
-import { getPrismaClient } from '#/db.js';
+import { getPrismaClient } from '#db.js';
 export async function usePrismaAuthState(
     sessionCategory: string = 'default'
 ): Promise<{ state: AuthenticationState; saveCreds: () => Promise<void> }> {

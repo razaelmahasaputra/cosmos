@@ -1,5 +1,5 @@
 import { ToolDefinition, ToolContext } from './types.js';
-import { removeTelegramPrivateChat } from '#/db.js';
+import { removeTelegramPrivateChat } from '#db.js';
 
 export const definition: ToolDefinition = {
     name: 'tgdel',

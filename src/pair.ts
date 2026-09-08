@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { connectToWhatsApp } from '#/utils/connectionManager.js';
+import { connectToWhatsApp } from '#utils/connectionManager.js';
 
 dotenv.config();
 

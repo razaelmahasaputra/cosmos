@@ -1,15 +1,15 @@
 import { jidNormalizedUser, WASocket, WAMessage } from '@whiskeysockets/baileys';
-import { addGroup, isGroupWhitelisted, prisma } from '#/db.js';
-import toolsHandler from '#/tools/handler.js';
-import { isAutoStickerEnabled } from '#/utils/autoSticker.js';
-import { isAutoCorrectionEnabled, analyzeAndCorrectText } from '#/utils/autoCorrection.js';
-import { isMessageProcessed, markMessageProcessed } from '#/utils/messageCache.js';
-import { processAutoDl } from '#/utils/autodl.js';
-import { handleOfflineAiResponder } from '#/utils/offlineAi.js';
-import { isUserRegistering, processRegistrationStep } from '#/utils/idCard.js';
-import { formatMentions } from '#/utils/casino.js';
-import { hasCancellableSession, cancelActiveSession } from '#/utils/cancellationManager.js';
-import { getTranslator } from '#/utils/i18n.js';
+import { addGroup, isGroupWhitelisted, prisma } from '#db.js';
+import toolsHandler from '#tools/handler.js';
+import { isAutoStickerEnabled } from '#utils/autoSticker.js';
+import { isAutoCorrectionEnabled, analyzeAndCorrectText } from '#utils/autoCorrection.js';
+import { isMessageProcessed, markMessageProcessed } from '#utils/messageCache.js';
+import { processAutoDl } from '#utils/autodl.js';
+import { handleOfflineAiResponder } from '#utils/offlineAi.js';
+import { isUserRegistering, processRegistrationStep } from '#utils/idCard.js';
+import { formatMentions } from '#utils/casino.js';
+import { hasCancellableSession, cancelActiveSession } from '#utils/cancellationManager.js';
+import { getTranslator } from '#utils/i18n.js';
 
 function getUnwrappedMessage(m: any): any {
     if (!m) return null;

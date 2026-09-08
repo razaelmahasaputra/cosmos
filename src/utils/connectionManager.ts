@@ -1,10 +1,10 @@
 import { makeWASocket, DisconnectReason, Browsers, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
 import pino from 'pino';
-import { handleMessage } from '#/handlers/message.js';
-import { cacheMessage, getCachedMessage, markMessageProcessed } from '#/utils/messageCache.js';
-import { usePrismaAuthState } from '#/utils/prismaAuthState.js';
-import { initActiveSessions } from '#/utils/sessionStore.js';
-import { dbContext, getPrismaClient } from '#/db.js';
+import { handleMessage } from '#handlers/message.js';
+import { cacheMessage, getCachedMessage, markMessageProcessed } from '#utils/messageCache.js';
+import { usePrismaAuthState } from '#utils/prismaAuthState.js';
+import { initActiveSessions } from '#utils/sessionStore.js';
+import { dbContext, getPrismaClient } from '#db.js';
 
 const logger = pino({ level: 'debug' });
 const MAX_RECONNECT_ATTEMPTS = 15;
