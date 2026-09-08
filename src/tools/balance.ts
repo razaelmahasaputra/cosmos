@@ -56,9 +56,9 @@ const balanceTool: ToolModule = {
             mentionArray = [targetJid];
         }
 
-        let text = `${ctx.t('tools.balance.title')}\n\n${ctx.t('tools.balance.amount', { amount: formatRupiah(user.balance) })}.\nKeep playing and claim your daily reward!`;
+        let text = `${ctx.t('tools.balance.title')}\n\n${ctx.t('tools.balance.amount', { amount: formatRupiah(user.balance) })}.\n${ctx.t('tools.balance.keep_playing')}`;
         if (isCheckingOther) {
-            text = `${ctx.t('tools.balance.title')}\n\n@${displayId}: ${formatRupiah(user.balance)}`;
+            text = `${ctx.t('tools.balance.title')}\n\n${ctx.t('tools.balance.other_user', { user: displayId, amount: formatRupiah(user.balance) })}`;
         }
 
         await sock.sendMessage(

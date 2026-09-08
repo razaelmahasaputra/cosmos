@@ -150,6 +150,11 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
             if (user?.language) {
                 chatLang = user.language.toLowerCase();
             }
+        } else if (senderLidDb) {
+            const user = await prisma.user.findUnique({ where: { lid: senderLidDb } });
+            if (user?.language) {
+                chatLang = user.language.toLowerCase();
+            }
         }
     } catch {
         /* fallback to id */

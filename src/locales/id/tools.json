@@ -2,10 +2,13 @@
     "balance": {
         "title": "💰 Saldo",
         "amount": "Saldo Anda saat ini: {{amount}}",
+        "keep_playing": "Terus bermain dan klaim reward harian Anda!",
+        "other_user": "@{{user}} saat ini memiliki {{amount}}.",
         "no_account": "Anda belum memiliki akun. Gunakan .daily untuk memulai."
     },
     "daily": {
         "claimed": "Selamat! Anda telah mengklaim reward harian sebesar {{amount}}.",
+        "new_balance": "Saldo baru Anda adalah *{{balance}}*.",
         "cooldown": "Anda sudah mengklaim reward harian. Silakan coba lagi dalam {{remaining}}."
     },
     "setlang": {

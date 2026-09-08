@@ -68,15 +68,15 @@ const coinflipTool: ToolModule = {
         const flippedEmoji = flipped === 'heads' ? '🦅 (Heads)' : '🪙 (Tails)';
 
         const winMsg = result.isWin
-            ? `🎉 ${ctx.t('games.coinflip.won', { result: flippedEmoji, amount: formatRupiah(result.winAmount) })}`
-            : `💀 ${ctx.t('games.coinflip.lost', { result: flippedEmoji, amount: formatRupiah(bet) })}`;
+            ? `🎉 ${ctx.t('games.coinflip.win_earned', { amount: formatRupiah(result.winAmount) })}`
+            : `💀 ${ctx.t('games.coinflip.lose_lost', { amount: formatRupiah(bet) })}`;
 
         const text =
-            `🪙 *COINFLIP* 🪙\n\n` +
-            `You guessed: *${guess.toUpperCase()}*\n` +
-            `Coin landed on: *${flippedEmoji}*\n\n` +
+            `${ctx.t('games.coinflip.title')}\n\n` +
+            `${ctx.t('games.coinflip.guessed', { guess: guess.toUpperCase() })}\n` +
+            `${ctx.t('games.coinflip.landed', { result: flippedEmoji })}\n\n` +
             `${winMsg}\n` +
-            `Current Balance: *${formatRupiah(result.newBalance)}*`;
+            `${ctx.t('games.coinflip.current_balance', { balance: formatRupiah(result.newBalance) })}`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: msg });

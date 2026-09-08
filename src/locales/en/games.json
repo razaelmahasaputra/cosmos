@@ -1,8 +1,14 @@
 {
     "coinflip": {
+        "title": "🪙 *COINFLIP* 🪙",
         "usage": "Invalid format. Use: .coinflip <heads|tails> <bet>",
+        "guessed": "You guessed: *{{guess}}*",
+        "landed": "Coin landed on: *{{result}}*",
         "won": "Coin landed on {{result}}! You won {{amount}}!",
+        "win_earned": "*You Win!* You earned *{{amount}}*!",
         "lost": "Coin landed on {{result}}. You lost {{amount}}.",
+        "lose_lost": "*You Lose!* You lost *{{amount}}*.",
+        "current_balance": "Current Balance: *{{balance}}*",
         "min_bet": "Minimum bet is {{min}}.",
         "insufficient": "Insufficient balance for this bet."
     },

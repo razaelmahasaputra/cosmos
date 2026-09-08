@@ -1,6 +1,6 @@
 import { ToolDefinition, ToolContext, ToolModule } from './types.js';
 import { prisma } from '../db.js';
-import { SUPPORTED_LANGUAGES, LANGUAGE_CONFIG } from '../utils/i18n.js';
+import { SUPPORTED_LANGUAGES, LANGUAGE_CONFIG, getTranslator } from '../utils/i18n.js';
 
 export const definition: ToolDefinition = {
     name: 'setgrouplang',
@@ -93,7 +93,8 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     });
 
     const langName = LANGUAGE_CONFIG[targetLang]?.nativeName || targetLang;
-    return ctx.t('tools.setgrouplang.success', { language: langName });
+    const t = getTranslator(targetLang);
+    return t('tools.setgrouplang.success', { language: langName });
 }
 
 const setGroupLangTool: ToolModule = {

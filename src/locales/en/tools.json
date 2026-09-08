@@ -2,10 +2,13 @@
     "balance": {
         "title": "💰 Balance",
         "amount": "Your current balance is {{amount}}",
+        "keep_playing": "Keep playing and claim your daily reward!",
+        "other_user": "@{{user}} currently has {{amount}}.",
         "no_account": "You don't have an account yet. Use .daily to start."
     },
     "daily": {
         "claimed": "Congratulations! You have claimed your daily reward of {{amount}}.",
+        "new_balance": "Your new balance is *{{balance}}*.",
         "cooldown": "You have already claimed your daily reward. Please try again in {{remaining}}."
     },
     "setlang": {

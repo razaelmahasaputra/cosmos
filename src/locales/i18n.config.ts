@@ -9,11 +9,12 @@ export const SUPPORTED_LANGUAGES = ['id', 'en'] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 export function getLocalesDir(): string {
-    const srcPath = path.resolve(process.cwd(), 'src', 'locales');
-    if (fs.existsSync(srcPath)) return srcPath;
     const distPath = path.resolve(process.cwd(), 'dist', 'locales');
-    if (fs.existsSync(distPath)) return distPath;
-    return srcPath;
+    const srcPath = path.resolve(process.cwd(), 'src', 'locales');
+    if (fs.existsSync(path.join(distPath, 'id', 'core.json'))) return distPath;
+    if (fs.existsSync(path.join(srcPath, 'id', 'core.json'))) return srcPath;
+    if (fs.existsSync(srcPath)) return srcPath;
+    return distPath;
 }
 
 export function loadResources(): Record<string, Record<string, any>> {

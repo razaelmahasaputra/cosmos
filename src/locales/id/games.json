@@ -1,10 +1,16 @@
 {
     "coinflip": {
+        "title": "🪙 *COINFLIP* 🪙",
         "usage": "Format tidak valid. Gunakan: .coinflip <heads|tails> <taruhan>",
+        "guessed": "Tebakan Anda: *{{guess}}*",
+        "landed": "Koin mendarat pada: *{{result}}*",
         "won": "Koin mendarat pada {{result}}! Anda menang {{amount}}!",
-        "lost": "Koin mendarat pada {{result}}. Anda kalah {{amount}}.",
-        "min_bet": "Taruhan minimal adalah {{min}}.",
-        "insufficient": "Saldo Anda tidak mencukupi untuk memasang taruhan ini."
+        "win_earned": "*Anda Menang!* Anda mendapatkan *{{amount}}*!",
+        "lost": "Koin mendarat pada {{result}}. Anda kehilangan {{amount}}.",
+        "lose_lost": "*Anda Kalah!* Anda kehilangan *{{amount}}*.",
+        "current_balance": "Saldo Saat Ini: *{{balance}}*",
+        "min_bet": "Taruhan minimum adalah {{min}}.",
+        "insufficient": "Saldo tidak mencukupi untuk taruhan ini."
     },
     "dice": {
         "usage": "Format tidak valid. Gunakan: .dice <taruhan>",

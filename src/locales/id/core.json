@@ -2,10 +2,12 @@
     "owner_only": "Perintah ini hanya dapat digunakan oleh pemilik bot.",
     "group_only": "Perintah ini hanya dapat dijalankan di dalam grup.",
     "database_error": "Terjadi kesalahan pada database. Silakan coba lagi nanti.",
+    "error_database": "Terjadi kesalahan pada database. Silakan coba lagi nanti.",
     "group_add_success": "Grup berhasil ditambahkan ke whitelist!",
     "group_add_failed": "Gagal menambahkan grup ke database.",
     "unauthorized": "Anda tidak memiliki izin untuk menggunakan perintah ini.",
     "unknown_error": "Terjadi kesalahan yang tidak terduga.",
     "command_disabled": "Perintah ini sedang dinonaktifkan.",
-    "generic_success": "Operasi berhasil diselesaikan."
+    "generic_success": "Operasi berhasil diselesaikan.",
+    "ai_disclaimer": "Pesan yang dihasilkan oleh AI mungkin mengandung kesalahan; harap periksa kembali"
 }

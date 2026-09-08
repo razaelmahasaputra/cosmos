@@ -68,7 +68,7 @@ const dailyTool: ToolModule = {
         await sock.sendMessage(
             msg.key.remoteJid!,
             {
-                text: `🎉 ${ctx.t('tools.daily.claimed', { amount: formatRupiah(reward) })}\nYour new balance is *${formatRupiah(updatedUser.balance)}*.`
+                text: `🎉 ${ctx.t('tools.daily.claimed', { amount: formatRupiah(reward) })}\n${ctx.t('tools.daily.new_balance', { balance: formatRupiah(updatedUser.balance) })}`
             },
             { quoted: msg }
         );

@@ -26,23 +26,20 @@ export function getTranslator(lang: string): (key: string, variables?: Record<st
     const finalLang = normalizeLanguage(lang);
 
     return (key: string, variables?: Record<string, any>): string => {
-        let result = i18n.t(key, { lng: finalLang, ...variables });
-        const isMissing = (res: string) => !res || res === key || key.endsWith(`.${res}`);
+        if (i18n.exists(key, { lng: finalLang })) {
+            return i18n.t(key, { lng: finalLang, ...variables });
+        }
 
-        // If key not found or returned raw key, try fallback to 'id' if not already 'id'
-        if (isMissing(result) && finalLang !== 'id') {
-            result = i18n.t(key, { lng: 'id', ...variables });
+        // If key not found in finalLang, try fallback to 'id' if not already 'id'
+        if (finalLang !== 'id' && i18n.exists(key, { lng: 'id' })) {
+            return i18n.t(key, { lng: 'id', ...variables });
         }
 
         // If still not found, handle missing key
-        if (isMissing(result)) {
-            if (process.env.NODE_ENV !== 'production') {
-                console.warn(`[i18n] Missing translation key "${key}" for language "${finalLang}"`);
-            }
-            return key;
+        if (process.env.NODE_ENV !== 'production') {
+            console.warn(`[i18n] Missing translation key "${key}" for language "${finalLang}"`);
         }
-
-        return result;
+        return key;
     };
 }
 

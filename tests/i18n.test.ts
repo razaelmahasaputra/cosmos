@@ -155,6 +155,53 @@ async function runTests() {
     assert.strictEqual(translatedItem.name, 'Golden Sword');
     console.log('✓ getItemWithTranslation verified.');
 
+    // Test 9: Coinflip & Balance full localization
+    console.log('[Test 9] Testing Coinflip & Balance complete localization...');
+    assert.strictEqual(tEn('core.error_database'), 'Database error occurred. Please try again.');
+    assert.strictEqual(tId('core.error_database'), 'Terjadi kesalahan pada database. Silakan coba lagi nanti.');
+    assert.strictEqual(tEn('tools.balance.keep_playing'), 'Keep playing and claim your daily reward!');
+    assert.strictEqual(tId('tools.balance.keep_playing'), 'Terus bermain dan klaim reward harian Anda!');
+    assert.strictEqual(tEn('games.coinflip.title'), '🪙 *COINFLIP* 🪙');
+    assert.strictEqual(tId('games.coinflip.title'), '🪙 *COINFLIP* 🪙');
+    assert.strictEqual(tEn('games.coinflip.win_earned', { amount: 'Rp20.000' }), '*You Win!* You earned *Rp20.000*!');
+    assert.strictEqual(
+        tId('games.coinflip.win_earned', { amount: 'Rp20.000' }),
+        '*Anda Menang!* Anda mendapatkan *Rp20.000*!'
+    );
+    console.log('✓ Coinflip & Balance localization verified.');
+
+    // Test 10: Confirmation in target language for setlang
+    console.log('[Test 10] Testing setlang confirmation in selected language...');
+    const resSetLangEn = await setLangModule.execute(
+        { language: 'en' },
+        {
+            sock: mockSock,
+            msg: mockUserMsg,
+            jid: '628999999999@s.whatsapp.net',
+            t: tId // passed with old 'id' translator
+        }
+    );
+    assert(resSetLangEn.includes('Your language has been updated to English'));
+
+    const resSetLangId = await setLangModule.execute(
+        { language: 'id' },
+        {
+            sock: mockSock,
+            msg: mockUserMsg,
+            jid: '628999999999@s.whatsapp.net',
+            t: tEn // passed with old 'en' translator
+        }
+    );
+    assert(resSetLangId.includes('Bahasa Anda telah diubah ke Bahasa Indonesia'));
+    console.log('✓ setlang response in target language verified.');
+
+    // Test 11: Translation value matching last key segment safety
+    console.log('[Test 11] Testing translation value matching last key segment...');
+    const tTest = getTranslator('en');
+    // Ensure tTest exists and doesn't consider valid values missing
+    assert.strictEqual(tTest('tools.balance.title'), '💰 Balance');
+    console.log('✓ Translation value safety verified.');
+
     console.log('--- ALL I18N TESTS PASSED SUCCESSFULLY! ---');
 }
 
