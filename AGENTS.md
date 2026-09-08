@@ -126,3 +126,8 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 
 - **Global Cancellation Registry:** Seluruh fitur interaktif yang memiliki alur percakapan bertingkat (_multi-step conversational flow_), dialog konfirmasi aksi berisiko, atau sesi tunggu/lobby game (seperti Buckshot Roulette atau pendaftaran Virtual ID/KTP) **WAJIB** diintegrasikan ke dalam `src/utils/cancellationManager.ts` menggunakan fungsi `registerCancellableSession`.
 - **Dukungan Command `.cancel`:** Pengguna harus selalu dapat membatalkan proses dengan mengetikkan `.cancel` (atau `cancel`, `.batal`, `batal`, `.abort`, `abort`). Handler pembatalan wajib membersihkan state, timeout/timer, atau mengembalikan saldo/taruhan jika ada, lalu membatalkan pendaftaran sesi (`unregisterCancellableSession` atau `unregisterCancellableSessionByUser`). Rujuk panduan lengkap di `.agents/skills/global-cancellation-manager/SKILL.md`.
+
+### O. Sistem Internasionalisasi & Multibahasa (i18n Localization Standards)
+
+- **i18n Integration:** Seluruh tool dan modul wajib mendukung sistem multibahasa dengan menggunakan `ctx.t` dan `ctx.lang` dari `src/locales/i18n.config.ts`. Dilarang menggabungkan string terjemahan dengan teks statis bahasa Inggris manual (_mixed-language_).
+- **Safe Key Detection & Build Sync:** Deteksi kunci terjemahan WAJIB menggunakan `i18n.exists()`. File terjemahan JSON di `src/locales/` wajib disinkronkan ke `dist/locales/` saat proses build melalui `scripts/copy-locales.ts`. Rujuk panduan lengkap di `.agents/skills/i18n-localization-standards/SKILL.md`.
