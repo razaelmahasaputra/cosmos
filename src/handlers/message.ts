@@ -171,7 +171,11 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         if (quotedMsg) {
             const extText = quotedMsg.extendedTextMessage;
             const quotedText = quotedMsg.conversation || extText?.text || extText?.matchedText || '';
-            if (quotedText.toLowerCase().includes('reply with a number') && quotedText.includes('results for')) {
+            if (
+                (quotedText.toLowerCase().includes('reply with a number') ||
+                    quotedText.toLowerCase().includes('balas dengan angka')) &&
+                (quotedText.includes('results for') || quotedText.includes('hasil teratas untuk'))
+            ) {
                 isPlayReply = true;
             }
         }

@@ -16,10 +16,10 @@ export const definition: ToolDefinition = {
 
 export async function execute(_args: Record<string, any>, ctx: ToolContext): Promise<string> {
     try {
-        const result = await stopLyrics(ctx.jid, ctx.sock);
+        const result = await stopLyrics(ctx.jid, ctx.sock, ctx.t);
         return result;
     } catch (err) {
         console.error('Error in stoplyrics tool:', err);
-        return 'Failed: An error occurred while stopping lyrics playback.';
+        return ctx.t('media.stoplyrics.error');
     }
 }

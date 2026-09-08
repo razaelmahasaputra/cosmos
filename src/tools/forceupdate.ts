@@ -13,11 +13,7 @@ const forceupdateTool: ToolModule = {
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
         const { msg, sock, jid } = ctx;
 
-        await sock.sendMessage(
-            jid,
-            { text: '⏳ *Contacting World Markets...*\nFetching data and consulting AI...' },
-            { quoted: msg }
-        );
+        await sock.sendMessage(jid, { text: ctx.t('tools.forceupdate.contacting') }, { quoted: msg });
 
         try {
             // 1. Fetch data
@@ -45,11 +41,14 @@ const forceupdateTool: ToolModule = {
 
             const groupCount = await prisma.whitelistedGroup.count();
 
-            const text = `✅ *Market updated manually!*\nNew multiplier is *${aiResponse.multiplier}x*. Broadcasts are being sent to ${groupCount} whitelisted groups.`;
+            const text = ctx.t('tools.forceupdate.success', {
+                multiplier: aiResponse.multiplier,
+                count: groupCount
+            });
             await sock.sendMessage(jid, { text }, { quoted: msg });
         } catch (error: any) {
             console.error('Force update error:', error);
-            const text = `⚠️ *SYSTEM ALERT: Economy Update Failed*\n\nThe update failed.\n_Error: ${error.message}_\n\nThe economy will remain at the current multiplier.`;
+            const text = ctx.t('tools.forceupdate.failed', { error: error.message });
             await sock.sendMessage(jid, { text }, { quoted: msg });
         }
     }

@@ -16,26 +16,26 @@ const startGameTool: ToolModule = {
 
         const session = getSessionByChatId(jid);
         if (!session) {
-            return `❌ No active game session in this group.`;
+            return ctx.t('games.roulette.no_session');
         }
 
         if (session.status !== 'LOBBY') {
-            return `❌ The game has already started.`;
+            return ctx.t('games.roulette.already_started');
         }
 
         if (session.players[0].userId !== senderJid) {
-            return `❌ Only the room creator can start the game.`;
+            return ctx.t('games.roulette.creator_only_start');
         }
 
         if (session.players.length < 2) {
-            return `❌ Minimum 2 players are required to start the game.`;
+            return ctx.t('games.roulette.min_players');
         }
 
         // Check if all players have bet
         const nonBetters = session.players.filter((p) => p.betAmount === 0);
         if (nonBetters.length > 0) {
             const names = nonBetters.map((p) => `@${p.pushName}`).join(', ');
-            return `❌ Failed to start game! User ${names} has not placed a bet.`;
+            return ctx.t('games.roulette.non_betters', { names });
         }
 
         // Clear timeout
@@ -56,7 +56,10 @@ const startGameTool: ToolModule = {
             player.inventory.push(...getRandomItems(2));
         }
 
-        const startMsg = `🚀 *GAME STARTED!*\nTotal Players: ${session.players.length}\n💰 *Total Bet Pot:* ${formatRupiah(session.potAmount)}\n\n*Dealer (Bot)* is preparing the table and weapons...\nGood luck! 💀`;
+        const startMsg = ctx.t('games.roulette.game_started_announcement', {
+            count: session.players.length,
+            pot: formatRupiah(session.potAmount)
+        });
         await sock.sendMessage(jid, { text: startMsg });
 
         // Delay before announcing round 1
@@ -71,7 +74,15 @@ const startGameTool: ToolModule = {
                 ? firstPlayer.inventory.map((i) => i.replace('_', ' ')).join(', ')
                 : 'Empty';
 
-        const roundMsg = `🔄 *ROUND 1 BEGINS* 🔄\n\n*Dealer* loads shells into the shotgun...\n🔴 *Live:* ${liveCount}\n⚪ *Blank:* ${blankCount}\n*(Total ${session.shells.length} shells shuffled mysteriously...)*\n\n📦 *Item Distribution:* Each player receives 2 random items!\n\n👇 *TURN:* 👑 @${firstPlayer.pushName}\n❤️ Lives: [${'❤️'.repeat(firstPlayer.hp)}${'🖤'.repeat(5 - firstPlayer.hp)}]\n🎒 Inventory: ${inventoryStr}\n🔥 *Active Status:* None\n\nAvailable actions:\n🔫 *.shoot @user* - Shoot another player\n🔫 *.shoot me* - Shoot yourself\n🛠️ *.use <item> [@target]* - Use an item (Max. 1 Item/Turn)`;
+        const roundMsg = ctx.t('games.roulette.round_begins', {
+            live: liveCount,
+            blank: blankCount,
+            total: session.shells.length,
+            player: firstPlayer.pushName,
+            lives: `${'❤️'.repeat(firstPlayer.hp)}${'🖤'.repeat(5 - firstPlayer.hp)}`,
+            inventory: inventoryStr,
+            status: 'None'
+        });
 
         return roundMsg;
     }

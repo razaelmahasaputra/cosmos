@@ -24,7 +24,7 @@ const addBalanceTool: ToolModule = {
         const targetJid = mentionedJidList.length > 0 ? mentionedJidList[0] : null;
 
         if (!targetJid) {
-            return `❌ Please mention a user to add coins to. Example: .addbalance @user 50`;
+            return ctx.t('tools.addbalance.mention_required');
         }
 
         let cleanedInputStr = String(args.input || '').trim();
@@ -36,7 +36,7 @@ const addBalanceTool: ToolModule = {
         const amount = parseCurrencyAmount(cleanedInputStr);
 
         if (amount === null || amount <= 0) {
-            return `❌ Invalid amount. Please specify a valid amount of coins to add.`;
+            return ctx.t('tools.addbalance.invalid_amount');
         }
 
         try {
@@ -74,13 +74,16 @@ const addBalanceTool: ToolModule = {
             await sock.sendMessage(
                 msg.key.remoteJid!,
                 {
-                    text: `✅ *Balance Added!*\n\nSuccessfully added *${formatRupiah(amount)}* to @${targetJid.split('@')[0]} from the house vault.`,
+                    text: ctx.t('tools.addbalance.success', {
+                        amount: formatRupiah(amount),
+                        target: targetJid.split('@')[0]
+                    }),
                     mentions: [targetJid]
                 },
                 { quoted: msg }
             );
         } catch (error: any) {
-            return `❌ Failed to add balance: ${error.message}`;
+            return ctx.t('tools.addbalance.failed', { error: error.message });
         }
     }
 };

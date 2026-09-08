@@ -24,16 +24,16 @@ const useTool: ToolModule = {
 
         const session = getSessionByChatId(jid);
         if (!session || session.status !== 'PLAYING') {
-            return `❌ No active Buckshot Roulette game in this group.`;
+            return ctx.t('games.roulette.no_session');
         }
 
         const currentPlayer = session.players[session.turnIndex];
         if (currentPlayer.userId !== senderJid) {
-            return `❌ It's not your turn!`;
+            return ctx.t('games.roulette.not_your_turn');
         }
 
         if (currentPlayer.hasUsedItemThisTurn) {
-            return `❌ You have already used an item this turn! You must shoot.`;
+            return ctx.t('games.roulette.already_used_item');
         }
 
         let targetId = '';
@@ -52,12 +52,12 @@ const useTool: ToolModule = {
         else if (inputStr.includes('inverter')) itemType = 'INVERTER';
 
         if (!itemType) {
-            return `❌ Invalid item.`;
+            return ctx.t('games.roulette.invalid_item');
         }
 
         const itemIndex = currentPlayer.inventory.indexOf(itemType);
         if (itemIndex === -1) {
-            return `❌ You don't have that item in your inventory.`;
+            return ctx.t('games.roulette.item_not_in_inventory');
         }
 
         currentPlayer.inventory.splice(itemIndex, 1);
@@ -70,34 +70,41 @@ const useTool: ToolModule = {
             case 'COLA':
             case 'CIGARETTES':
                 if (currentPlayer.hp < 5) currentPlayer.hp++;
-                outputMsg = `🍺 @${currentPlayer.pushName} used ${itemType === 'COLA' ? 'Cola' : 'Cigarettes'}!\n❤️ Lives restored (+1 Heart).\nCurrent lives: [${'❤️'.repeat(currentPlayer.hp)}${'🖤'.repeat(5 - currentPlayer.hp)}]`;
+                outputMsg = ctx.t('games.roulette.used_heal', {
+                    player: currentPlayer.pushName,
+                    item: itemType === 'COLA' ? 'Cola' : 'Cigarettes',
+                    lives: `${'❤️'.repeat(currentPlayer.hp)}${'🖤'.repeat(5 - currentPlayer.hp)}`
+                });
                 break;
             case 'HAND_SAW':
                 currentPlayer.handSawActive = true;
-                outputMsg = `🪚 @${currentPlayer.pushName} sawed off the barrel! Next shell damage is x2.`;
+                outputMsg = ctx.t('games.roulette.used_saw', { player: currentPlayer.pushName });
                 break;
             case 'HANDCUFFS': {
-                if (!targetId) return `❌ Use the format: .use handcuffs @target`;
+                if (!targetId) return ctx.t('games.roulette.handcuffs_usage');
                 const target = session.players.find((p) => p.userId === targetId);
                 if (target && target.hp > 0) {
                     target.isHandcuffed = true;
-                    outputMsg = `🔗 @${currentPlayer.pushName} handcuffed @${target.pushName}!\nTheir next turn will be skipped.`;
+                    outputMsg = ctx.t('games.roulette.used_handcuffs', {
+                        player: currentPlayer.pushName,
+                        target: target.pushName
+                    });
                 } else {
-                    return `❌ Target is invalid or eliminated.`;
+                    return ctx.t('games.roulette.invalid_target');
                 }
                 break;
             }
             case 'MAGNIFYING_GLASS': {
-                outputMsg = `🔍 @${currentPlayer.pushName} uses the *Magnifying Glass*!`;
+                outputMsg = ctx.t('games.roulette.used_glass', { player: currentPlayer.pushName });
                 await sock.sendMessage(jid, { text: outputMsg, mentions: [senderJid] });
                 const shell = session.shells[session.shells.length - 1];
                 try {
                     await sock.sendMessage(senderJid, {
-                        text: `🔍 *Magnifying Glass Result:*\nThe current shell in the barrel is: *${shell}*`
+                        text: ctx.t('games.roulette.glass_dm', { shell })
                     });
                 } catch {
                     await sock.sendMessage(jid, {
-                        text: `⚠️ *FAILED TO SEND DM!*\n@${currentPlayer.pushName}, the Bot cannot send a private message to your number!\nThe *Magnifying Glass* was wasted with no result!`,
+                        text: ctx.t('games.roulette.glass_dm_failed', { player: currentPlayer.pushName }),
                         mentions: [senderJid]
                     });
                 }
@@ -106,7 +113,7 @@ const useTool: ToolModule = {
             case 'INVERTER': {
                 const current = session.shells[session.shells.length - 1];
                 session.shells[session.shells.length - 1] = current === 'LIVE' ? 'BLANK' : 'LIVE';
-                outputMsg = `🔄 @${currentPlayer.pushName} used the Inverter!\nThe current shell's polarity has been swapped.`;
+                outputMsg = ctx.t('games.roulette.used_inverter', { player: currentPlayer.pushName });
                 break;
             }
         }

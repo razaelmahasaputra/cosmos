@@ -26,8 +26,8 @@ export const definition: ToolDefinition = {
 
 export async function execute(_args: Record<string, any>, ctx: ToolContext): Promise<string> {
     if (!isAutoStickerEnabled(ctx.jid)) {
-        return '⚠️ *Warning:* Auto Sticker Maker is not active in this chat.';
+        return ctx.t('utilities.autosticker.not_active');
     }
     await disableAutoSticker(ctx.jid);
-    return '🔴 *Auto Sticker Maker DEACTIVATED* for this chat.';
+    return ctx.t('utilities.autosticker.disabled');
 }

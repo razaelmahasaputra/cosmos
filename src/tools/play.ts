@@ -69,14 +69,15 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         !isNaN(queryNum) &&
         queryNum > 0 &&
         queryNum <= 10 &&
-        quotedText.toLowerCase().includes('reply with a number')
+        (quotedText.toLowerCase().includes('reply with a number') ||
+            quotedText.toLowerCase().includes('balas dengan angka'))
     ) {
         if (quotedText.includes('(Flags: --lyrics)')) {
             enableLyrics = true;
         }
 
         // Extract original search term for lyrics file matching
-        const matchTitle = quotedText.match(/results for \*(.*?)\*/);
+        const matchTitle = quotedText.match(/(?:results for|hasil teratas untuk) \*(.*?)\*/i);
         if (matchTitle) {
             originalQueryStr = matchTitle[1];
         }
@@ -118,9 +119,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 return;
             }
 
-            let replyText = `Here are the top results for *${query}*.\nPlease reply with a number (1-${results.length}) to this message to download:\n`;
+            let replyText = ctx.t('media.play.results_title', { query, count: results.length });
             if (enableLyrics) {
-                replyText += `(Flags: --lyrics)\n`;
+                replyText += ctx.t('media.play.flags_lyrics');
             }
             replyText += `\n`;
             results.forEach((res, index) => {

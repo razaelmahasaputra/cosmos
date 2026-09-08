@@ -63,6 +63,29 @@ export async function getItemWithTranslation(itemId: string | number, lang: stri
     };
 }
 
+export async function getChatLanguage(chatJid: string): Promise<string> {
+    try {
+        if (chatJid.endsWith('@g.us')) {
+            const group = await prisma.whitelistedGroup.findUnique({ where: { jid: chatJid } });
+            if (group?.language) {
+                return normalizeLanguage(group.language);
+            }
+        } else {
+            const user = await prisma.user.findFirst({
+                where: {
+                    OR: [{ id: chatJid }, { lid: chatJid }]
+                }
+            });
+            if (user?.language) {
+                return normalizeLanguage(user.language);
+            }
+        }
+    } catch {
+        /* fallback to id */
+    }
+    return 'id';
+}
+
 export function reloadTranslations(): void {
     reloadI18n();
 }

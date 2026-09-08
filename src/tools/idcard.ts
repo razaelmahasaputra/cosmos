@@ -46,9 +46,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     if (isCancelCommand) {
         if (isUserRegistering(senderJid, ctx.jid)) {
             cancelRegistrationSession(senderJid);
-            return 'Virtual ID card registration has been cancelled.';
+            return ctx.t('utilities.idcard.cancelled');
         }
-        return 'You do not have an active ID card registration session in this chat.';
+        return ctx.t('utilities.idcard.no_active_session');
     }
 
     if (isRegisterCommand) {
@@ -57,7 +57,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             await ctx.sock.sendMessage(
                 ctx.jid,
                 {
-                    text: `You already possess a registered Virtual ID Card (NIK: ${existing.nik}). Duplicate registrations are not permitted. Fetching your card now...`
+                    text: ctx.t('utilities.idcard.already_registered', { nik: existing.nik })
                 },
                 { quoted: ctx.msg }
             );
@@ -68,14 +68,19 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     (ctx.msg.key.participant || ctx.msg.key.remoteJid) ?? senderJid
                 );
                 const imageBuffer = await generateIdCardImage(existing, pfp);
-                const caption =
-                    `Here is your Virtual ID Card.\n\n` +
-                    `*NIK:* ${existing.nik}\n` +
-                    `*Full Name:* ${existing.fullName}\n` +
-                    `*Date of Birth:* ${existing.dateOfBirth}\n` +
-                    `*Gender:* ${existing.gender}\n` +
-                    `*Citizenship:* ${existing.citizenship}\n` +
-                    `*Valid Until:* ${existing.validUntil}`;
+                const caption = ctx.t('utilities.idcard.card_caption', {
+                    nik: existing.nik,
+                    fullName: existing.fullName,
+                    pob: existing.placeOfBirth,
+                    dob: existing.dateOfBirth,
+                    gender: existing.gender,
+                    address: existing.address,
+                    religion: existing.religion,
+                    maritalStatus: existing.maritalStatus,
+                    occupation: existing.occupation,
+                    citizenship: existing.citizenship,
+                    validUntil: existing.validUntil
+                });
 
                 await ctx.sock.sendMessage(ctx.jid, { image: imageBuffer, caption }, { quoted: ctx.msg });
             } catch (err) {
@@ -85,7 +90,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         }
 
         if (isUserRegistering(senderJid, ctx.jid)) {
-            return 'You already have an active registration in progress. Please reply to the prompt or type *.cancel* to abort.';
+            return ctx.t('utilities.idcard.active_in_progress');
         }
 
         const prompt = startRegistrationSession(senderJid, ctx.jid);
@@ -96,33 +101,34 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     // Default: View existing ID Card
     const existing = await getIdCardByUser(senderJid);
     if (!existing) {
-        return 'You do not possess a Virtual ID Card yet. Please register your identity first using the *.register-id* command.';
+        return ctx.t('utilities.idcard.not_registered');
     }
 
     try {
-        await ctx.sock.sendMessage(ctx.jid, { text: '⏳ Fetching your Virtual ID Card...' }, { quoted: ctx.msg });
+        await ctx.sock.sendMessage(ctx.jid, { text: ctx.t('utilities.idcard.fetching') }, { quoted: ctx.msg });
         const pfp = await fetchUserProfilePic(
             ctx.sock,
             (ctx.msg.key.participant || ctx.msg.key.remoteJid) ?? senderJid
         );
         const imageBuffer = await generateIdCardImage(existing, pfp);
-        const caption =
-            `Here is your Virtual ID Card.\n\n` +
-            `*NIK:* ${existing.nik}\n` +
-            `*Full Name:* ${existing.fullName}\n` +
-            `*Place & Date of Birth:* ${existing.placeOfBirth}, ${existing.dateOfBirth}\n` +
-            `*Gender:* ${existing.gender}\n` +
-            `*Address:* ${existing.address}\n` +
-            `*Religion:* ${existing.religion}\n` +
-            `*Marital Status:* ${existing.maritalStatus}\n` +
-            `*Occupation:* ${existing.occupation}\n` +
-            `*Citizenship:* ${existing.citizenship}\n` +
-            `*Valid Until:* ${existing.validUntil}`;
+        const caption = ctx.t('utilities.idcard.card_caption', {
+            nik: existing.nik,
+            fullName: existing.fullName,
+            pob: existing.placeOfBirth,
+            dob: existing.dateOfBirth,
+            gender: existing.gender,
+            address: existing.address,
+            religion: existing.religion,
+            maritalStatus: existing.maritalStatus,
+            occupation: existing.occupation,
+            citizenship: existing.citizenship,
+            validUntil: existing.validUntil
+        });
 
         await ctx.sock.sendMessage(ctx.jid, { image: imageBuffer, caption }, { quoted: ctx.msg });
     } catch (err) {
         console.error('[IdCard] Error viewing ID card:', err);
-        return 'An error occurred while generating your Virtual ID Card. Please try again later.';
+        return ctx.t('utilities.idcard.generation_error');
     }
 }
 

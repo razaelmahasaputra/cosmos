@@ -1,6 +1,7 @@
 import { ToolModule, ToolContext } from './types.js';
 import { gameSessions, Player } from '../utils/roulette.js';
-import { getSenderJid } from '../utils/casino.js';
+import { getSenderJid, MIN_BET } from '../utils/casino.js';
+import { formatRupiah } from '../utils/currency.js';
 import { prisma } from '../db.js';
 
 const joinGameTool: ToolModule = {
@@ -24,20 +25,20 @@ const joinGameTool: ToolModule = {
             .toUpperCase();
 
         if (!sessionId) {
-            return `❌ Please provide a Session ID. Example: .joingame A1X9B`;
+            return ctx.t('games.roulette.session_id_required');
         }
 
         const session = gameSessions.get(sessionId);
         if (!session) {
-            return `❌ Session not found or has already ended.`;
+            return ctx.t('games.roulette.session_not_found');
         }
 
         if (session.status !== 'LOBBY') {
-            return `❌ The game has already started.`;
+            return ctx.t('games.roulette.already_started');
         }
 
         if (session.players.length >= 5) {
-            return `❌ The room is full (Maximum 5 players).`;
+            return ctx.t('games.roulette.room_full');
         }
 
         const user = await prisma.user.findFirst({
@@ -49,7 +50,7 @@ const joinGameTool: ToolModule = {
         const actualUserId = user ? user.id : senderJid;
 
         if (session.players.find((p) => p.userId === actualUserId || p.userId === senderJid)) {
-            return `❌ You are already in this room!`;
+            return ctx.t('games.roulette.already_joined');
         }
 
         const newPlayer: Player = {
@@ -84,7 +85,15 @@ const joinGameTool: ToolModule = {
         const numPlayers = session.players.length;
         const betters = session.players.filter((p) => p.betAmount > 0).length;
 
-        return `📥 @${newPlayer.pushName} has joined the room!\n👥 *Players (${numPlayers}/5):*\n${playerList.trim()}\n\n💰 *Current Pot:* Rp ${session.potAmount.toLocaleString('id-ID')} (From ${betters} Player${betters > 1 ? 's' : ''})\n\n⚠️ Don't forget to place your bets!\n👉 Type *.bet <amount>* (Min. Rp 444,379)`;
+        return ctx.t('games.roulette.joined_broadcast', {
+            player: newPlayer.pushName,
+            count: numPlayers,
+            players: playerList.trim(),
+            pot: formatRupiah(session.potAmount),
+            betters,
+            plural: betters > 1 ? 's' : '',
+            min: formatRupiah(MIN_BET)
+        });
     }
 };
 

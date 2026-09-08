@@ -41,7 +41,7 @@ const propertySellTool: ToolModule = {
             await sock.sendMessage(
                 jid,
                 {
-                    text: 'Please specify the property name to sell. Format: /sell <property_name> <optional_negotiation>'
+                    text: ctx.t('tools.property_sell.specify_property')
                 },
                 { quoted: msg }
             );
@@ -139,7 +139,7 @@ const propertySellTool: ToolModule = {
         if (!inventoryItem) {
             await sock.sendMessage(
                 jid,
-                { text: `You do not own a property named "${propertyName}" or it is already pawned/sold.` },
+                { text: ctx.t('tools.property_sell.not_owned', { name: propertyName }) },
                 { quoted: msg }
             );
             return;
@@ -152,7 +152,7 @@ const propertySellTool: ToolModule = {
         if (!propertyDef) {
             await sock.sendMessage(
                 jid,
-                { text: `Property definition not found for ${propertyName}.` },
+                { text: ctx.t('tools.property_sell.definition_not_found', { name: propertyName }) },
                 { quoted: msg }
             );
             return;
@@ -256,7 +256,7 @@ You must call the 'finalize_deal' function to return your response.`;
                 }
             } catch (err) {
                 console.error('Groq negotiation failed:', err);
-                aiMessage = 'I am currently unable to negotiate. I will give you the standard base offer.';
+                aiMessage = ctx.t('tools.property_sell.negotiation_failed_fallback');
             }
         }
 
@@ -286,17 +286,17 @@ You must call the 'finalize_deal' function to return your response.`;
             });
         });
 
-        let responseText = `*🤝 Property Sold*\n\n`;
-        responseText += `You sold *${inventoryItem.name}*.\n`;
-        responseText += `Original Price: ${formatRupiah(originalPrice)}\n`;
-        responseText += `Base Offer: ${formatRupiah(baseOffer)}\n`;
+        let responseText = ctx.t('tools.property_sell.sold_title');
+        responseText += ctx.t('tools.property_sell.sold_name', { name: inventoryItem.name });
+        responseText += ctx.t('tools.property_sell.original_price', { price: formatRupiah(originalPrice) });
+        responseText += ctx.t('tools.property_sell.base_offer', { price: formatRupiah(baseOffer) });
 
         if (negotiationText) {
-            responseText += `Negotiated Deal Price: ${formatRupiah(finalDealPrice)}\n\n`;
-            responseText += `*Broker says:* "${aiMessage}"`;
+            responseText += ctx.t('tools.property_sell.negotiated_price', { price: formatRupiah(finalDealPrice) });
+            responseText += ctx.t('tools.property_sell.broker_says', { message: aiMessage });
         } else {
-            responseText += `Final Deal Price: ${formatRupiah(finalDealPrice)}\n\n`;
-            responseText += `_You can negotiate the price by using: /sell ${propertyName} <your persuasion message>_`;
+            responseText += ctx.t('tools.property_sell.final_price', { price: formatRupiah(finalDealPrice) });
+            responseText += ctx.t('tools.property_sell.negotiate_hint', { name: propertyName });
         }
 
         await sock.sendMessage(jid, { text: responseText }, { quoted: msg });

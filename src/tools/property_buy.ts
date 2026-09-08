@@ -61,7 +61,7 @@ const buyTool: ToolModule = {
                 await sock.sendMessage(
                     jid,
                     {
-                        text: 'Please specify the item or property you want to buy. Format: `.buy <short_id> [quantity]`'
+                        text: ctx.t('tools.property_buy.specify_item')
                     },
                     { quoted: msg }
                 );
@@ -106,7 +106,12 @@ const buyTool: ToolModule = {
                     await sock.sendMessage(
                         jid,
                         {
-                            text: `You do not have enough funds to purchase ${inputQuantity}x *${matchedItem.name}*. Total cost: ${formatRupiah(totalCost)}, but your current balance is ${formatRupiah(currentBalance)}.`
+                            text: ctx.t('tools.property_buy.insufficient_item_funds', {
+                                quantity: inputQuantity,
+                                name: matchedItem.name,
+                                cost: formatRupiah(totalCost),
+                                balance: formatRupiah(currentBalance)
+                            })
                         },
                         { quoted: msg }
                     );
@@ -121,7 +126,12 @@ const buyTool: ToolModule = {
             await sock.sendMessage(
                 jid,
                 {
-                    text: `🎉 Purchase successful! You bought *${purchaseResult.quantity}x ${matchedItem.name}* for *${totalFormatted}*.\nRemaining balance: *${remainingFormatted}*.`
+                    text: ctx.t('tools.property_buy.item_success', {
+                        quantity: purchaseResult.quantity,
+                        name: matchedItem.name,
+                        cost: totalFormatted,
+                        balance: remainingFormatted
+                    })
                 },
                 { quoted: msg }
             );
@@ -157,7 +167,7 @@ const buyTool: ToolModule = {
             await sock.sendMessage(
                 jid,
                 {
-                    text: `Item or property "${normalizedTarget}" was not found. Use \`.shop\` to view available items.`
+                    text: ctx.t('tools.property_buy.not_found', { target: normalizedTarget })
                 },
                 { quoted: msg }
             );
@@ -177,7 +187,7 @@ const buyTool: ToolModule = {
             await sock.sendMessage(
                 jid,
                 {
-                    text: `You already own *${targetProp.name}*. You cannot purchase the same property more than once.`
+                    text: ctx.t('tools.property_buy.already_owned', { name: targetProp.name })
                 },
                 { quoted: msg }
             );
@@ -192,7 +202,11 @@ const buyTool: ToolModule = {
             await sock.sendMessage(
                 jid,
                 {
-                    text: `You do not have enough funds to purchase ${targetProp.name}. The property costs ${formatRupiah(targetProp.basePrice)}, but your current balance is only ${formatRupiah(userBalance)}.`
+                    text: ctx.t('tools.property_buy.insufficient_prop_funds', {
+                        name: targetProp.name,
+                        cost: formatRupiah(targetProp.basePrice),
+                        balance: formatRupiah(userBalance)
+                    })
                 },
                 { quoted: msg }
             );
@@ -238,7 +252,10 @@ const buyTool: ToolModule = {
             await sock.sendMessage(
                 jid,
                 {
-                    text: `🎉 Congratulations! You have successfully purchased *${targetProp.name}* for ${formatRupiah(targetProp.basePrice)}.`
+                    text: ctx.t('tools.property_buy.prop_success', {
+                        name: targetProp.name,
+                        cost: formatRupiah(targetProp.basePrice)
+                    })
                 },
                 { quoted: msg }
             );
@@ -249,18 +266,18 @@ const buyTool: ToolModule = {
                 await sock.sendMessage(
                     jid,
                     {
-                        text: `You do not have enough funds to purchase ${targetProp.name}. The property costs ${formatRupiah(targetProp.basePrice)}, but your current balance is only ${formatRupiah(currentBal)}.`
+                        text: ctx.t('tools.property_buy.insufficient_prop_funds', {
+                            name: targetProp.name,
+                            cost: formatRupiah(targetProp.basePrice),
+                            balance: formatRupiah(currentBal)
+                        })
                     },
                     { quoted: msg }
                 );
                 return;
             }
             console.error('Error during property purchase:', err);
-            await sock.sendMessage(
-                jid,
-                { text: 'A database error occurred while processing the property purchase.' },
-                { quoted: msg }
-            );
+            await sock.sendMessage(jid, { text: ctx.t('tools.property_buy.db_error') }, { quoted: msg });
         }
     }
 };

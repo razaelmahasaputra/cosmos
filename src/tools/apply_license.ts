@@ -22,11 +22,11 @@ export const definition: ToolDefinition = {
 export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string> {
     const senderJid = getSenderJid(ctx.msg, ctx.sock);
     if (!senderJid) {
-        return 'Could not determine your sender identity.';
+        return ctx.t('tools.apply_license.cannot_determine_sender');
     }
 
     // Step 1: Verification Hook (IdCard Requirement)
-    const auth = await requireIdCard(senderJid);
+    const auth = await requireIdCard(senderJid, ctx.t);
     if (!auth.authorized || !auth.idCard) {
         return auth.message!;
     }
@@ -37,11 +37,15 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     const age = calculateAge(idCard.dateOfBirth);
 
     if (age < 17) {
-        return `Application Denied. You must be at least 17 years old to apply for a driver's license. (Calculated age: ${age} years old).`;
+        return ctx.t('tools.apply_license.underage', { age });
     }
 
     const licenseType = (args.licenseType || 'A').toUpperCase().trim();
-    return `Identity verified! Name: ${idCard.fullName}. Age requirement met (${age} years old). Starting your virtual driving test for SIM ${licenseType} now...`;
+    return ctx.t('tools.apply_license.verified', {
+        name: idCard.fullName,
+        age,
+        licenseType
+    });
 }
 
 const applyLicenseTool: ToolModule = {

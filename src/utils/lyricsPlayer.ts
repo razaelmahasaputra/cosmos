@@ -214,10 +214,14 @@ export async function playLyrics(jid: string, sock: WASocket, songName: string, 
 /**
  * Stops playing lyrics for a given JID.
  */
-export async function stopLyrics(jid: string, sock: WASocket): Promise<string> {
+export async function stopLyrics(
+    jid: string,
+    sock: WASocket,
+    t?: (key: string, args?: Record<string, any>) => string
+): Promise<string> {
     const session = activeSessions.get(jid);
     if (!session) {
-        return 'Failed: There is no ongoing lyrics playback in this chat.';
+        return t ? t('media.stoplyrics.no_session') : 'Failed: There is no ongoing lyrics playback in this chat.';
     }
 
     // 1. Clear all timers first to prevent any race condition
@@ -236,5 +240,7 @@ export async function stopLyrics(jid: string, sock: WASocket): Promise<string> {
     // 3. Delete session
     activeSessions.delete(jid);
 
-    return `Lyrics playback for "${session.songName}" has been successfully stopped.`;
+    return t
+        ? t('media.stoplyrics.stopped', { song: session.songName })
+        : `Lyrics playback for "${session.songName}" has been successfully stopped.`;
 }

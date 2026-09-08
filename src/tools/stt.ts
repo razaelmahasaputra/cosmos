@@ -28,11 +28,11 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     const audioMessage = quotedMessage?.audioMessage;
 
     if (!contextInfo || !audioMessage) {
-        return 'Failed: Please quote a voice note first, then execute this command.';
+        return ctx.t('tools.stt.quote_required');
     }
 
     if (!audioMessage.ptt) {
-        return 'Failed: The quoted message is not a push-to-talk voice note.';
+        return ctx.t('tools.stt.not_ptt');
     }
 
     try {
@@ -56,7 +56,7 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         const text = typeof rawText === 'string' ? rawText.trim() : '';
 
         if (!text) {
-            return 'Failed: No text detected from this voice note.';
+            return ctx.t('tools.stt.no_text');
         }
 
         console.log('STT transcription success', { jid: ctx.jid, length: text.length });
@@ -90,6 +90,6 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     } catch (err: any) {
         console.error('[STT Tool Error]', err);
         console.error('STT transcription failed', { jid: ctx.jid, error: err.message });
-        return 'Failed: An error occurred while transcribing the voice note.';
+        return ctx.t('tools.stt.error');
     }
 }

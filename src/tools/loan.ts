@@ -24,11 +24,11 @@ export const definition: ToolDefinition = {
 export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string> {
     const senderJid = getSenderJid(ctx.msg, ctx.sock);
     if (!senderJid) {
-        return 'Could not determine your sender identity.';
+        return ctx.t('tools.loan.cannot_determine_sender');
     }
 
     // Step 1: Verification Hook (IdCard Requirement)
-    const auth = await requireIdCard(senderJid);
+    const auth = await requireIdCard(senderJid, ctx.t);
     if (!auth.authorized || !auth.idCard) {
         return auth.message!;
     }
@@ -37,11 +37,14 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     const loanAmount = parseCurrencyAmount(rawAmount);
 
     if (!loanAmount || loanAmount <= 0) {
-        return 'Please specify a valid loan amount (e.g., .loan 5000000).';
+        return ctx.t('tools.loan.invalid_amount');
     }
 
     // Bind debt / approve loan registered under NIK
-    return `Identity verification successful. A loan of ${formatRupiah(loanAmount)} has been approved and registered under NIK: ${auth.idCard.nik}.`;
+    return ctx.t('tools.loan.approved', {
+        amount: formatRupiah(loanAmount),
+        nik: auth.idCard.nik
+    });
 }
 
 const loanTool: ToolModule = {

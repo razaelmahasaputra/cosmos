@@ -17,7 +17,7 @@ const createGameTool: ToolModule = {
         // Check if there is already a game in this group
         for (const session of gameSessions.values()) {
             if (session.chatId === jid) {
-                return `❌ There is already an ongoing game in this group (ID: ${session.sessionId}).`;
+                return ctx.t('games.roulette.already_ongoing', { sessionId: session.sessionId });
             }
         }
 
@@ -28,7 +28,7 @@ const createGameTool: ToolModule = {
                 unregisterCancellableSession(`roulette_${sessionId}`);
                 gameSessions.delete(sessionId);
                 await sock.sendMessage(jid, {
-                    text: `❌ *GAME CANCELLED!*\nTime expired (30 seconds) and no one joined, or the betting requirements were not met. Bet balances have been refunded to each player.`
+                    text: ctx.t('games.roulette.cancelled_timeout')
                 });
             }
         }, 30000);
@@ -83,12 +83,12 @@ const createGameTool: ToolModule = {
                             }
                         }
                     }
-                    return `❌ *GAME CANCELLED!*\nThe Buckshot Roulette lobby (ID: \`${sessionId}\`) has been cancelled by the host. All placed bets have been refunded.`;
+                    return ctx.t('games.roulette.cancelled_host', { sessionId });
                 }
             }
         });
 
-        return `🔫 *ROULETTE MINIGAME* 🔫\n\nRoom successfully created by 👑 @${creator.pushName}!\n🆔 *Session ID:* \`${sessionId}\`\n\nWaiting for other players to join...\n👉 Type *.joingame ${sessionId}* to join this session.\n⏱️ *Timeout:* 30 Seconds if no one joins.`;
+        return ctx.t('games.roulette.lobby_created', { creator: creator.pushName, sessionId });
     }
 };
 

@@ -53,15 +53,13 @@ const shopTool: ToolModule = {
                 }
             }
 
-            let text = `*🏬 Cosmos Shop - Categories*\n\n`;
-            text += `Select a category to browse:\n`;
+            let text = `${ctx.t('tools.shop.categories_title')}\n\n`;
+            text += `${ctx.t('tools.shop.categories_select')}\n`;
             categoryList.forEach((cat) => {
                 text += `• \`.shop ${cat.toLowerCase()}\`\n`;
             });
-            text += `• \`.shop items\` _(View all general items)_\n\n`;
-            text += `*Usage:*\n`;
-            text += `• Type \`.shop <category>\` to view items in a category.\n`;
-            text += `• Type \`.buy <short_id> [quantity]\` to purchase an item.`;
+            text += `${ctx.t('tools.shop.categories_items_view')}\n\n`;
+            text += `${ctx.t('tools.shop.categories_usage')}`;
 
             await sock.sendMessage(jid, { text }, { quoted: msg });
             return;
@@ -74,11 +72,11 @@ const shopTool: ToolModule = {
             });
 
             if (properties.length === 0) {
-                await sock.sendMessage(jid, { text: 'The property catalog is currently empty.' }, { quoted: msg });
+                await sock.sendMessage(jid, { text: ctx.t('tools.shop.properties_empty') }, { quoted: msg });
                 return;
             }
 
-            let text = `*🏬 Cosmos Property Catalog*\n\n`;
+            let text = `${ctx.t('tools.shop.properties_title')}\n\n`;
             properties.forEach((p, index) => {
                 text += `${index + 1}. *${p.name}*\n`;
                 text += `   Type: ${p.typeCategory}\n`;
@@ -86,7 +84,7 @@ const shopTool: ToolModule = {
                 text += `   Depreciation: ${p.baseDepreciationRate * 100}%\n\n`;
             });
 
-            text += `_Use \`.buy <property_name>\` to purchase a property._`;
+            text += ctx.t('tools.shop.properties_buy_tip');
             await sock.sendMessage(jid, { text }, { quoted: msg });
             return;
         }
@@ -99,7 +97,7 @@ const shopTool: ToolModule = {
             await sock.sendMessage(
                 jid,
                 {
-                    text: `No items found in category "${rawCategory}". Use \`.shop\` to see available categories.`
+                    text: ctx.t('tools.shop.no_items', { category: rawCategory })
                 },
                 { quoted: msg }
             );
@@ -110,7 +108,7 @@ const shopTool: ToolModule = {
             ? `${filterCategory.charAt(0).toUpperCase() + filterCategory.slice(1)} Items`
             : 'All Items';
 
-        let text = `*🛍️ Cosmos Shop - ${headerTitle}*\n\n`;
+        let text = `${ctx.t('tools.shop.header_title', { title: headerTitle })}\n\n`;
         items.forEach((item, index) => {
             text += `${index + 1}. *${item.name}* (\`${item.shortId}\`)\n`;
             text += `   Type: ${item.type.charAt(0).toUpperCase() + item.type.slice(1)}\n`;
@@ -118,7 +116,7 @@ const shopTool: ToolModule = {
             text += `   Desc: ${item.description}\n\n`;
         });
 
-        text += `_To purchase an item, use: \`.buy <short_id> [quantity]\`_`;
+        text += ctx.t('tools.shop.buy_tip');
 
         await sock.sendMessage(jid, { text }, { quoted: msg });
     }

@@ -17,8 +17,8 @@ export const definition: ToolDefinition = {
 
 export async function execute(_args: Record<string, any>, ctx: ToolContext): Promise<string> {
     if (!isAutoCorrectionEnabled(ctx.jid)) {
-        return '⚠️ *Warning:* Auto-Correction is not active in this chat.';
+        return ctx.t('utilities.autocorrection.not_active');
     }
     await disableAutoCorrection(ctx.jid);
-    return '🔴 *Auto-Correction DEACTIVATED* for this chat.';
+    return ctx.t('utilities.autocorrection.deactivated');
 }

@@ -29,13 +29,13 @@ const transferTool: ToolModule = {
         const targetJid = mentionedJidList.length > 0 ? mentionedJidList[0] : null;
 
         if (!targetJid) {
-            return `❌ Please mention a user to transfer coins to. Example: .transfer @user 50`;
+            return ctx.t('tools.transfer.mention_required');
         }
 
         const cleanTargetJid = await resolveId(targetJid, sock, msg.key.remoteJid);
 
         if (cleanTargetJid === senderJid) {
-            return `❌ You cannot transfer coins to yourself.`;
+            return ctx.t('tools.transfer.self_transfer');
         }
 
         let cleanedInputStr = String(args.input || '').trim();
@@ -47,11 +47,11 @@ const transferTool: ToolModule = {
         const amount = parseCurrencyAmount(cleanedInputStr, Number(user.balance));
 
         if (amount === null || amount <= 0) {
-            return `❌ Invalid amount. Please specify a valid amount of coins to transfer.`;
+            return ctx.t('tools.transfer.invalid_amount');
         }
 
         if (Number(user.balance) < amount) {
-            return `❌ Insufficient balance. You only have ${formatRupiah(user.balance)}.`;
+            return ctx.t('tools.transfer.insufficient_balance', { balance: formatRupiah(user.balance) });
         }
 
         // Anti-Miss: Transaction wrapper
@@ -81,13 +81,17 @@ const transferTool: ToolModule = {
             await sock.sendMessage(
                 msg.key.remoteJid!,
                 {
-                    text: `💸 *Transfer Successful!*\n\nYou have successfully transferred *${formatRupiah(amount)}* to @${targetJid.split('@')[0]}.\nYour remaining balance is *${formatRupiah(Number(user.balance) - amount)}*.`,
+                    text: ctx.t('tools.transfer.transfer_success', {
+                        amount: formatRupiah(amount),
+                        target: targetJid.split('@')[0],
+                        remaining: formatRupiah(Number(user.balance) - amount)
+                    }),
                     mentions: [targetJid]
                 },
                 { quoted: msg }
             );
         } catch (error: any) {
-            return `❌ Transfer failed: ${error.message}`;
+            return ctx.t('tools.transfer.transfer_failed', { error: error.message });
         }
     }
 };

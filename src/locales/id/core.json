@@ -9,5 +9,9 @@
     "unknown_error": "Terjadi kesalahan yang tidak terduga.",
     "command_disabled": "Perintah ini sedang dinonaktifkan.",
     "generic_success": "Operasi berhasil diselesaikan.",
-    "ai_disclaimer": "Pesan yang dihasilkan oleh AI mungkin mengandung kesalahan; harap periksa kembali"
+    "ai_disclaimer": "Pesan yang dihasilkan oleh AI mungkin mengandung kesalahan; harap periksa kembali",
+    "admin_or_owner": "Perintah ini hanya dapat digunakan oleh admin grup atau pemilik bot.",
+    "owner_only_private": "Perintah ini hanya dapat digunakan oleh pemilik bot di obrolan pribadi.",
+    "not_in_group": "Perintah ini hanya dapat digunakan di dalam grup chat.",
+    "sender_identity_error": "Tidak dapat menentukan identitas pengirim Anda."
 }

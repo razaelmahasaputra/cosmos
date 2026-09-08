@@ -33,18 +33,18 @@ const diceTool: ToolModule = {
         const guess = match ? parseInt(match[1], 10) : null;
 
         if (!guess) {
-            return `❌ Please specify your guess (1-6). Example: .dice 6 1.000.000`;
+            return ctx.t('games.dice.guess_required');
         }
 
         const betStr = inputStr.replace(new RegExp(`\\b${guess}\\b`), '').trim();
         const bet = parseBet(betStr, Number(user.balance));
 
         if (bet === null) {
-            return `❌ Invalid bet amount. Minimum bet is ${formatRupiah(MIN_BET)}.`;
+            return ctx.t('games.dice.invalid_bet', { min: formatRupiah(MIN_BET) });
         }
 
         // Dice probabilities: 16% win, 84% lose. Multiplier: 5
-        const result = await executeGamble(prisma, senderJid, bet, 5, 16, 84, sock, msg);
+        const result = await executeGamble(prisma, senderJid, bet, 5, 16, 84, sock, msg, 0, ctx.t);
 
         if (!result.success) {
             return `❌ ${result.error}`;
@@ -59,15 +59,15 @@ const diceTool: ToolModule = {
         }
 
         const winMsg = result.isWin
-            ? `🎉 *You Win!* You earned *${formatRupiah(result.winAmount)}*!`
-            : `💀 *You Lose!* You lost *${formatRupiah(bet)}*.`;
+            ? ctx.t('games.dice.won', { amount: formatRupiah(result.winAmount) })
+            : ctx.t('games.dice.lost', { amount: formatRupiah(bet) });
 
         const text =
-            `🎲 *DICE ROLL* 🎲\n\n` +
-            `You guessed: *${guess}*\n` +
-            `Dice rolled: *${rolled}*\n\n` +
+            `${ctx.t('games.dice.title')}\n\n` +
+            `${ctx.t('games.dice.guessed', { guess })}\n` +
+            `${ctx.t('games.dice.rolled', { rolled })}\n\n` +
             `${winMsg}\n` +
-            `Current Balance: *${formatRupiah(result.newBalance)}*`;
+            `${ctx.t('games.dice.current_balance', { balance: formatRupiah(result.newBalance) })}`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: msg });

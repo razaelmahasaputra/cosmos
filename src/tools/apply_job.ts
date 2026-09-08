@@ -23,21 +23,25 @@ export const definition: ToolDefinition = {
 export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string> {
     const senderJid = getSenderJid(ctx.msg, ctx.sock);
     if (!senderJid) {
-        return 'Could not determine your sender identity.';
+        return ctx.t('tools.apply_job.cannot_determine_sender');
     }
 
     // Step 1: Verification Hook (IdCard Requirement)
-    const auth = await requireIdCard(senderJid);
+    const auth = await requireIdCard(senderJid, ctx.t);
     if (!auth.authorized || !auth.idCard) {
         return auth.message!;
     }
 
     const role = (args.role || '').trim();
     if (!role) {
-        return 'Please specify the job position you are applying for (e.g., .apply-job Developer).';
+        return ctx.t('tools.apply_job.specify_role');
     }
 
-    return `Your application has been submitted. The contract for '${role}' has been registered under the name ${auth.idCard.fullName}, residing at ${auth.idCard.address}.`;
+    return ctx.t('tools.apply_job.submitted', {
+        role,
+        name: auth.idCard.fullName,
+        address: auth.idCard.address
+    });
 }
 
 const applyJobTool: ToolModule = {

@@ -36,11 +36,7 @@ const inventoryTool: ToolModule = {
         });
 
         if (inventory.length === 0) {
-            await sock.sendMessage(
-                jid,
-                { text: 'Your inventory is currently empty. Visit the shop using `.shop` to browse items!' },
-                { quoted: msg }
-            );
+            await sock.sendMessage(jid, { text: ctx.t('tools.inventory.empty') }, { quoted: msg });
             return;
         }
 
@@ -52,41 +48,41 @@ const inventoryTool: ToolModule = {
             (inv) => inv.itemId === null && inv.item === null && inv.propertyId === null && inv.property === null
         );
 
-        let text = `*📦 Cosmos Inventory*\n\n`;
+        let text = `${ctx.t('tools.inventory.title')}\n\n`;
 
         if (shopItems.length > 0) {
-            text += `*Items & Equipment:*\n`;
+            text += `${ctx.t('tools.inventory.items_header')}\n`;
             shopItems.forEach((inv, index) => {
                 const itemName = inv.item?.name || inv.name || 'Unknown Item';
                 const shortId = inv.item?.shortId ? ` (\`${inv.item.shortId}\`)` : '';
                 const type = inv.item?.type || inv.typeCategory || 'Item';
                 const typeFormatted = type.charAt(0).toUpperCase() + type.slice(1);
                 text += `${index + 1}. *${itemName}*${shortId}\n`;
-                text += `   Quantity: ${inv.quantity}\n`;
-                text += `   Type: ${typeFormatted}\n\n`;
+                text += `${ctx.t('tools.inventory.quantity_label', { quantity: inv.quantity })}\n`;
+                text += `${ctx.t('tools.inventory.type_label', { type: typeFormatted })}\n\n`;
             });
         }
 
         if (properties.length > 0) {
-            text += `*Owned Properties:*\n`;
+            text += `${ctx.t('tools.inventory.properties_header')}\n`;
             properties.forEach((inv, index) => {
                 const propName = inv.property?.name || inv.name || 'Unknown Property';
                 const originalPrice = inv.originalPrice ? formatRupiah(inv.originalPrice) : 'N/A';
                 text += `${index + 1}. *${propName}*\n`;
-                text += `   Original Value: ${originalPrice}\n`;
-                text += `   Acquired: ${inv.purchaseDate.toLocaleDateString()}\n\n`;
+                text += `${ctx.t('tools.inventory.original_value_label', { price: originalPrice })}\n`;
+                text += `${ctx.t('tools.inventory.acquired_label', { date: inv.purchaseDate.toLocaleDateString() })}\n\n`;
             });
         }
 
         if (legacyItems.length > 0) {
-            text += `*Other Assets:*\n`;
+            text += `${ctx.t('tools.inventory.other_assets_header')}\n`;
             legacyItems.forEach((inv, index) => {
                 const name = inv.name || 'Asset';
                 text += `${index + 1}. *${name}* (x${inv.quantity})\n\n`;
             });
         }
 
-        text += `_Use \`.shop\` to buy more items or \`.sell <property_name>\` to liquidate properties._`;
+        text += ctx.t('tools.inventory.footer_tip');
 
         await sock.sendMessage(jid, { text }, { quoted: msg });
     }

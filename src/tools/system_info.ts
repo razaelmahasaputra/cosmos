@@ -59,13 +59,13 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     }
 
     return (
-        `*⚡ BOT & SERVER STATUS*\n\n` +
-        `• *Latency:* ${latencyStr}\n` +
-        `• *OS:* ${os.type()} (${os.release()})\n` +
-        `• *CPU:* ${cpuModel} (${cpuArch})\n` +
-        `• *RAM:* ${usedMem} / ${totalMem} (Free: ${freeMem})\n` +
-        `• *Server Uptime:* ${systemUptime}\n` +
-        `• *Bot Uptime:* ${botUptime}\n` +
-        `• *Node.js:* ${process.version}`
+        `${ctx.t('tools.system_info.title')}\n\n` +
+        `${ctx.t('tools.system_info.latency', { latency: latencyStr })}\n` +
+        `${ctx.t('tools.system_info.os', { os: os.type(), release: os.release() })}\n` +
+        `${ctx.t('tools.system_info.cpu', { cpu: cpuModel, arch: cpuArch })}\n` +
+        `${ctx.t('tools.system_info.ram', { used: usedMem, total: totalMem, free: freeMem })}\n` +
+        `${ctx.t('tools.system_info.server_uptime', { uptime: systemUptime })}\n` +
+        `${ctx.t('tools.system_info.bot_uptime', { uptime: botUptime })}\n` +
+        `${ctx.t('tools.system_info.nodejs', { version: process.version })}`
     );
 }

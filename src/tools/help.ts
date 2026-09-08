@@ -71,39 +71,42 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         );
 
         if (matchedCategory) {
-            let menuText = `*Cosmos - ${matchedCategory.toUpperCase()} MENU*\n\n`;
+            let menuText = `${ctx.t('tools.help.category_menu_title', { category: matchedCategory.toUpperCase() })}\n\n`;
             const toolsInCategory = categorizedTools[matchedCategory];
 
             toolsInCategory.forEach((t, tIndex) => {
                 const primaryCommand = t.aliases.length > 0 ? t.aliases[0] : `.${t.name}`;
-                const ownerBadge = t.owner ? ' *(Owner)*' : '';
+                const ownerBadge = t.owner ? ctx.t('tools.help.owner_badge') : '';
                 const aliasStr =
                     t.aliases.length > 0
                         ? t.aliases.map((a) => `\`\`\`${a}\`\`\``).join(', ')
                         : `\`\`\`.${t.name}\`\`\``;
 
                 menuText += `\`\`\`${primaryCommand}\`\`\`${ownerBadge}\n`;
-                menuText += `Alias: ${aliasStr}\n`;
-                menuText += `Desc: ${t.description}`;
+                menuText += `${ctx.t('tools.help.alias_label')}${aliasStr}\n`;
+                menuText += `${ctx.t('tools.help.desc_label')}${t.description}`;
 
                 if (tIndex !== toolsInCategory.length - 1) {
                     menuText += '\n\n';
                 }
             });
 
-            menuText += `\n\n*Tip:* Use \`\`\`${cmdPrefix}\`\`\` to see all available categories.`;
+            menuText += `\n\n${ctx.t('tools.help.category_tip', { prefix: cmdPrefix })}`;
             return menuText.trim();
         } else {
-            return `*Error:* Category '${args.category}' not found.\n\n*Available Categories:*\n${categories.map((c) => `- ${c}`).join('\n')}`;
+            return ctx.t('tools.help.category_not_found', {
+                category: args.category,
+                categories: categories.map((c) => `- ${c}`).join('\n')
+            });
         }
     }
 
-    let menuText = `*Cosmos - COMMAND CATEGORIES*\n\n`;
+    let menuText = `${ctx.t('tools.help.categories_title')}\n\n`;
     categories.forEach((cat) => {
         menuText += `\`\`\`${cmdPrefix} ${cat}\`\`\`\n`;
     });
 
-    menuText += `\n*Tip:* Type \`\`\`${cmdPrefix} <category>\`\`\` to view the commands in that category (e.g. \`\`\`${cmdPrefix} media\`\`\`).`;
+    menuText += `\n${ctx.t('tools.help.categories_tip', { prefix: cmdPrefix })}`;
 
     return menuText.trim();
 }

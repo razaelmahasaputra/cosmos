@@ -363,14 +363,15 @@ export async function getIdCardByUser(userJidOrLid: string) {
  * Future Integration Hook: Requires the user to have a valid Virtual ID Card.
  * Gracefully rejects and returns an authorized flag and standard prompt message.
  */
-export async function requireIdCard(userJidOrLid: string) {
+export async function requireIdCard(userJidOrLid: string, t?: (key: string, args?: Record<string, any>) => string) {
     const idCard = await getIdCardByUser(userJidOrLid);
     if (!idCard) {
         return {
             authorized: false,
             idCard: null,
-            message:
-                'Access Denied. You must possess a Virtual ID Card to use this feature. Please register your identity first using the .register-id command.'
+            message: t
+                ? t('utilities.idcard.access_denied')
+                : 'Access Denied. You must possess a Virtual ID Card to use this feature. Please register your identity first using the .register-id command.'
         };
     }
     return {

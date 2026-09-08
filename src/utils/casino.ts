@@ -96,10 +96,14 @@ export async function executeGamble(
     baseLoseWeight: number,
     sock?: any,
     msg?: any,
-    fixedBonus: number = 0
+    fixedBonus: number = 0,
+    t?: (key: string, args?: Record<string, any>) => string
 ): Promise<GambleResult> {
     if (mutex.has(jid)) {
-        return { success: false, error: 'Please wait, transaction is being processed.' };
+        return {
+            success: false,
+            error: t ? t('utilities.casino.processing') : 'Please wait, transaction is being processed.'
+        };
     }
     mutex.add(jid);
 
@@ -115,14 +119,26 @@ export async function executeGamble(
             if (Number(user.balance) < bet) {
                 return {
                     success: false,
-                    error: `Insufficient balance. Your balance: ${formatRupiah(user.balance)}`
+                    error: t
+                        ? t('utilities.casino.insufficient_balance', { balance: formatRupiah(user.balance) })
+                        : `Insufficient balance. Your balance: ${formatRupiah(user.balance)}`
                 };
             }
             if (bet < MIN_BET) {
-                return { success: false, error: `Minimum bet is ${formatRupiah(MIN_BET)}.` };
+                return {
+                    success: false,
+                    error: t
+                        ? t('utilities.casino.min_bet', { min: formatRupiah(MIN_BET) })
+                        : `Minimum bet is ${formatRupiah(MIN_BET)}.`
+                };
             }
             if (bet > MAX_BET) {
-                return { success: false, error: `Maximum bet is ${formatRupiah(MAX_BET)}.` };
+                return {
+                    success: false,
+                    error: t
+                        ? t('utilities.casino.max_bet', { max: formatRupiah(MAX_BET) })
+                        : `Maximum bet is ${formatRupiah(MAX_BET)}.`
+                };
             }
 
             const now = Date.now();
@@ -132,7 +148,9 @@ export async function executeGamble(
                     const remainingSeconds = ((5100 - diff) / 1000).toFixed(1);
                     return {
                         success: false,
-                        error: `Please wait ${remainingSeconds} more seconds before betting again.`
+                        error: t
+                            ? t('utilities.casino.cooldown', { seconds: remainingSeconds })
+                            : `Please wait ${remainingSeconds} more seconds before betting again.`
                     };
                 }
             }

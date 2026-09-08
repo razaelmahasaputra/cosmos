@@ -39,7 +39,7 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     }
 
     if (!targetJid) {
-        return 'Could not determine the target user. Please quote a message, mention someone, or use the command directly.';
+        return ctx.t('tools.profile_photo.target_not_found');
     }
 
     targetJid = jidNormalizedUser(targetJid);
@@ -64,13 +64,13 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         if (!ppUrl) {
             await sock.sendMessage(jid, { react: { text: '❌', key: safeMsgKey } });
             await sock.sendMessage(jid, {
-                text: 'Failed to fetch the profile photo. The user might have hidden it or does not have one.'
+                text: ctx.t('tools.profile_photo.fetch_failed')
             });
             return;
         }
 
         // Notify user that we are downloading
-        await sock.sendMessage(jid, { text: 'Memproses foto profil...' });
+        await sock.sendMessage(jid, { text: ctx.t('tools.profile_photo.processing') });
 
         // Download the image manually to ensure it's valid and to avoid silent drop
         const response = await fetch(ppUrl);
@@ -94,7 +94,7 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         // We do this for ALL requests because WhatsApp has officially blocked sending "View Once" messages from Web/Linked Devices.
         const sentMsg = await sock.sendMessage(jid, {
             image: { url: tempFilePath },
-            caption: 'Profile photo (Auto-delete in 10s)'
+            caption: ctx.t('tools.profile_photo.caption')
         });
 
         await sock.sendMessage(jid, { react: { text: '✅', key: safeMsgKey } });
@@ -125,9 +125,9 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
 
         // Handle specific Baileys error where no profile picture is available (usually returns 401 or 404)
         if (err.message && (err.message.includes('not-authorized') || err.message.includes('Item not found'))) {
-            return 'The profile photo is hidden or does not exist.';
+            return ctx.t('tools.profile_photo.hidden_or_none');
         }
 
-        return 'An error occurred while attempting to fetch the profile photo.';
+        return ctx.t('tools.profile_photo.error');
     }
 }

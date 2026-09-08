@@ -1,7 +1,7 @@
 import { prisma } from '#/db.js';
 import { WASocket, WAMessage } from '@whiskeysockets/baileys';
 import toolsHandler from '#/tools/handler.js';
-import { getTranslator } from '#/utils/i18n.js';
+import { getTranslator, getChatLanguage } from '#/utils/i18n.js';
 
 const autoDlCache = new Map<string, Map<string, boolean>>();
 
@@ -151,7 +151,8 @@ export async function processAutoDl(sock: WASocket, msg: WAMessage, jid: string,
                     // We ensure it executes only if the tool exists, otherwise we wait for phase 2.
                     // This handles gracefully if Phase 2 tools are not yet implemented.
                     if (toolsHandler.getTool(toolName)) {
-                        const t = getTranslator('id');
+                        const chatLang = await getChatLanguage(jid);
+                        const t = getTranslator(chatLang);
                         const result = await toolsHandler.execute(toolName, { url }, { sock, msg, jid, t });
                         if (result && typeof result === 'string' && result.trim().length > 0) {
                             await sock.sendMessage(jid, { text: result }, { quoted: msg });

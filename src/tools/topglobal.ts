@@ -88,12 +88,14 @@ const topGlobalTool: ToolModule = {
             }
         }
 
-        let text = isRoulette ? `🌍 *Global Roulette Leaderboard* 🌍\n\n` : `🌍 *Global Casino Leaderboard* 🌍\n\n`;
+        let text = isRoulette
+            ? `${ctx.t('tools.topglobal.roulette_title')}\n\n`
+            : `${ctx.t('tools.topglobal.casino_title')}\n\n`;
         const topUsersList = isRoulette ? topRouletteCache : topGlobalCache;
         const mentions: string[] = [];
 
         if (topUsersList.length === 0) {
-            text += `No players found.`;
+            text += ctx.t('tools.topglobal.empty');
         } else {
             topUsersList.forEach((user: any, index: number) => {
                 let domain: string;
@@ -121,14 +123,28 @@ const topGlobalTool: ToolModule = {
                 const displayName = user.pushName ? ` (${user.pushName})` : '';
 
                 if (isRoulette) {
-                    text += `${index === 0 ? '👑' : '💀'} *${index + 1}.* @${user.id} - *${user.rouletteWins}* Wins / *${user.rouletteRounds}* Matches\n`;
+                    text +=
+                        ctx.t('tools.topglobal.roulette_entry', {
+                            icon: index === 0 ? '👑' : '💀',
+                            rank: index + 1,
+                            user: user.id,
+                            wins: user.rouletteWins,
+                            matches: user.rouletteRounds
+                        }) + '\n';
                 } else {
-                    text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* @${user.id}${displayName} - *${formatRupiah(user.balance)}*\n`;
+                    text +=
+                        ctx.t('tools.topglobal.casino_entry', {
+                            icon: index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️',
+                            rank: index + 1,
+                            user: user.id,
+                            name: displayName,
+                            balance: formatRupiah(user.balance)
+                        }) + '\n';
                 }
             });
         }
 
-        text += `\n_Updated every 5 minutes._`;
+        text += `${ctx.t('tools.topglobal.footer')}`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text, mentions }, { quoted: msg });

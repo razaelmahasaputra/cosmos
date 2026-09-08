@@ -25,41 +25,212 @@
     "help": {
         "title": "📜 Cosmos Help Menu",
         "description": "Here is the list of available commands:",
-        "command_not_found": "Command '{{command}}' not found."
+        "command_not_found": "Command '{{command}}' not found.",
+        "category_menu_title": "*Cosmos - {{category}} MENU*\n\n",
+        "alias": "Alias: {{aliases}}",
+        "desc": "Desc: {{description}}",
+        "tip_categories": "*Tip:* Use ```{{prefix}}``` to see all available categories.",
+        "category_not_found": "*Error:* Category '{{category}}' not found.\n\n*Available Categories:*\n{{available}}",
+        "categories_title": "*Cosmos - COMMAND CATEGORIES*\n\n",
+        "tip_view_category": "*Tip:* Type ```{{prefix}} <category>``` to view the commands in that category (e.g. ```{{prefix}} media```)."
     },
     "cancel": {
         "no_active_session": "You do not have any active operation or pending confirmation to cancel in this chat.",
-        "success": "Active session has been cancelled."
+        "success": "Active session has been cancelled.",
+        "sender_identity_error": "Could not determine your sender identity."
     },
     "addbalance": {
         "usage": "Invalid format. Use: .addbalance <user> <amount>",
-        "success": "Successfully added {{amount}} to the user's balance."
+        "mention_required": "❌ Please mention a user to add coins to. Example: .addbalance @user 50",
+        "invalid_amount": "❌ Invalid amount. Please specify a valid amount of coins to add.",
+        "success": "✅ *Balance Added!*\n\nSuccessfully added *{{amount}}* to @{{user}} from the house vault.",
+        "failed": "❌ Failed to add balance: {{error}}"
+    },
+    "forceupdate": {
+        "contacting": "⏳ *Contacting World Markets...*\nFetching data and consulting AI...",
+        "success": "✅ *Market updated manually!*\nNew multiplier is *{{multiplier}}x*. Broadcasts are being sent to {{count}} whitelisted groups.",
+        "failed": "⚠️ *SYSTEM ALERT: Economy Update Failed*\n\nThe update failed.\n_Error: {{error}}_\n\nThe economy will remain at the current multiplier."
+    },
+    "system_info": {
+        "title": "*⚡ BOT & SERVER STATUS*",
+        "latency": "• *Latency:* {{latency}}",
+        "os": "• *OS:* {{type}} ({{release}})",
+        "cpu": "• *CPU:* {{model}} ({{arch}})",
+        "ram": "• *RAM:* {{used}} / {{total}} (Free: {{free}})",
+        "server_uptime": "• *Server Uptime:* {{uptime}}",
+        "bot_uptime": "• *Bot Uptime:* {{uptime}}",
+        "nodejs": "• *Node.js:* {{version}}"
     },
     "transfer": {
         "usage": "Invalid format. Use: .transfer <user> <amount>",
-        "insufficient": "Insufficient balance to complete the transfer.",
-        "success": "Successfully transferred {{amount}} to @{{target}}.",
-        "self_transfer": "You cannot transfer balance to yourself."
+        "mention_required": "❌ Please mention a user to transfer coins to. Example: .transfer @user 50",
+        "self_transfer": "❌ You cannot transfer balance to yourself.",
+        "invalid_amount": "❌ Invalid amount. Please specify a valid amount of coins to transfer.",
+        "insufficient": "❌ Insufficient balance. You only have {{balance}}.",
+        "success": "💸 *Transfer Successful!*\n\nYou have successfully transferred *{{amount}}* to @{{target}}.\nYour remaining balance is *{{remaining}}*.",
+        "failed": "❌ Transfer failed: {{error}}"
     },
-    "inventory": {
-        "title": "🎒 Your Inventory",
-        "empty": "Your inventory is currently empty.",
-        "items_count_one": "You have 1 item.",
-        "items_count_other": "You have {{count}} items."
+    "loan": {
+        "invalid_amount": "Please specify a valid loan amount (e.g., .loan 5000000).",
+        "approved": "Identity verification successful. A loan of {{amount}} has been approved and registered under NIK: {{nik}}."
+    },
+    "vault": {
+        "title": "🏦 *House Vault Statistics*",
+        "income": "📈 *Total Income:* {{income}}",
+        "payout": "📉 *Total Payout:* {{payout}}",
+        "net_profit": "💰 *Net Profit:* {{profit}}"
+    },
+    "top": {
+        "group_only": "❌ This command can only be used in a group chat. Use .topglobal to see the global leaderboard.",
+        "roulette_title": "🔫 *Group Roulette Leaderboard* 🔫\n\n",
+        "casino_title": "👥 *Group Casino Leaderboard* 👥\n\n",
+        "empty": "📭 There are no players registered in the database for this leaderboard yet.",
+        "roulette_row": "{{badge}} *{{rank}}.* @{{user}} - *{{wins}}* Wins / *{{rounds}}* Matches\n",
+        "casino_row": "{{badge}} *{{rank}}.* @{{user}}{{name}} - *{{balance}}*\n",
+        "failed": "❌ Failed to fetch group leaderboard."
+    },
+    "topglobal": {
+        "roulette_title": "🌍 *Global Roulette Leaderboard* 🌍\n\n",
+        "casino_title": "🌍 *Global Casino Leaderboard* 🌍\n\n",
+        "empty": "No players found.",
+        "roulette_row": "{{badge}} *{{rank}}.* @{{user}} - *{{wins}}* Wins / *{{rounds}}* Matches\n",
+        "casino_row": "{{badge}} *{{rank}}.* @{{user}}{{name}} - *{{balance}}*\n",
+        "footer": "\n_Updated every 5 minutes._"
+    },
+    "apply_job": {
+        "specify_role": "Please specify the job position you are applying for (e.g., .apply-job Developer).",
+        "success": "Your application has been submitted. The contract for '{{role}}' has been registered under the name {{name}}, residing at {{address}}."
+    },
+    "apply_license": {
+        "age_denied": "Application Denied. You must be at least 17 years old to apply for a driver's license. (Calculated age: {{age}} years old).",
+        "success": "Identity verified! Name: {{name}}. Age requirement met ({{age}} years old). Starting your virtual driving test for SIM {{type}} now..."
+    },
+    "market": {
+        "unavailable": "Economy data is currently unavailable.",
+        "title": "*📊 Current Market Status*\n\n",
+        "multiplier": "• *Multiplier:* {{multiplier}}x\n",
+        "updated": "• *Last Updated:* {{date}}\n",
+        "rate": "• *Current Rate:* {{rate}} / USD\n\n",
+        "tip": "_Tip: Sell your loot now while inflation is high! 💰_"
     },
     "shop": {
         "title": "🏬 Cosmos Shop",
         "category_title": "🏬 Cosmos Shop - Categories",
-        "select_category": "Select a category to browse:",
+        "select_category": "Select a category to browse:\n",
         "item_not_found": "Item not found in the shop catalog.",
         "buy_success": "Successfully purchased {{item}} for {{price}}.",
-        "insufficient_funds": "Insufficient balance to purchase this item."
+        "insufficient_funds": "Insufficient balance to purchase this item.",
+        "all_items_hint": "• `.shop items` _(View all general items)_\n\n",
+        "usage": "*Usage:*\n• Type `.shop <category>` to view items in a category.\n• Type `.buy <short_id> [quantity]` to purchase an item.",
+        "property_catalog_empty": "The property catalog is currently empty.",
+        "property_catalog_title": "*🏬 Cosmos Property Catalog*\n\n",
+        "property_usage": "_Use `.buy <property_name>` to purchase a property._",
+        "no_items_category": "No items found in category \"{{category}}\". Use `.shop` to see available categories.",
+        "items_title": "*🛍️ Cosmos Shop - {{title}}*\n\n",
+        "buy_hint": "_To purchase an item, use: `.buy <short_id> [quantity]`_"
     },
-    "system_info": {
-        "title": "🖥️ Cosmos System Information",
-        "uptime": "Uptime: {{uptime}}",
-        "memory": "Memory Usage: {{memory}}",
-        "platform": "Platform: {{platform}}"
+    "property_buy": {
+        "specify_target": "Please specify the item or property you want to buy. Format: `.buy <short_id> [quantity]`",
+        "insufficient_funds_item": "You do not have enough funds to purchase {{quantity}}x *{{name}}*. Total cost: {{cost}}, but your current balance is {{balance}}.",
+        "buy_item_success": "🎉 Purchase successful! You bought *{{quantity}}x {{name}}* for *{{cost}}*.\nRemaining balance: *{{remaining}}*.",
+        "not_found": "Item or property \"{{target}}\" was not found. Use `.shop` to view available items.",
+        "already_owned": "You already own *{{name}}*. You cannot purchase the same property more than once.",
+        "insufficient_funds_property": "You do not have enough funds to purchase {{name}}. The property costs {{cost}}, but your current balance is only {{balance}}.",
+        "buy_property_success": "🎉 Congratulations! You have successfully purchased *{{name}}* for {{cost}}."
+    },
+    "property_catalog": {
+        "empty": "The property catalog is currently empty.",
+        "title": "*🏬 Cosmos Property Catalog*\n\n",
+        "usage": "_Use the \"buy\" command to purchase a property._"
+    },
+    "inventory": {
+        "title": "*📦 Cosmos Inventory*\n\n",
+        "empty": "Your inventory is currently empty. Visit the shop using `.shop` to browse items!",
+        "items_count_one": "You have 1 item.",
+        "items_count_other": "You have {{count}} items.",
+        "items_title": "*Items & Equipment:*\n",
+        "properties_title": "*Owned Properties:*\n",
+        "other_assets_title": "*Other Assets:*\n",
+        "footer": "_Use `.shop` to buy more items or `.sell <property_name>` to liquidate properties._"
+    },
+    "property_sell": {
+        "specify_property": "Please specify the property name to sell. Format: /sell <property_name> <optional_negotiation>",
+        "not_owned": "You do not own a property named \"{{name}}\" or it is already pawned/sold.",
+        "definition_not_found": "Property definition not found for {{name}}.",
+        "negotiation_failed_fallback": "I am currently unable to negotiate. I will give you the standard base offer.",
+        "sold_title": "*🤝 Property Sold*\n\n",
+        "sold_name": "You sold *{{name}}*.\n",
+        "original_price": "Original Price: {{price}}\n",
+        "base_offer": "Base Offer: {{price}}\n",
+        "negotiated_price": "Negotiated Deal Price: {{price}}\n\n",
+        "broker_says": "*Broker says:* \"{{message}}\"",
+        "final_price": "Final Deal Price: {{price}}\n\n",
+        "negotiate_hint": "_You can negotiate the price by using: /sell {{name}} <your persuasion message>_"
+    },
+    "autodl": {
+        "invalid_platform": "❌ Invalid platform. Supported: tiktok, ig, pin, yt, tg, twitter, fb, threads, autodelete, all.",
+        "status_title": "*📋 Auto-Downloader Status*\n\n",
+        "all_success": "✅ Auto-download for all media platforms has been turned {{state}}.",
+        "save_failed": "❌ Failed to save auto-download settings.",
+        "autodelete_success": "✅ Auto-delete for downloaded media and links is now {{state}}.",
+        "platform_success": "✅ Auto-download for {{platform}} has been turned {{state}}."
+    },
+    "profile_photo": {
+        "target_not_found": "Could not determine the target user. Please quote a message, mention someone, or use the command directly.",
+        "fetch_failed": "Failed to fetch the profile photo. The user might have hidden it or does not have one.",
+        "processing": "Processing profile photo...",
+        "caption": "Profile photo (Auto-delete in 10s)",
+        "hidden_or_none": "The profile photo is hidden or does not exist.",
+        "error": "An error occurred while attempting to fetch the profile photo."
+    },
+    "quoted": {
+        "reply_required": "Please reply to a message that quotes another message.",
+        "too_old": "The originally quoted message is too old and no longer in the cache.",
+        "not_found": "Could not find a valid message to forward.",
+        "forward_failed": "Failed to forward message."
+    },
+    "stt": {
+        "quote_required": "Failed: Please quote a voice note first, then execute this command.",
+        "not_ptt": "Failed: The quoted message is not a push-to-talk voice note.",
+        "no_text": "Failed: No text detected from this voice note.",
+        "error": "Failed: An error occurred while transcribing the voice note."
+    },
+    "idcard": {
+        "duplicate": "You already possess a registered Virtual ID Card (NIK: {{nik}}). Duplicate registrations are not permitted. Fetching your card now...",
+        "active_in_progress": "You already have an active registration in progress. Please reply to the prompt or type *.cancel* to abort.",
+        "not_registered": "You do not possess a Virtual ID Card yet. Please register your identity first using the *.register-id* command.",
+        "fetching": "⏳ Fetching your Virtual ID Card...",
+        "generate_error": "An error occurred while generating your Virtual ID Card. Please try again later.",
+        "card_title": "Here is your Virtual ID Card.\n\n"
+    },
+    "offlineai": {
+        "activated": "🤖 *Offline AI Responder ACTIVATED*\n\nIncoming messages will now receive a casual AI reply while you are offline.\n\nType *.toggleofflineai* again to disable.",
+        "deactivated": "🔴 *Offline AI Responder DEACTIVATED*"
+    },
+    "autocorrection": {
+        "already_active": "⚠️ *Warning:* Auto-Correction is already ACTIVE in this chat! If you want to disable it, type *.stopautocorrection*.",
+        "activated": "✨ *Auto-Correction ACTIVATED* for this chat.\n\nSent messages will automatically be analyzed and corrected by OpenRouter AI if typos or misspoken words are detected.\n\nType *.stopautocorrection* (or *.autocorrect*) to disable.",
+        "not_active": "⚠️ *Warning:* Auto-Correction is not active in this chat.",
+        "deactivated": "🔴 *Auto-Correction DEACTIVATED* for this chat."
+    },
+    "tgadd": {
+        "specify_link": "Error: Please provide an invite link, a private post link, or a numeric chat id.",
+        "already_registered": "That chat is already registered in the database as \"{{title}}\".",
+        "save_failed": "Error: The chat was joined successfully, but it could not be saved to the database.",
+        "join_success": "Success: The dummy account has joined and registered \"{{title}}\". Private posts from that group can now be downloaded.",
+        "join_failed": "Error: The dummy account could not join using that invitation. It may have expired, been revoked, or the Telegram client may not be paired.",
+        "invalid_format": "Error: That does not look like a valid invite link, private post link, or numeric chat id. Private post links look like https://t.me/c/1234567890/15.",
+        "already_registered_id": "That chat ({{chatId}}) is already registered in the database.",
+        "register_success": "Success: Chat {{chatId}}{{title}} has been registered. Please ensure the dummy account is a member of that group."
+    },
+    "tgdel": {
+        "specify_id": "Error: Please provide the numeric chat id, for example .tgdel 1234567890. Use .tglist to see registered chats.",
+        "not_found": "Error: Chat {{chatId}} was not found in the registry.",
+        "success": "Success: Chat {{chatId}} has been removed from the registry and can no longer be proxied."
+    },
+    "tglist": {
+        "empty": "No private Telegram chats have been registered yet. Use .tgadd to register one.",
+        "title": "*Registered Private Telegram Chats ({{count}}):*\n\n"
     },
     "items": {
         "pedang_emas": {

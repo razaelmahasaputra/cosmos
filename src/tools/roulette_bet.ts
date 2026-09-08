@@ -24,34 +24,34 @@ const betTool: ToolModule = {
         const amount = parseCurrencyAmount(String(args.input || ''), user?.balance);
 
         if (amount === null || isNaN(amount) || amount < MIN_BET) {
-            return `❌ Minimum bet is ${formatRupiah(MIN_BET)}.`;
+            return ctx.t('games.roulette.min_bet', { min: formatRupiah(MIN_BET) });
         }
 
         if (amount > MAX_BET) {
-            return `❌ Maximum bet is ${formatRupiah(MAX_BET)}.`;
+            return ctx.t('games.roulette.max_bet', { max: formatRupiah(MAX_BET) });
         }
 
         const session = getSessionByChatId(jid);
         if (!session) {
-            return `❌ No active game session in this group.`;
+            return ctx.t('games.roulette.no_session');
         }
 
         if (session.status !== 'LOBBY') {
-            return `❌ Betting is closed. The game has already started.`;
+            return ctx.t('games.roulette.bet_closed');
         }
 
         const player = session.players.find((p) => p.userId === senderJid);
         if (!player) {
-            return `❌ You are not in this game session. Type .joingame ${session.sessionId} first.`;
+            return ctx.t('games.roulette.bet_not_in_room', { sessionId: session.sessionId });
         }
 
         if (player.betAmount > 0) {
-            return `❌ You have already placed a bet.`;
+            return ctx.t('games.roulette.bet_already_placed');
         }
 
         // Deduct from DB
         if (!user || Number(user.balance) < amount) {
-            return `❌ Insufficient balance. You have ${formatRupiah(user?.balance || 0)}.`;
+            return ctx.t('games.roulette.bet_insufficient', { balance: formatRupiah(user?.balance || 0) });
         }
 
         await prisma.user.update({
@@ -62,7 +62,11 @@ const betTool: ToolModule = {
         player.betAmount = amount;
         session.potAmount += amount;
 
-        return `💰 @${player.pushName} placed a bet of *${formatRupiah(amount)}*.\n📊 *Current Total Pot:* ${formatRupiah(session.potAmount)} (Waiting for other players...)`;
+        return ctx.t('games.roulette.bet_placed', {
+            player: player.pushName,
+            amount: formatRupiah(amount),
+            pot: formatRupiah(session.potAmount)
+        });
     }
 };
 
