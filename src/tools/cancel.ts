@@ -1,6 +1,7 @@
 import { ToolDefinition, ToolContext, ToolModule } from './types.js';
 import { getSenderJid } from '#/utils/casino.js';
 import { cancelActiveSession } from '#/utils/cancellationManager.js';
+import { getTranslator } from '#/utils/i18n.js';
 
 export const definition: ToolDefinition = {
     name: 'cancel',
@@ -21,9 +22,10 @@ export const definition: ToolDefinition = {
 };
 
 export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string | void> {
+    const t = ctx?.t || getTranslator('en');
     const senderJid = getSenderJid(ctx.msg, ctx.sock);
     if (!senderJid) {
-        return 'Could not determine your sender identity.';
+        return t('core.sender_identity_error');
     }
 
     const cancelled = await cancelActiveSession(senderJid, ctx.jid, ctx.sock, ctx.msg);
@@ -31,9 +33,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         return cancelled;
     }
 
-    return ctx.t
-        ? ctx.t('tools.cancel.no_active_session')
-        : 'You do not have any active operation or pending confirmation to cancel in this chat.';
+    return t('tools.cancel.no_active_session');
 }
 
 const cancelTool: ToolModule = {

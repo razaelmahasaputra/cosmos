@@ -3,6 +3,7 @@ import { getSessionByChatId, generateShells, getRandomItems } from '../utils/rou
 import { getSenderJid } from '../utils/casino.js';
 import { formatRupiah } from '../utils/currency.js';
 import { unregisterCancellableSession } from '../utils/cancellationManager.js';
+import { getTranslator } from '../utils/i18n.js';
 
 const startGameTool: ToolModule = {
     definition: {
@@ -11,31 +12,32 @@ const startGameTool: ToolModule = {
         category: 'Games'
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
+        const t = ctx?.t || getTranslator('en');
         const { msg, sock, jid } = ctx;
         const senderJid = getSenderJid(msg, sock);
 
         const session = getSessionByChatId(jid);
         if (!session) {
-            return ctx.t('games.roulette.no_session');
+            return t('games.roulette.no_session');
         }
 
         if (session.status !== 'LOBBY') {
-            return ctx.t('games.roulette.already_started');
+            return t('games.roulette.already_started');
         }
 
         if (session.players[0].userId !== senderJid) {
-            return ctx.t('games.roulette.creator_only_start');
+            return t('games.roulette.creator_only_start');
         }
 
         if (session.players.length < 2) {
-            return ctx.t('games.roulette.min_players');
+            return t('games.roulette.min_players');
         }
 
         // Check if all players have bet
         const nonBetters = session.players.filter((p) => p.betAmount === 0);
         if (nonBetters.length > 0) {
             const names = nonBetters.map((p) => `@${p.pushName}`).join(', ');
-            return ctx.t('games.roulette.non_betters', { names });
+            return t('games.roulette.non_betters', { names });
         }
 
         // Clear timeout
@@ -56,7 +58,7 @@ const startGameTool: ToolModule = {
             player.inventory.push(...getRandomItems(2));
         }
 
-        const startMsg = ctx.t('games.roulette.game_started_announcement', {
+        const startMsg = t('games.roulette.game_started_announcement', {
             count: session.players.length,
             pot: formatRupiah(session.potAmount)
         });
@@ -74,7 +76,7 @@ const startGameTool: ToolModule = {
                 ? firstPlayer.inventory.map((i) => i.replace('_', ' ')).join(', ')
                 : 'Empty';
 
-        const roundMsg = ctx.t('games.roulette.round_begins', {
+        const roundMsg = t('games.roulette.round_begins', {
             live: liveCount,
             blank: blankCount,
             total: session.shells.length,

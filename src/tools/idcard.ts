@@ -7,6 +7,7 @@ import {
     cancelRegistrationSession
 } from '#/utils/idCard.js';
 import { generateIdCardImage, fetchUserProfilePic } from '#/utils/imageProcessing.js';
+import { getTranslator } from '#/utils/i18n.js';
 
 export const definition: ToolDefinition = {
     name: 'idcard',
@@ -26,9 +27,10 @@ export const definition: ToolDefinition = {
 };
 
 export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string | void> {
+    const t = ctx?.t || getTranslator('en');
     const senderJid = getSenderJid(ctx.msg, ctx.sock);
     if (!senderJid) {
-        return 'Could not determine your sender identity.';
+        return t('core.sender_identity_error');
     }
 
     const rawText = (ctx.msg.message?.conversation || ctx.msg.message?.extendedTextMessage?.text || '').trim();
@@ -46,9 +48,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     if (isCancelCommand) {
         if (isUserRegistering(senderJid, ctx.jid)) {
             cancelRegistrationSession(senderJid);
-            return ctx.t('utilities.idcard.cancelled');
+            return t('utilities.idcard.cancelled');
         }
-        return ctx.t('utilities.idcard.no_active_session');
+        return t('utilities.idcard.no_active_session');
     }
 
     if (isRegisterCommand) {
@@ -57,7 +59,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             await ctx.sock.sendMessage(
                 ctx.jid,
                 {
-                    text: ctx.t('utilities.idcard.already_registered', { nik: existing.nik })
+                    text: t('utilities.idcard.already_registered', { nik: existing.nik })
                 },
                 { quoted: ctx.msg }
             );
@@ -68,7 +70,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     (ctx.msg.key.participant || ctx.msg.key.remoteJid) ?? senderJid
                 );
                 const imageBuffer = await generateIdCardImage(existing, pfp);
-                const caption = ctx.t('utilities.idcard.card_caption', {
+                const caption = t('utilities.idcard.card_caption', {
                     nik: existing.nik,
                     fullName: existing.fullName,
                     pob: existing.placeOfBirth,
@@ -90,10 +92,10 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         }
 
         if (isUserRegistering(senderJid, ctx.jid)) {
-            return ctx.t('utilities.idcard.active_in_progress');
+            return t('utilities.idcard.active_in_progress');
         }
 
-        const prompt = startRegistrationSession(senderJid, ctx.jid);
+        const prompt = startRegistrationSession(senderJid, ctx.jid, t);
         await ctx.sock.sendMessage(ctx.jid, { text: prompt }, { quoted: ctx.msg });
         return;
     }
@@ -101,17 +103,17 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     // Default: View existing ID Card
     const existing = await getIdCardByUser(senderJid);
     if (!existing) {
-        return ctx.t('utilities.idcard.not_registered');
+        return t('utilities.idcard.not_registered');
     }
 
     try {
-        await ctx.sock.sendMessage(ctx.jid, { text: ctx.t('utilities.idcard.fetching') }, { quoted: ctx.msg });
+        await ctx.sock.sendMessage(ctx.jid, { text: t('utilities.idcard.fetching') }, { quoted: ctx.msg });
         const pfp = await fetchUserProfilePic(
             ctx.sock,
             (ctx.msg.key.participant || ctx.msg.key.remoteJid) ?? senderJid
         );
         const imageBuffer = await generateIdCardImage(existing, pfp);
-        const caption = ctx.t('utilities.idcard.card_caption', {
+        const caption = t('utilities.idcard.card_caption', {
             nik: existing.nik,
             fullName: existing.fullName,
             pob: existing.placeOfBirth,
@@ -128,7 +130,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         await ctx.sock.sendMessage(ctx.jid, { image: imageBuffer, caption }, { quoted: ctx.msg });
     } catch (err) {
         console.error('[IdCard] Error viewing ID card:', err);
-        return ctx.t('utilities.idcard.generation_error');
+        return t('utilities.idcard.generation_error');
     }
 }
 

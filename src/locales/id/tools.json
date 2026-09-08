@@ -4,12 +4,19 @@
         "amount": "Saldo Anda saat ini: {{amount}}",
         "keep_playing": "Terus bermain dan klaim reward harian Anda!",
         "other_user": "@{{user}} saat ini memiliki {{amount}}.",
-        "no_account": "Anda belum memiliki akun. Gunakan .daily untuk memulai."
+        "no_account": "Anda belum memiliki akun. Gunakan .daily untuk memulai.",
+        "owner_only_other": "❌ Hanya pemilik bot yang dapat memeriksa saldo pengguna lain."
     },
     "daily": {
         "claimed": "Selamat! Anda telah mengklaim reward harian sebesar {{amount}}.",
         "new_balance": "Saldo baru Anda adalah *{{balance}}*.",
-        "cooldown": "Anda sudah mengklaim reward harian. Silakan coba lagi dalam {{remaining}}."
+        "cooldown": "Anda sudah mengklaim reward harian. Silakan coba lagi dalam {{remaining}}.",
+        "hours_one": "1 jam",
+        "hours_other": "{{count}} jam",
+        "minutes_one": "1 menit",
+        "minutes_other": "{{count}} menit",
+        "and": " dan ",
+        "less_than_minute": "kurang dari satu menit"
     },
     "setlang": {
         "usage": "Format tidak valid. Gunakan: .setlang <id|en>",
@@ -32,7 +39,12 @@
         "tip_categories": "*Tips:* Gunakan ```{{prefix}}``` untuk melihat semua kategori yang tersedia.",
         "category_not_found": "*Error:* Kategori '{{category}}' tidak ditemukan.\n\n*Kategori yang Tersedia:*\n{{available}}",
         "categories_title": "*Cosmos - KATEGORI PERINTAH*\n\n",
-        "tip_view_category": "*Tips:* Ketik ```{{prefix}} <kategori>``` untuk melihat perintah dalam kategori tersebut (contoh: ```{{prefix}} media```)."
+        "tip_view_category": "*Tips:* Ketik ```{{prefix}} <kategori>``` untuk melihat perintah dalam kategori tersebut (contoh: ```{{prefix}} media```).",
+        "owner_badge": " *(Pemilik)*",
+        "alias_label": "Alias: ",
+        "desc_label": "Deskripsi: ",
+        "category_tip": "*Tips:* Gunakan ```{{prefix}}``` untuk melihat semua kategori yang tersedia.",
+        "categories_tip": "*Tips:* Ketik ```{{prefix}} <kategori>``` untuk melihat perintah dalam kategori tersebut (contoh: ```{{prefix}} media```)."
     },
     "cancel": {
         "no_active_session": "Tidak ada sesi interaktif aktif yang dapat dibatalkan.",
@@ -78,7 +90,8 @@
         "title": "🏦 *Statistik House Vault*",
         "income": "📈 *Total Pemasukan:* {{income}}",
         "payout": "📉 *Total Pengeluaran:* {{payout}}",
-        "net_profit": "💰 *Keuntungan Bersih:* {{profit}}"
+        "net_profit": "💰 *Keuntungan Bersih:* {{profit}}",
+        "quote": "🏦 Sistem Brankas Global Cosmos"
     },
     "top": {
         "group_only": "❌ Perintah ini hanya dapat digunakan dalam obrolan grup. Gunakan .topglobal untuk melihat papan peringkat global.",
@@ -87,7 +100,9 @@
         "empty": "📭 Belum ada pemain yang terdaftar dalam database untuk papan peringkat ini.",
         "roulette_row": "{{badge}} *{{rank}}.* @{{user}} - *{{wins}}* Menang / *{{rounds}}* Pertandingan\n",
         "casino_row": "{{badge}} *{{rank}}.* @{{user}}{{name}} - *{{balance}}*\n",
-        "failed": "❌ Gagal mengambil papan peringkat grup."
+        "failed": "❌ Gagal mengambil papan peringkat grup.",
+        "roulette_entry": "{{icon}} *{{rank}}.* @{{user}} - *{{wins}}* Menang / *{{matches}}* Pertandingan",
+        "casino_entry": "{{icon}} *{{rank}}.* @{{user}}{{name}} - *{{balance}}"
     },
     "topglobal": {
         "roulette_title": "🌍 *Papan Peringkat Roulette Global* 🌍\n\n",
@@ -95,7 +110,9 @@
         "empty": "Tidak ada pemain yang ditemukan.",
         "roulette_row": "{{badge}} *{{rank}}.* @{{user}} - *{{wins}}* Menang / *{{rounds}}* Pertandingan\n",
         "casino_row": "{{badge}} *{{rank}}.* @{{user}}{{name}} - *{{balance}}*\n",
-        "footer": "\n_Diperbarui setiap 5 menit._"
+        "footer": "\n_Diperbarui setiap 5 menit._",
+        "roulette_entry": "{{icon}} *{{rank}}.* @{{user}} - *{{wins}}* Menang / *{{matches}}* Pertandingan",
+        "casino_entry": "{{icon}} *{{rank}}.* @{{user}}{{name}} - *{{balance}}"
     },
     "apply_job": {
         "specify_role": "Silakan tentukan posisi pekerjaan yang Anda lamar (contoh: .apply-job Developer).",
@@ -108,10 +125,13 @@
     "market": {
         "unavailable": "Data ekonomi saat ini tidak tersedia.",
         "title": "*📊 Status Pasar Terkini*\n\n",
-        "multiplier": "• *Pengali:* {{multiplier}}x\n",
+        "multiplier": "• *Pengali:* {{multiplier}}x",
         "updated": "• *Terakhir Diperbarui:* {{date}}\n",
         "rate": "• *Kurs Saat Ini:* {{rate}} / USD\n\n",
-        "tip": "_Tips: Jual jarahan Anda sekarang saat inflasi tinggi! 💰_"
+        "tip": "_Tips: Jual jarahan Anda sekarang saat inflasi tinggi! 💰_",
+        "status_title": "*📊 Status Pasar Terkini*",
+        "last_updated": "• *Terakhir Diperbarui:* {{date}}",
+        "current_rate": "• *Kurs Saat Ini:* {{rate}} / USD"
     },
     "shop": {
         "title": "🏬 Toko Cosmos",
@@ -127,7 +147,17 @@
         "property_usage": "_Gunakan `.buy <nama_properti>` untuk membeli properti._",
         "no_items_category": "Item tidak ditemukan dalam kategori \"{{category}}\". Gunakan `.shop` untuk melihat kategori yang tersedia.",
         "items_title": "*🛍️ Toko Cosmos - {{title}}*\n\n",
-        "buy_hint": "_Untuk membeli item, gunakan: `.buy <short_id> [jumlah]`_"
+        "buy_hint": "_Untuk membeli item, gunakan: `.buy <short_id> [jumlah]`_",
+        "categories_title": "*🏬 Toko Cosmos - Kategori*",
+        "categories_select": "Pilih kategori untuk dijelajahi:",
+        "categories_items_view": "• `.shop items` _(Lihat semua item umum)_",
+        "categories_usage": "*Penggunaan:*\n• Ketik `.shop <kategori>` untuk melihat item dalam suatu kategori.\n• Ketik `.buy <short_id> [jumlah]` untuk membeli item.",
+        "properties_empty": "Katalog properti saat ini kosong.",
+        "properties_title": "*🏬 Katalog Properti Cosmos*\n\n",
+        "properties_buy_tip": "_Gunakan `.buy <nama_properti>` untuk membeli properti._",
+        "no_items": "Tidak ada item yang ditemukan dalam kategori \"{{category}}\". Gunakan `.shop` untuk melihat kategori yang tersedia.",
+        "header_title": "*🛍️ Toko Cosmos - {{title}}*",
+        "buy_tip": "_Untuk membeli item, gunakan: `.buy <short_id> [jumlah]`_"
     },
     "property_buy": {
         "specify_target": "Silakan tentukan item atau properti yang ingin Anda beli. Format: `.buy <short_id> [jumlah]`",
@@ -136,12 +166,19 @@
         "not_found": "Item atau properti \"{{target}}\" tidak ditemukan. Gunakan `.shop` untuk melihat item yang tersedia.",
         "already_owned": "Anda sudah memiliki *{{name}}*. Anda tidak dapat membeli properti yang sama lebih dari satu kali.",
         "insufficient_funds_property": "Saldo Anda tidak mencukupi untuk membeli {{name}}. Harga properti {{cost}}, saldo Anda: {{balance}}.",
-        "buy_property_success": "🎉 Selamat! Anda telah berhasil membeli *{{name}}* seharga {{cost}}."
+        "buy_property_success": "🎉 Selamat! Anda telah berhasil membeli *{{name}}* seharga {{cost}}.",
+        "specify_item": "Silakan tentukan item atau properti yang ingin Anda beli. Format: `.buy <short_id> [jumlah]`",
+        "insufficient_item_funds": "Saldo Anda tidak mencukupi untuk membeli {{quantity}}x *{{name}}*. Total biaya: {{cost}}, saldo Anda: {{balance}}.",
+        "item_success": "🎉 Pembelian berhasil! Anda membeli *{{quantity}}x {{name}}* seharga *{{cost}}*.\nSisa saldo: *{{balance}}*.",
+        "insufficient_prop_funds": "Saldo Anda tidak mencukupi untuk membeli {{name}}. Harga properti {{cost}}, saldo Anda: {{balance}}.",
+        "prop_success": "🎉 Selamat! Anda telah berhasil membeli *{{name}}* seharga {{cost}}.",
+        "db_error": "Terjadi kesalahan basis data saat memproses pembelian properti."
     },
     "property_catalog": {
         "empty": "Katalog properti saat ini kosong.",
         "title": "*🏬 Katalog Properti Cosmos*\n\n",
-        "usage": "_Gunakan perintah \"buy\" untuk membeli properti._"
+        "usage": "_Gunakan perintah \"buy\" untuk membeli properti._",
+        "buy_tip": "_Gunakan perintah \"buy\" untuk membeli properti._"
     },
     "inventory": {
         "title": "*📦 Inventaris Cosmos*\n\n",
@@ -151,7 +188,15 @@
         "items_title": "*Item & Perlengkapan:*\n",
         "properties_title": "*Properti yang Dimiliki:*\n",
         "other_assets_title": "*Aset Lainnya:*\n",
-        "footer": "_Gunakan `.shop` untuk membeli lebih banyak item atau `.sell <nama_properti>` untuk menjual properti._"
+        "footer": "_Gunakan `.shop` untuk membeli lebih banyak item atau `.sell <nama_properti>` untuk menjual properti._",
+        "items_header": "*Item & Perlengkapan:*",
+        "quantity_label": "   Jumlah: {{quantity}}",
+        "type_label": "   Tipe: {{type}}",
+        "properties_header": "*Properti yang Dimiliki:*",
+        "original_value_label": "   Nilai Asli: {{price}}",
+        "acquired_label": "   Diperoleh: {{date}}",
+        "other_assets_header": "*Aset Lainnya:*",
+        "footer_tip": "_Gunakan `.shop` untuk membeli lebih banyak item atau `.sell <nama_properti>` untuk melikuidasi properti._"
     },
     "property_sell": {
         "specify_property": "Silakan tentukan nama properti yang akan dijual. Format: /sell <nama_properti> <negosiasi_opsional>",
@@ -173,7 +218,8 @@
         "all_success": "✅ Auto-download untuk semua platform media telah di{{state}}kan.",
         "save_failed": "❌ Gagal menyimpan pengaturan auto-download.",
         "autodelete_success": "✅ Auto-delete untuk media dan tautan unduhan sekarang {{state}}.",
-        "platform_success": "✅ Auto-download untuk {{platform}} telah di{{state}}kan."
+        "platform_success": "✅ Auto-download untuk {{platform}} telah di{{state}}kan.",
+        "settings_title": "*⚙️ Pengaturan*"
     },
     "profile_photo": {
         "target_not_found": "Tidak dapat menentukan pengguna target. Silakan balas pesan, sebutkan seseorang, atau gunakan perintah secara langsung.",

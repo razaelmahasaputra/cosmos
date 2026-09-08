@@ -1,5 +1,6 @@
 import { playLyrics } from '#/utils/lyricsPlayer.js';
 import { ToolDefinition, ToolContext } from './types.js';
+import { getTranslator } from '#/utils/i18n.js';
 
 export const definition: ToolDefinition = {
     name: 'playlyrics',
@@ -21,9 +22,10 @@ export const definition: ToolDefinition = {
 };
 
 export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string> {
+    const t = ctx?.t || getTranslator('en');
     const query = args.query ? String(args.query).trim() : '';
     if (!query) {
-        return ctx.t('media.playlyrics.invalid_format');
+        return t('media.playlyrics.invalid_format');
     }
 
     let songName: string;
@@ -58,15 +60,15 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         if (!isNaN(val) && val > 0) {
             speedMultiplier = val;
         } else {
-            return ctx.t('media.playlyrics.multiplier_positive');
+            return t('media.playlyrics.multiplier_positive');
         }
     }
 
     try {
-        const result = await playLyrics(ctx.jid, ctx.sock, songName, speedMultiplier);
+        const result = await playLyrics(ctx.jid, ctx.sock, songName, speedMultiplier, t);
         return result;
     } catch (err) {
         console.error('Error in playlyrics tool:', err);
-        return ctx.t('media.playlyrics.playback_error');
+        return t('media.playlyrics.playback_error');
     }
 }

@@ -3,6 +3,7 @@ import { gameSessions, getSessionByChatId, handleElimination, nextTurn, checkRel
 import { getSenderJid, resolveId } from '../utils/casino.js';
 import { formatRupiah } from '../utils/currency.js';
 import { prisma } from '../db.js';
+import { getTranslator } from '../utils/i18n.js';
 
 const shootTool: ToolModule = {
     definition: {
@@ -18,6 +19,7 @@ const shootTool: ToolModule = {
         }
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
+        const t = ctx?.t || getTranslator('en');
         const { msg, sock, jid } = ctx;
         const senderJid = getSenderJid(msg, sock);
         const inputStr = String(args.input || '')
@@ -26,12 +28,12 @@ const shootTool: ToolModule = {
 
         const session = getSessionByChatId(jid);
         if (!session || session.status !== 'PLAYING') {
-            return ctx.t('games.roulette.no_session');
+            return t('games.roulette.no_session');
         }
 
         const currentPlayer = session.players[session.turnIndex];
         if (currentPlayer.userId !== senderJid) {
-            return ctx.t('games.roulette.not_your_turn');
+            return t('games.roulette.not_your_turn');
         }
 
         let targetId = '';
@@ -42,13 +44,13 @@ const shootTool: ToolModule = {
             if (mentionedJidList.length > 0) {
                 targetId = await resolveId(mentionedJidList[0], sock, msg.key.remoteJid);
             } else {
-                return ctx.t('games.roulette.specify_target');
+                return t('games.roulette.specify_target');
             }
         }
 
         const target = session.players.find((p) => p.userId === targetId);
         if (!target || target.hp <= 0) {
-            return ctx.t('games.roulette.invalid_target');
+            return t('games.roulette.invalid_target');
         }
 
         const currentShell = session.shells.pop(); // Remove front shell
@@ -59,7 +61,7 @@ const shootTool: ToolModule = {
         currentPlayer.handSawActive = false;
         session.lastActionAt = Date.now();
 
-        let outputMsg = ctx.t('games.roulette.aim_message', {
+        let outputMsg = t('games.roulette.aim_message', {
             shooter: currentPlayer.pushName,
             target: target.pushName
         });
@@ -70,26 +72,26 @@ const shootTool: ToolModule = {
         outputMsg = ''; // Reset for the result
 
         if (currentShell === 'LIVE') {
-            outputMsg += ctx.t('games.roulette.bang_live');
+            outputMsg += t('games.roulette.bang_live');
             target.hp -= damage;
 
             if (target.hp <= 0) {
                 targetEliminated = true;
-                outputMsg += handleElimination(session, target, ctx.t);
+                outputMsg += handleElimination(session, target, t);
             }
 
-            outputMsg += nextTurn(session, targetEliminated, ctx.t);
+            outputMsg += nextTurn(session, targetEliminated, t);
         } else {
-            outputMsg += ctx.t('games.roulette.click_blank', { target: target.pushName });
+            outputMsg += t('games.roulette.click_blank', { target: target.pushName });
 
             if (isSelfShoot) {
-                outputMsg += ctx.t('games.roulette.turn_continues_self');
+                outputMsg += t('games.roulette.turn_continues_self');
             } else {
-                outputMsg += nextTurn(session, false, ctx.t);
+                outputMsg += nextTurn(session, false, t);
             }
         }
 
-        outputMsg += ctx.t('games.roulette.remaining_shells', { count: session.shells.length });
+        outputMsg += t('games.roulette.remaining_shells', { count: session.shells.length });
 
         // Check game over
         const alivePlayers = session.players.filter((p) => p.hp > 0);
@@ -114,21 +116,21 @@ const shootTool: ToolModule = {
                 });
             }
 
-            outputMsg += ctx.t('games.roulette.game_over_winner', {
+            outputMsg += t('games.roulette.game_over_winner', {
                 winner: winner.pushName,
                 pot: formatRupiah(pot)
             });
 
             gameSessions.delete(session.sessionId);
         } else {
-            const reloadMsg = checkReloadShells(session, ctx.t);
+            const reloadMsg = checkReloadShells(session, t);
             if (reloadMsg) {
                 outputMsg += `\n${reloadMsg}`;
                 // After reload, we need to show the next turn info again because it might have gotten buried
                 const nextP = session.players[session.turnIndex];
                 const inventoryStr =
                     nextP.inventory.length > 0 ? nextP.inventory.map((i) => i.replace('_', ' ')).join(', ') : 'Empty';
-                outputMsg += ctx.t('games.roulette.turn_info', {
+                outputMsg += t('games.roulette.turn_info', {
                     player: nextP.pushName,
                     lives: `${'❤️'.repeat(nextP.hp)}${'🖤'.repeat(5 - nextP.hp)}`,
                     inventory: inventoryStr

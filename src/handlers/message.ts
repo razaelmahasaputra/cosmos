@@ -145,13 +145,17 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
             if (group?.language) {
                 chatLang = group.language.toLowerCase();
             }
-        } else if (senderJidDb) {
-            const user = await prisma.user.findUnique({ where: { id: senderJidDb } });
-            if (user?.language) {
-                chatLang = user.language.toLowerCase();
+        } else {
+            let user = senderJidDb
+                ? await prisma.user.findFirst({
+                      where: { OR: [{ id: senderJidDb }, { lid: senderJidDb }] }
+                  })
+                : null;
+            if (!user && senderLidDb && senderLidDb !== senderJidDb) {
+                user = await prisma.user.findFirst({
+                    where: { OR: [{ id: senderLidDb }, { lid: senderLidDb }] }
+                });
             }
-        } else if (senderLidDb) {
-            const user = await prisma.user.findUnique({ where: { lid: senderLidDb } });
             if (user?.language) {
                 chatLang = user.language.toLowerCase();
             }
@@ -216,7 +220,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
     // Check if sender is currently in an active ID Card registration flow in this chat
     if (senderRaw && !isQuotingCommand && isUserRegistering(senderRaw, jid)) {
         if (!trimmedText.startsWith('.')) {
-            const handled = await processRegistrationStep(sock, msg, senderRaw, jid, trimmedText);
+            const handled = await processRegistrationStep(sock, msg, senderRaw, jid, trimmedText, t);
             if (handled) return;
         }
     }

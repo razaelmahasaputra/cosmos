@@ -293,7 +293,11 @@ export function cancelRegistrationSession(userKey: string, remoteJid?: string): 
 /**
  * Starts a new registration session for a user.
  */
-export function startRegistrationSession(userKey: string, remoteJid: string): string {
+export function startRegistrationSession(
+    userKey: string,
+    remoteJid: string,
+    t?: (key: string, args?: Record<string, any>) => string
+): string {
     const cleaned = cleanId(userKey);
     registrationSessions.set(cleaned, {
         userKey: cleaned,
@@ -311,11 +315,13 @@ export function startRegistrationSession(userKey: string, remoteJid: string): st
         description: 'Virtual ID card registration',
         onCancel: async () => {
             registrationSessions.delete(cleaned);
-            return 'Virtual ID card registration has been cancelled.';
+            return t ? t('utilities.idcard.cancelled') : 'Virtual ID card registration has been cancelled.';
         }
     });
 
-    return "Welcome to the Cosmos Identity System. Let's create your virtual ID card. Please reply with your *Full Name*.\n\nType *.cancel* at any time to abort the registration.";
+    return t
+        ? t('utilities.idcard.welcome')
+        : "Welcome to the Cosmos Identity System. Let's create your virtual ID card. Please reply with your *Full Name*.\n\nType *.cancel* at any time to abort the registration.";
 }
 
 /**
@@ -521,7 +527,8 @@ export async function processRegistrationStep(
     msg: WAMessage,
     userKey: string,
     remoteJid: string,
-    input: string
+    input: string,
+    t?: (key: string, args?: Record<string, any>) => string
 ): Promise<boolean> {
     const session = findRegistrationSession(userKey);
     if (!session) return false;
@@ -547,7 +554,7 @@ export async function processRegistrationStep(
         cancelRegistrationSession(cleaned, remoteJid);
         await sock.sendMessage(
             remoteJid,
-            { text: 'Virtual ID card registration has been cancelled.' },
+            { text: t ? t('utilities.idcard.cancelled') : 'Virtual ID card registration has been cancelled.' },
             { quoted: msg }
         );
         return true;
@@ -559,7 +566,11 @@ export async function processRegistrationStep(
             if (trimmed.length < 2) {
                 await sock.sendMessage(
                     remoteJid,
-                    { text: 'Please provide a valid full name (at least 2 characters).' },
+                    {
+                        text: t
+                            ? t('utilities.idcard.step_name_min_length')
+                            : 'Please provide a valid full name (at least 2 characters).'
+                    },
                     { quoted: msg }
                 );
                 return true;
@@ -569,7 +580,9 @@ export async function processRegistrationStep(
             await sock.sendMessage(
                 remoteJid,
                 {
-                    text: 'Thank you. Now, please reply with your *Place and Date of Birth* (e.g., *Jakarta, 17-08-1990* or *Surabaya, 20 November 2002*).'
+                    text: t
+                        ? t('utilities.idcard.step_prompt_dob')
+                        : 'Thank you. Now, please reply with your *Place and Date of Birth* (e.g., *Jakarta, 17-08-1990* or *Surabaya, 20 November 2002*).'
                 },
                 { quoted: msg }
             );
@@ -583,7 +596,9 @@ export async function processRegistrationStep(
                 await sock.sendMessage(
                     remoteJid,
                     {
-                        text: 'Invalid format. Please reply with your *Place and Date of Birth* (e.g., *Jakarta, 17-08-1990* or *Surabaya, 20 November 2002*).'
+                        text: t
+                            ? t('utilities.idcard.step_dob_invalid')
+                            : 'Invalid format. Please reply with your *Place and Date of Birth* (e.g., *Jakarta, 17-08-1990* or *Surabaya, 20 November 2002*).'
                     },
                     { quoted: msg }
                 );
@@ -596,7 +611,11 @@ export async function processRegistrationStep(
 
             await sock.sendMessage(
                 remoteJid,
-                { text: 'Thank you. Please specify your *Gender* (e.g., Male / Female or Laki-laki / Perempuan).' },
+                {
+                    text: t
+                        ? t('utilities.idcard.step_prompt_gender')
+                        : 'Thank you. Please specify your *Gender* (e.g., Male / Female or Laki-laki / Perempuan).'
+                },
                 { quoted: msg }
             );
             return true;
@@ -615,7 +634,11 @@ export async function processRegistrationStep(
             if (!gender) {
                 await sock.sendMessage(
                     remoteJid,
-                    { text: 'Please specify a valid gender: *Male* (*Laki-laki*) or *Female* (*Perempuan*).' },
+                    {
+                        text: t
+                            ? t('utilities.idcard.step_gender_invalid')
+                            : 'Please specify a valid gender: *Male* (*Laki-laki*) or *Female* (*Perempuan*).'
+                    },
                     { quoted: msg }
                 );
                 return true;
@@ -626,7 +649,11 @@ export async function processRegistrationStep(
 
             await sock.sendMessage(
                 remoteJid,
-                { text: 'Thank you. Please reply with your *Address* (e.g., Jl. Merdeka No. 1).' },
+                {
+                    text: t
+                        ? t('utilities.idcard.step_prompt_address')
+                        : 'Thank you. Please reply with your *Address* (e.g., Jl. Merdeka No. 1).'
+                },
                 { quoted: msg }
             );
             return true;
@@ -637,7 +664,11 @@ export async function processRegistrationStep(
             if (trimmed.length < 3) {
                 await sock.sendMessage(
                     remoteJid,
-                    { text: 'Please provide a valid address (at least 3 characters).' },
+                    {
+                        text: t
+                            ? t('utilities.idcard.step_address_invalid')
+                            : 'Please provide a valid address (at least 3 characters).'
+                    },
                     { quoted: msg }
                 );
                 return true;
@@ -648,7 +679,9 @@ export async function processRegistrationStep(
             await sock.sendMessage(
                 remoteJid,
                 {
-                    text: 'Thank you. Please specify your *Religion* (e.g., Islam, Christian, Catholic, Hindu, Buddhist, Confucian).'
+                    text: t
+                        ? t('utilities.idcard.step_prompt_religion')
+                        : 'Thank you. Please specify your *Religion* (e.g., Islam, Christian, Catholic, Hindu, Buddhist, Confucian).'
                 },
                 { quoted: msg }
             );
@@ -660,7 +693,11 @@ export async function processRegistrationStep(
             if (trimmed.length < 2) {
                 await sock.sendMessage(
                     remoteJid,
-                    { text: 'Please provide a valid religion (at least 2 characters).' },
+                    {
+                        text: t
+                            ? t('utilities.idcard.step_religion_invalid')
+                            : 'Please provide a valid religion (at least 2 characters).'
+                    },
                     { quoted: msg }
                 );
                 return true;
@@ -671,7 +708,9 @@ export async function processRegistrationStep(
             await sock.sendMessage(
                 remoteJid,
                 {
-                    text: 'Thank you. Please specify your *Marital Status* (e.g., Single / Married or Belum Kawin / Kawin).'
+                    text: t
+                        ? t('utilities.idcard.step_prompt_marital')
+                        : 'Thank you. Please specify your *Marital Status* (e.g., Single / Married or Belum Kawin / Kawin).'
                 },
                 { quoted: msg }
             );
@@ -693,7 +732,11 @@ export async function processRegistrationStep(
             if (maritalStatus.length < 3) {
                 await sock.sendMessage(
                     remoteJid,
-                    { text: 'Please specify a valid marital status (e.g., Single / Married or Belum Kawin / Kawin).' },
+                    {
+                        text: t
+                            ? t('utilities.idcard.step_marital_invalid')
+                            : 'Please specify a valid marital status (e.g., Single / Married or Belum Kawin / Kawin).'
+                    },
                     { quoted: msg }
                 );
                 return true;
@@ -705,7 +748,9 @@ export async function processRegistrationStep(
             await sock.sendMessage(
                 remoteJid,
                 {
-                    text: 'Thank you. Please reply with your *Occupation* (e.g., Developer, Student, Entrepreneur).'
+                    text: t
+                        ? t('utilities.idcard.step_prompt_occupation')
+                        : 'Thank you. Please reply with your *Occupation* (e.g., Developer, Student, Entrepreneur).'
                 },
                 { quoted: msg }
             );
@@ -717,7 +762,11 @@ export async function processRegistrationStep(
             if (trimmed.length < 2) {
                 await sock.sendMessage(
                     remoteJid,
-                    { text: 'Please provide a valid occupation (at least 2 characters).' },
+                    {
+                        text: t
+                            ? t('utilities.idcard.step_occupation_invalid')
+                            : 'Please provide a valid occupation (at least 2 characters).'
+                    },
                     { quoted: msg }
                 );
                 return true;
@@ -729,7 +778,11 @@ export async function processRegistrationStep(
 
             await sock.sendMessage(
                 remoteJid,
-                { text: '⏳ All data collected successfully. Processing your virtual ID card...' },
+                {
+                    text: t
+                        ? t('utilities.idcard.processing_card')
+                        : '⏳ All data collected successfully. Processing your virtual ID card...'
+                },
                 { quoted: msg }
             );
 
@@ -758,14 +811,22 @@ export async function processRegistrationStep(
                 // Generate ID card image
                 const imageBuffer = await generateIdCardImage(saved, pfpBuffer);
 
-                const caption =
-                    `✅ Your Virtual ID Card has been successfully issued! You can now use this ID to apply for future banking loans or licenses.\n\n` +
-                    `*NIK:* ${saved.nik}\n` +
-                    `*Full Name:* ${saved.fullName}\n` +
-                    `*Date of Birth:* ${saved.dateOfBirth}\n` +
-                    `*Gender:* ${saved.gender}\n` +
-                    `*Citizenship:* ${saved.citizenship}\n` +
-                    `*Valid Until:* ${saved.validUntil}`;
+                const caption = t
+                    ? t('utilities.idcard.issued_caption', {
+                          nik: saved.nik,
+                          fullName: saved.fullName,
+                          dob: saved.dateOfBirth,
+                          gender: saved.gender,
+                          citizenship: saved.citizenship,
+                          validUntil: saved.validUntil
+                      })
+                    : `✅ Your Virtual ID Card has been successfully issued! You can now use this ID to apply for future banking loans or licenses.\n\n` +
+                      `*NIK:* ${saved.nik}\n` +
+                      `*Full Name:* ${saved.fullName}\n` +
+                      `*Date of Birth:* ${saved.dateOfBirth}\n` +
+                      `*Gender:* ${saved.gender}\n` +
+                      `*Citizenship:* ${saved.citizenship}\n` +
+                      `*Valid Until:* ${saved.validUntil}`;
 
                 await sock.sendMessage(remoteJid, { image: imageBuffer, caption }, { quoted: msg });
                 return true;
@@ -773,7 +834,11 @@ export async function processRegistrationStep(
                 console.error('[IdCard] Error generating final ID card:', err);
                 await sock.sendMessage(
                     remoteJid,
-                    { text: '❌ An error occurred while generating your Virtual ID Card. Please try again later.' },
+                    {
+                        text: t
+                            ? t('utilities.idcard.error_generating')
+                            : '❌ An error occurred while generating your Virtual ID Card. Please try again later.'
+                    },
                     { quoted: msg }
                 );
                 return true;

@@ -3,6 +3,7 @@ import { gameSessions, Player } from '../utils/roulette.js';
 import { getSenderJid, MIN_BET } from '../utils/casino.js';
 import { formatRupiah } from '../utils/currency.js';
 import { prisma } from '../db.js';
+import { getTranslator } from '../utils/i18n.js';
 
 const joinGameTool: ToolModule = {
     definition: {
@@ -18,6 +19,7 @@ const joinGameTool: ToolModule = {
         }
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
+        const t = ctx?.t || getTranslator('en');
         const { msg, sock } = ctx;
         const senderJid = getSenderJid(msg, sock);
         const sessionId = String(args.input || '')
@@ -25,20 +27,20 @@ const joinGameTool: ToolModule = {
             .toUpperCase();
 
         if (!sessionId) {
-            return ctx.t('games.roulette.session_id_required');
+            return t('games.roulette.session_id_required');
         }
 
         const session = gameSessions.get(sessionId);
         if (!session) {
-            return ctx.t('games.roulette.session_not_found');
+            return t('games.roulette.session_not_found');
         }
 
         if (session.status !== 'LOBBY') {
-            return ctx.t('games.roulette.already_started');
+            return t('games.roulette.already_started');
         }
 
         if (session.players.length >= 5) {
-            return ctx.t('games.roulette.room_full');
+            return t('games.roulette.room_full');
         }
 
         const user = await prisma.user.findFirst({
@@ -50,7 +52,7 @@ const joinGameTool: ToolModule = {
         const actualUserId = user ? user.id : senderJid;
 
         if (session.players.find((p) => p.userId === actualUserId || p.userId === senderJid)) {
-            return ctx.t('games.roulette.already_joined');
+            return t('games.roulette.already_joined');
         }
 
         const newPlayer: Player = {
@@ -85,7 +87,7 @@ const joinGameTool: ToolModule = {
         const numPlayers = session.players.length;
         const betters = session.players.filter((p) => p.betAmount > 0).length;
 
-        return ctx.t('games.roulette.joined_broadcast', {
+        return t('games.roulette.joined_broadcast', {
             player: newPlayer.pushName,
             count: numPlayers,
             players: playerList.trim(),

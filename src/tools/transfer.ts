@@ -3,6 +3,7 @@ import { prisma } from '../db.js';
 import { getSenderJid, resolveId, getUser } from '../utils/casino.js';
 import { formatRupiah, parseCurrencyAmount } from '../utils/currency.js';
 import { logTransaction } from '../utils/transactionLogger.js';
+import { getTranslator } from '../utils/i18n.js';
 
 const transferTool: ToolModule = {
     definition: {
@@ -19,6 +20,7 @@ const transferTool: ToolModule = {
         }
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
+        const t = ctx?.t || getTranslator('en');
         const { msg, sock } = ctx;
         const senderJid = getSenderJid(msg, sock);
 
@@ -29,13 +31,13 @@ const transferTool: ToolModule = {
         const targetJid = mentionedJidList.length > 0 ? mentionedJidList[0] : null;
 
         if (!targetJid) {
-            return ctx.t('tools.transfer.mention_required');
+            return t('tools.transfer.mention_required');
         }
 
         const cleanTargetJid = await resolveId(targetJid, sock, msg.key.remoteJid);
 
         if (cleanTargetJid === senderJid) {
-            return ctx.t('tools.transfer.self_transfer');
+            return t('tools.transfer.self_transfer');
         }
 
         let cleanedInputStr = String(args.input || '').trim();
@@ -47,11 +49,11 @@ const transferTool: ToolModule = {
         const amount = parseCurrencyAmount(cleanedInputStr, Number(user.balance));
 
         if (amount === null || amount <= 0) {
-            return ctx.t('tools.transfer.invalid_amount');
+            return t('tools.transfer.invalid_amount');
         }
 
         if (Number(user.balance) < amount) {
-            return ctx.t('tools.transfer.insufficient_balance', { balance: formatRupiah(user.balance) });
+            return t('tools.transfer.insufficient', { balance: formatRupiah(user.balance) });
         }
 
         // Anti-Miss: Transaction wrapper
@@ -81,7 +83,7 @@ const transferTool: ToolModule = {
             await sock.sendMessage(
                 msg.key.remoteJid!,
                 {
-                    text: ctx.t('tools.transfer.transfer_success', {
+                    text: t('tools.transfer.success', {
                         amount: formatRupiah(amount),
                         target: targetJid.split('@')[0],
                         remaining: formatRupiah(Number(user.balance) - amount)
@@ -91,7 +93,7 @@ const transferTool: ToolModule = {
                 { quoted: msg }
             );
         } catch (error: any) {
-            return ctx.t('tools.transfer.transfer_failed', { error: error.message });
+            return t('tools.transfer.failed', { error: error.message });
         }
     }
 };

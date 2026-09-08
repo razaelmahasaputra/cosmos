@@ -219,10 +219,11 @@ Important: Gunakan Native Function Calling API. DILARANG KERAS mengetik tag XML 
                         await sock.sendMessage(jid, { text: result }, { quoted: msg });
                     }
                 } catch (err: any) {
+                    const t = getTranslator(lang);
                     console.error(`[Offline AI Tool Error] ${funcName}:`, err);
                     await sock.sendMessage(
                         jid,
-                        { text: `Sorry, there was an error executing ${funcName}.` },
+                        { text: t('core.tool_execution_error', { tool: funcName }) },
                         { quoted: msg }
                     );
                 }

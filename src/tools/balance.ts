@@ -2,21 +2,21 @@ import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
 import { getSenderJid, resolveId, getUser } from '../utils/casino.js';
 import { formatRupiah } from '../utils/currency.js';
+import { getTranslator } from '../utils/i18n.js';
 
 const balanceTool: ToolModule = {
     definition: {
         name: 'balance',
-        aliases: ['uang'],
-        description: 'Check your current casino coin balance. Owner can check other users by mentioning them.',
+        aliases: ['bal', 'saldo'],
+        description: "Check your current casino coin balance or another user's balance.",
         category: 'Casino',
         parameters: {
             type: 'object',
-            properties: {
-                target: { type: 'string', description: 'Target user to check balance of (Optional, Owner only)' }
-            }
+            properties: {}
         }
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
+        const t = ctx?.t || getTranslator('en');
         const { msg, sock } = ctx;
         const senderJid = getSenderJid(msg, sock);
 
@@ -34,7 +34,7 @@ const balanceTool: ToolModule = {
             if (!isOwner) {
                 await sock.sendMessage(
                     msg.key.remoteJid!,
-                    { text: "❌ Only the bot owner can check other users' balances." },
+                    { text: t('tools.balance.owner_only_other') },
                     { quoted: msg }
                 );
                 return;
@@ -56,9 +56,9 @@ const balanceTool: ToolModule = {
             mentionArray = [targetJid];
         }
 
-        let text = `${ctx.t('tools.balance.title')}\n\n${ctx.t('tools.balance.amount', { amount: formatRupiah(user.balance) })}.\n${ctx.t('tools.balance.keep_playing')}`;
+        let text = `${t('tools.balance.title')}\n\n${t('tools.balance.amount', { amount: formatRupiah(user.balance) })}.\n${t('tools.balance.keep_playing')}`;
         if (isCheckingOther) {
-            text = `${ctx.t('tools.balance.title')}\n\n${ctx.t('tools.balance.other_user', { user: displayId, amount: formatRupiah(user.balance) })}`;
+            text = `${t('tools.balance.title')}\n\n${t('tools.balance.other_user', { user: displayId, amount: formatRupiah(user.balance) })}`;
         }
 
         await sock.sendMessage(

@@ -4,12 +4,19 @@
         "amount": "Your current balance is {{amount}}",
         "keep_playing": "Keep playing and claim your daily reward!",
         "other_user": "@{{user}} currently has {{amount}}.",
-        "no_account": "You don't have an account yet. Use .daily to start."
+        "no_account": "You don't have an account yet. Use .daily to start.",
+        "owner_only_other": "❌ Only the bot owner can check other users' balances."
     },
     "daily": {
         "claimed": "Congratulations! You have claimed your daily reward of {{amount}}.",
         "new_balance": "Your new balance is *{{balance}}*.",
-        "cooldown": "You have already claimed your daily reward. Please try again in {{remaining}}."
+        "cooldown": "You have already claimed your daily reward. Please try again in {{remaining}}.",
+        "hours_one": "1 hour",
+        "hours_other": "{{count}} hours",
+        "minutes_one": "1 minute",
+        "minutes_other": "{{count}} minutes",
+        "and": " and ",
+        "less_than_minute": "less than a minute"
     },
     "setlang": {
         "usage": "Invalid format. Use: .setlang <id|en>",
@@ -32,7 +39,12 @@
         "tip_categories": "*Tip:* Use ```{{prefix}}``` to see all available categories.",
         "category_not_found": "*Error:* Category '{{category}}' not found.\n\n*Available Categories:*\n{{available}}",
         "categories_title": "*Cosmos - COMMAND CATEGORIES*\n\n",
-        "tip_view_category": "*Tip:* Type ```{{prefix}} <category>``` to view the commands in that category (e.g. ```{{prefix}} media```)."
+        "tip_view_category": "*Tip:* Type ```{{prefix}} <category>``` to view the commands in that category (e.g. ```{{prefix}} media```).",
+        "owner_badge": " *(Owner)*",
+        "alias_label": "Alias: ",
+        "desc_label": "Desc: ",
+        "category_tip": "*Tip:* Use ```{{prefix}}``` to see all available categories.",
+        "categories_tip": "*Tip:* Type ```{{prefix}} <category>``` to view the commands in that category (e.g. ```{{prefix}} media```)."
     },
     "cancel": {
         "no_active_session": "You do not have any active operation or pending confirmation to cancel in this chat.",
@@ -78,7 +90,8 @@
         "title": "🏦 *House Vault Statistics*",
         "income": "📈 *Total Income:* {{income}}",
         "payout": "📉 *Total Payout:* {{payout}}",
-        "net_profit": "💰 *Net Profit:* {{profit}}"
+        "net_profit": "💰 *Net Profit:* {{profit}}",
+        "quote": "🏦 Cosmos Global Vault System"
     },
     "top": {
         "group_only": "❌ This command can only be used in a group chat. Use .topglobal to see the global leaderboard.",
@@ -87,7 +100,9 @@
         "empty": "📭 There are no players registered in the database for this leaderboard yet.",
         "roulette_row": "{{badge}} *{{rank}}.* @{{user}} - *{{wins}}* Wins / *{{rounds}}* Matches\n",
         "casino_row": "{{badge}} *{{rank}}.* @{{user}}{{name}} - *{{balance}}*\n",
-        "failed": "❌ Failed to fetch group leaderboard."
+        "failed": "❌ Failed to fetch group leaderboard.",
+        "roulette_entry": "{{icon}} *{{rank}}.* @{{user}} - *{{wins}}* Wins / *{{matches}}* Matches",
+        "casino_entry": "{{icon}} *{{rank}}.* @{{user}}{{name}} - *{{balance}}"
     },
     "topglobal": {
         "roulette_title": "🌍 *Global Roulette Leaderboard* 🌍\n\n",
@@ -95,7 +110,9 @@
         "empty": "No players found.",
         "roulette_row": "{{badge}} *{{rank}}.* @{{user}} - *{{wins}}* Wins / *{{rounds}}* Matches\n",
         "casino_row": "{{badge}} *{{rank}}.* @{{user}}{{name}} - *{{balance}}*\n",
-        "footer": "\n_Updated every 5 minutes._"
+        "footer": "\n_Updated every 5 minutes._",
+        "roulette_entry": "{{icon}} *{{rank}}.* @{{user}} - *{{wins}}* Wins / *{{matches}}* Matches",
+        "casino_entry": "{{icon}} *{{rank}}.* @{{user}}{{name}} - *{{balance}}"
     },
     "apply_job": {
         "specify_role": "Please specify the job position you are applying for (e.g., .apply-job Developer).",
@@ -108,10 +125,13 @@
     "market": {
         "unavailable": "Economy data is currently unavailable.",
         "title": "*📊 Current Market Status*\n\n",
-        "multiplier": "• *Multiplier:* {{multiplier}}x\n",
+        "multiplier": "• *Multiplier:* {{multiplier}}x",
         "updated": "• *Last Updated:* {{date}}\n",
         "rate": "• *Current Rate:* {{rate}} / USD\n\n",
-        "tip": "_Tip: Sell your loot now while inflation is high! 💰_"
+        "tip": "_Tip: Sell your loot now while inflation is high! 💰_",
+        "status_title": "*📊 Current Market Status*",
+        "last_updated": "• *Last Updated:* {{date}}",
+        "current_rate": "• *Current Rate:* {{rate}} / USD"
     },
     "shop": {
         "title": "🏬 Cosmos Shop",
@@ -127,7 +147,17 @@
         "property_usage": "_Use `.buy <property_name>` to purchase a property._",
         "no_items_category": "No items found in category \"{{category}}\". Use `.shop` to see available categories.",
         "items_title": "*🛍️ Cosmos Shop - {{title}}*\n\n",
-        "buy_hint": "_To purchase an item, use: `.buy <short_id> [quantity]`_"
+        "buy_hint": "_To purchase an item, use: `.buy <short_id> [quantity]`_",
+        "categories_title": "*🏬 Cosmos Shop - Categories*",
+        "categories_select": "Select a category to browse:",
+        "categories_items_view": "• `.shop items` _(View all general items)_",
+        "categories_usage": "*Usage:*\n• Type `.shop <category>` to view items in a category.\n• Type `.buy <short_id> [quantity]` to purchase an item.",
+        "properties_empty": "The property catalog is currently empty.",
+        "properties_title": "*🏬 Cosmos Property Catalog*\n\n",
+        "properties_buy_tip": "_Use `.buy <property_name>` to purchase a property._",
+        "no_items": "No items found in category \"{{category}}\". Use `.shop` to see available categories.",
+        "header_title": "*🛍️ Cosmos Shop - {{title}}*",
+        "buy_tip": "_To purchase an item, use: `.buy <short_id> [quantity]`_"
     },
     "property_buy": {
         "specify_target": "Please specify the item or property you want to buy. Format: `.buy <short_id> [quantity]`",
@@ -136,12 +166,19 @@
         "not_found": "Item or property \"{{target}}\" was not found. Use `.shop` to view available items.",
         "already_owned": "You already own *{{name}}*. You cannot purchase the same property more than once.",
         "insufficient_funds_property": "You do not have enough funds to purchase {{name}}. The property costs {{cost}}, but your current balance is only {{balance}}.",
-        "buy_property_success": "🎉 Congratulations! You have successfully purchased *{{name}}* for {{cost}}."
+        "buy_property_success": "🎉 Congratulations! You have successfully purchased *{{name}}* for {{cost}}.",
+        "specify_item": "Please specify the item or property you want to buy. Format: `.buy <short_id> [quantity]`",
+        "insufficient_item_funds": "You do not have enough funds to purchase {{quantity}}x *{{name}}*. Total cost: {{cost}}, but your current balance is {{balance}}.",
+        "item_success": "🎉 Purchase successful! You bought *{{quantity}}x {{name}}* for *{{cost}}*.\nRemaining balance: *{{balance}}*.",
+        "insufficient_prop_funds": "You do not have enough funds to purchase {{name}}. The property costs {{cost}}, but your current balance is only {{balance}}.",
+        "prop_success": "🎉 Congratulations! You have successfully purchased *{{name}}* for {{cost}}.",
+        "db_error": "A database error occurred while processing the property purchase."
     },
     "property_catalog": {
         "empty": "The property catalog is currently empty.",
         "title": "*🏬 Cosmos Property Catalog*\n\n",
-        "usage": "_Use the \"buy\" command to purchase a property._"
+        "usage": "_Use the \"buy\" command to purchase a property._",
+        "buy_tip": "_Use the \"buy\" command to purchase a property._"
     },
     "inventory": {
         "title": "*📦 Cosmos Inventory*\n\n",
@@ -151,7 +188,15 @@
         "items_title": "*Items & Equipment:*\n",
         "properties_title": "*Owned Properties:*\n",
         "other_assets_title": "*Other Assets:*\n",
-        "footer": "_Use `.shop` to buy more items or `.sell <property_name>` to liquidate properties._"
+        "footer": "_Use `.shop` to buy more items or `.sell <property_name>` to liquidate properties._",
+        "items_header": "*Items & Equipment:*",
+        "quantity_label": "   Quantity: {{quantity}}",
+        "type_label": "   Type: {{type}}",
+        "properties_header": "*Owned Properties:*",
+        "original_value_label": "   Original Value: {{price}}",
+        "acquired_label": "   Acquired: {{date}}",
+        "other_assets_header": "*Other Assets:*",
+        "footer_tip": "_Use `.shop` to buy more items or `.sell <property_name>` to liquidate properties._"
     },
     "property_sell": {
         "specify_property": "Please specify the property name to sell. Format: /sell <property_name> <optional_negotiation>",
@@ -173,7 +218,8 @@
         "all_success": "✅ Auto-download for all media platforms has been turned {{state}}.",
         "save_failed": "❌ Failed to save auto-download settings.",
         "autodelete_success": "✅ Auto-delete for downloaded media and links is now {{state}}.",
-        "platform_success": "✅ Auto-download for {{platform}} has been turned {{state}}."
+        "platform_success": "✅ Auto-download for {{platform}} has been turned {{state}}.",
+        "settings_title": "*⚙️ Settings*"
     },
     "profile_photo": {
         "target_not_found": "Could not determine the target user. Please quote a message, mention someone, or use the command directly.",

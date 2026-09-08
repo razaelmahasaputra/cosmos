@@ -3,6 +3,7 @@ import { gameSessions, generateSessionId, Player } from '../utils/roulette.js';
 import { getSenderJid } from '../utils/casino.js';
 import { prisma } from '../db.js';
 import { registerCancellableSession, unregisterCancellableSession } from '../utils/cancellationManager.js';
+import { getTranslator } from '../utils/i18n.js';
 
 const createGameTool: ToolModule = {
     definition: {
@@ -11,13 +12,14 @@ const createGameTool: ToolModule = {
         category: 'Games'
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
+        const t = ctx?.t || getTranslator('en');
         const { msg, sock, jid } = ctx;
         const senderJid = getSenderJid(msg, sock);
 
         // Check if there is already a game in this group
         for (const session of gameSessions.values()) {
             if (session.chatId === jid) {
-                return ctx.t('games.roulette.already_ongoing', { sessionId: session.sessionId });
+                return t('games.roulette.already_ongoing', { sessionId: session.sessionId });
             }
         }
 
@@ -28,7 +30,7 @@ const createGameTool: ToolModule = {
                 unregisterCancellableSession(`roulette_${sessionId}`);
                 gameSessions.delete(sessionId);
                 await sock.sendMessage(jid, {
-                    text: ctx.t('games.roulette.cancelled_timeout')
+                    text: t('games.roulette.cancelled_timeout')
                 });
             }
         }, 30000);
@@ -83,12 +85,12 @@ const createGameTool: ToolModule = {
                             }
                         }
                     }
-                    return ctx.t('games.roulette.cancelled_host', { sessionId });
+                    return t('games.roulette.cancelled_host', { sessionId });
                 }
             }
         });
 
-        return ctx.t('games.roulette.lobby_created', { creator: creator.pushName, sessionId });
+        return t('games.roulette.lobby_created', { creator: creator.pushName, sessionId });
     }
 };
 

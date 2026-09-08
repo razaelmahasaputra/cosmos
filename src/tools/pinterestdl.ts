@@ -316,7 +316,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     document: { url: filepath },
                     mimetype: isVideo ? 'video/mp4' : 'image/jpeg',
                     fileName: `Pinterest_${timestamp}_${i}${ext}`,
-                    caption: `Document version`,
+                    caption: ctx.t ? ctx.t('media.pinterestdl.document_version') : 'Document version',
                     mentions: senderJid ? [senderJid] : undefined,
                     contextInfo: { isForwarded: true, forwardingScore: 1 }
                 },

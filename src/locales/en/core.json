@@ -13,5 +13,6 @@
     "admin_or_owner": "This command can only be used by group admins or the bot owner.",
     "owner_only_private": "This command can only be used by the bot owner in private chats.",
     "not_in_group": "This command can only be used in a group chat.",
-    "sender_identity_error": "Could not determine your sender identity."
+    "sender_identity_error": "Could not determine your sender identity.",
+    "tool_execution_error": "Sorry, there was an error executing {{tool}}."
 }
