@@ -1,0 +1,19 @@
+{
+    "ytdl": {
+        "invalid_url": "URL YouTube yang diberikan tidak valid.",
+        "downloading": "Mengunduh media dari YouTube...",
+        "success": "Media berhasil diunduh.",
+        "failed": "Gagal mengunduh media dari YouTube: {{error}}"
+    },
+    "tiktokdl": {
+        "invalid_url": "URL TikTok yang diberikan tidak valid.",
+        "downloading": "Mengunduh video TikTok...",
+        "failed": "Gagal mengunduh video TikTok: {{error}}"
+    },
+    "sticker": {
+        "reply_media": "Balas gambar atau video dengan .sticker untuk membuat stiker.",
+        "processing": "Memproses stiker...",
+        "success": "Stiker berhasil dibuat!",
+        "failed": "Gagal membuat stiker: {{error}}"
+    }
+}

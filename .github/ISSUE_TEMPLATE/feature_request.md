@@ -1,7 +1,7 @@
 ---
 name: Feature request
 about: Suggest an idea for a new feature or command for Cosmos
-title: "[FEATURE] "
+title: '[FEATURE] '
 labels: enhancement
 assignees: ''
 ---

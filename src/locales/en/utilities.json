@@ -1,0 +1,26 @@
+{
+    "idcard": {
+        "prompt_name": "Please enter your Full Name:",
+        "prompt_pob": "Please enter your Place of Birth:",
+        "prompt_dob": "Please enter your Date of Birth (DD-MM-YYYY):",
+        "prompt_gender": "Please choose Gender (Male / Female):",
+        "prompt_address": "Please enter your Address:",
+        "prompt_religion": "Please enter your Religion:",
+        "prompt_marital": "Please enter your Marital Status:",
+        "prompt_occupation": "Please enter your Occupation:",
+        "registration_complete": "Virtual ID Card registration completed successfully!",
+        "cancelled": "Virtual ID Card registration has been cancelled."
+    },
+    "autosticker": {
+        "enabled": "Auto Sticker has been enabled for this chat.",
+        "disabled": "Auto Sticker has been disabled for this chat."
+    },
+    "autodl": {
+        "enabled": "Auto Downloader has been enabled for {{platform}}.",
+        "disabled": "Auto Downloader has been disabled for {{platform}}."
+    },
+    "cancellation": {
+        "session_cancelled": "Session '{{feature}}' has been cancelled.",
+        "refund": "Bet amount of {{amount}} has been refunded to your balance."
+    }
+}

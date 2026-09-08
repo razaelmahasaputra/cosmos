@@ -1,0 +1,30 @@
+{
+    "coinflip": {
+        "usage": "Format tidak valid. Gunakan: .coinflip <heads|tails> <taruhan>",
+        "won": "Koin mendarat pada {{result}}! Anda menang {{amount}}!",
+        "lost": "Koin mendarat pada {{result}}. Anda kalah {{amount}}.",
+        "min_bet": "Taruhan minimal adalah {{min}}.",
+        "insufficient": "Saldo Anda tidak mencukupi untuk memasang taruhan ini."
+    },
+    "dice": {
+        "usage": "Format tidak valid. Gunakan: .dice <taruhan>",
+        "won": "Dadu Anda: {{player}}, Dadu Bot: {{bot}}. Anda menang {{amount}}!",
+        "lost": "Dadu Anda: {{player}}, Dadu Bot: {{bot}}. Anda kalah {{amount}}.",
+        "draw": "Dadu Anda: {{player}}, Dadu Bot: {{bot}}. Seri! Taruhan Anda dikembalikan."
+    },
+    "slot": {
+        "usage": "Format tidak valid. Gunakan: .slot <taruhan>",
+        "spinning": "🎰 Memutar mesin slot...",
+        "jackpot": "JACKPOT! 🎉 Anda memenangkan {{amount}}!",
+        "win": "Menang! 💵 Anda memenangkan {{amount}}!",
+        "lost": "Anda kalah. Coba lagi lain waktu!"
+    },
+    "roulette": {
+        "bullet_count": "Peluru terpasang: {{count}}/6",
+        "game_created": "Lobby Buckshot Roulette dibuat oleh @{{creator}}! Ketik .roulette join untuk bergabung.",
+        "game_started": "Permainan dimulai! Giliran @{{player}}.",
+        "shoot_live": "DOR! 💥 Peluru asli! @{{victim}} terkena tembakan.",
+        "shoot_blank": "*KLIK!* 💨 Peluru kosong. @{{shooter}} selamat!",
+        "game_over": "Permainan berakhir! Pemenang: @{{winner}} dengan hadiah {{prize}}!"
+    }
+}

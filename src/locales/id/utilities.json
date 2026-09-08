@@ -1,0 +1,26 @@
+{
+    "idcard": {
+        "prompt_name": "Silakan masukkan Nama Lengkap Anda:",
+        "prompt_pob": "Silakan masukkan Tempat Lahir:",
+        "prompt_dob": "Silakan masukkan Tanggal Lahir (HH-BB-TTTT):",
+        "prompt_gender": "Silakan pilih Jenis Kelamin (Laki-laki / Perempuan):",
+        "prompt_address": "Silakan masukkan Alamat:",
+        "prompt_religion": "Silakan masukkan Agama:",
+        "prompt_marital": "Silakan masukkan Status Perkawinan:",
+        "prompt_occupation": "Silakan masukkan Pekerjaan:",
+        "registration_complete": "Pendaftaran KTP Virtual berhasil!",
+        "cancelled": "Pendaftaran KTP Virtual telah dibatalkan."
+    },
+    "autosticker": {
+        "enabled": "Fitur Auto Sticker telah diaktifkan untuk obrolan ini.",
+        "disabled": "Fitur Auto Sticker telah dinonaktifkan untuk obrolan ini."
+    },
+    "autodl": {
+        "enabled": "Fitur Auto Downloader telah diaktifkan untuk {{platform}}.",
+        "disabled": "Fitur Auto Downloader telah dinonaktifkan untuk {{platform}}."
+    },
+    "cancellation": {
+        "session_cancelled": "Sesi '{{feature}}' telah dibatalkan.",
+        "refund": "Taruhan sebesar {{amount}} telah dikembalikan ke saldo Anda."
+    }
+}

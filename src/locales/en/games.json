@@ -1,0 +1,30 @@
+{
+    "coinflip": {
+        "usage": "Invalid format. Use: .coinflip <heads|tails> <bet>",
+        "won": "Coin landed on {{result}}! You won {{amount}}!",
+        "lost": "Coin landed on {{result}}. You lost {{amount}}.",
+        "min_bet": "Minimum bet is {{min}}.",
+        "insufficient": "Insufficient balance for this bet."
+    },
+    "dice": {
+        "usage": "Invalid format. Use: .dice <bet>",
+        "won": "Your dice: {{player}}, Bot dice: {{bot}}. You won {{amount}}!",
+        "lost": "Your dice: {{player}}, Bot dice: {{bot}}. You lost {{amount}}.",
+        "draw": "Your dice: {{player}}, Bot dice: {{bot}}. Draw! Your bet has been refunded."
+    },
+    "slot": {
+        "usage": "Invalid format. Use: .slot <bet>",
+        "spinning": "🎰 Spinning the slot machine...",
+        "jackpot": "JACKPOT! 🎉 You won {{amount}}!",
+        "win": "Winner! 💵 You won {{amount}}!",
+        "lost": "You lost. Better luck next time!"
+    },
+    "roulette": {
+        "bullet_count": "Bullets loaded: {{count}}/6",
+        "game_created": "Buckshot Roulette lobby created by @{{creator}}! Type .roulette join to participate.",
+        "game_started": "Game started! It is now @{{player}}'s turn.",
+        "shoot_live": "BANG! 💥 Live round! @{{victim}} took damage.",
+        "shoot_blank": "*CLICK!* 💨 Blank round. @{{shooter}} survived!",
+        "game_over": "Game over! Winner: @{{winner}} with a prize of {{prize}}!"
+    }
+}

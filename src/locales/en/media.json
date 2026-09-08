@@ -1,0 +1,19 @@
+{
+    "ytdl": {
+        "invalid_url": "Invalid YouTube URL provided.",
+        "downloading": "Downloading media from YouTube...",
+        "success": "Media downloaded successfully.",
+        "failed": "Failed to download media from YouTube: {{error}}"
+    },
+    "tiktokdl": {
+        "invalid_url": "Invalid TikTok URL provided.",
+        "downloading": "Downloading TikTok video...",
+        "failed": "Failed to download TikTok video: {{error}}"
+    },
+    "sticker": {
+        "reply_media": "Reply to an image or video with .sticker to create a sticker.",
+        "processing": "Processing sticker...",
+        "success": "Sticker created successfully!",
+        "failed": "Failed to create sticker: {{error}}"
+    }
+}

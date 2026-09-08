@@ -46,7 +46,7 @@ const coinflipTool: ToolModule = {
         }
 
         if (!guess) {
-            return `❌ Please specify your guess (heads/tails). Example: .coinflip heads 1.000.000`;
+            return `❌ ${ctx.t('games.coinflip.usage')}`;
         }
 
         // Remove the guess word to parse the bet
@@ -54,7 +54,7 @@ const coinflipTool: ToolModule = {
         const bet = parseBet(betStr, Number(user.balance));
 
         if (bet === null) {
-            return `❌ Invalid bet amount. Minimum bet is ${formatRupiah(MIN_BET)}.`;
+            return `❌ ${ctx.t('games.coinflip.min_bet', { min: formatRupiah(MIN_BET) })}`;
         }
 
         // Coinflip probabilities: 30% win, 70% lose
@@ -68,8 +68,8 @@ const coinflipTool: ToolModule = {
         const flippedEmoji = flipped === 'heads' ? '🦅 (Heads)' : '🪙 (Tails)';
 
         const winMsg = result.isWin
-            ? `🎉 *You Win!* You earned *${formatRupiah(result.winAmount)}*!`
-            : `💀 *You Lose!* You lost *${formatRupiah(bet)}*.`;
+            ? `🎉 ${ctx.t('games.coinflip.won', { result: flippedEmoji, amount: formatRupiah(result.winAmount) })}`
+            : `💀 ${ctx.t('games.coinflip.lost', { result: flippedEmoji, amount: formatRupiah(bet) })}`;
 
         const text =
             `🪙 *COINFLIP* 🪙\n\n` +

@@ -18,8 +18,14 @@ model WhatsAppAuth {
   updated_at DateTime @default(now()) @updatedAt
 }
 
+enum Language {
+  ID
+  EN
+}
+
 model WhitelistedGroup {
-  jid String @id
+  jid      String   @id
+  language Language @default(ID)
 }
 
 model TelegramPrivateChat {
@@ -80,6 +86,7 @@ model User {
   lid            String?   @unique // Local Identifier (LID)
   pushName       String? // Display Name / Nama Profil WhatsApp
   username       String?   @unique // Username baru WhatsApp (contoh: razael123)
+  language       Language  @default(ID)
   balance        BigInt    @default(10000) // Starterpack 10,000 Rp
   lastDailyClaim DateTime?
   lastGambleAt   DateTime? // Cooldown permanen per user untuk minigame

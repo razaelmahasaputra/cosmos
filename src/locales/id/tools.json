@@ -1,0 +1,67 @@
+{
+    "balance": {
+        "title": "💰 Saldo",
+        "amount": "Saldo Anda saat ini: {{amount}}",
+        "no_account": "Anda belum memiliki akun. Gunakan .daily untuk memulai."
+    },
+    "daily": {
+        "claimed": "Selamat! Anda telah mengklaim reward harian sebesar {{amount}}.",
+        "cooldown": "Anda sudah mengklaim reward harian. Silakan coba lagi dalam {{remaining}}."
+    },
+    "setlang": {
+        "usage": "Format tidak valid. Gunakan: .setlang <id|en>",
+        "success": "Bahasa Anda telah diubah ke {{language}}.",
+        "unsupported": "Bahasa '{{lang}}' tidak didukung. Bahasa yang didukung: {{supported}}"
+    },
+    "setgrouplang": {
+        "usage": "Format tidak valid. Gunakan: .setgrouplang <id|en>",
+        "success": "Bahasa grup telah diubah ke {{language}}.",
+        "unsupported": "Bahasa '{{lang}}' tidak didukung. Bahasa yang didukung: {{supported}}",
+        "admin_only": "Hanya admin grup atau pemilik bot yang dapat mengubah bahasa grup."
+    },
+    "help": {
+        "title": "📜 Menu Bantuan Cosmos",
+        "description": "Berikut adalah daftar perintah yang tersedia:",
+        "command_not_found": "Perintah '{{command}}' tidak ditemukan."
+    },
+    "cancel": {
+        "no_active_session": "Tidak ada sesi interaktif aktif yang dapat dibatalkan.",
+        "success": "Sesi aktif berhasil dibatalkan."
+    },
+    "addbalance": {
+        "usage": "Format tidak valid. Gunakan: .addbalance <user> <jumlah>",
+        "success": "Berhasil menambahkan {{amount}} ke saldo pengguna."
+    },
+    "transfer": {
+        "usage": "Format tidak valid. Gunakan: .transfer <user> <jumlah>",
+        "insufficient": "Saldo Anda tidak mencukupi untuk melakukan transfer ini.",
+        "success": "Berhasil mentransfer {{amount}} ke @{{target}}.",
+        "self_transfer": "Anda tidak dapat mentransfer saldo ke diri sendiri."
+    },
+    "inventory": {
+        "title": "🎒 Inventaris Anda",
+        "empty": "Inventaris Anda masih kosong.",
+        "items_count_one": "Anda memiliki 1 item.",
+        "items_count_other": "Anda memiliki {{count}} item."
+    },
+    "shop": {
+        "title": "🏬 Toko Cosmos",
+        "category_title": "🏬 Kategori Toko Cosmos",
+        "select_category": "Pilih kategori untuk melihat:",
+        "item_not_found": "Item tidak ditemukan dalam katalog toko.",
+        "buy_success": "Berhasil membeli {{item}} seharga {{price}}.",
+        "insufficient_funds": "Saldo Anda tidak mencukupi untuk membeli item ini."
+    },
+    "system_info": {
+        "title": "🖥️ Informasi Sistem Cosmos",
+        "uptime": "Waktu Aktif: {{uptime}}",
+        "memory": "Penggunaan Memori: {{memory}}",
+        "platform": "Platform: {{platform}}"
+    },
+    "items": {
+        "pedang_emas": {
+            "name": "Pedang Emas",
+            "description": "Pedang emas yang kuat"
+        }
+    }
+}

@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { isGroupWhitelisted } from '#/db.js';
 import { addMessageToHistory, getConversationContext } from '#/utils/aiHistory.js';
 import toolsHandler from '#/tools/handler.js';
+import { getTranslator } from '#/utils/i18n.js';
 
 dotenv.config();
 
@@ -38,7 +39,8 @@ export async function handleOfflineAiResponder(
     sock: WASocket,
     msg: WAMessage,
     jid: string,
-    text: string
+    text: string,
+    lang: string = 'id'
 ): Promise<boolean> {
     if (!isGlobalOfflineAiEnabled) return false;
 
@@ -148,6 +150,12 @@ export async function handleOfflineAiResponder(
             }
         }
 
+        const languageMap: Record<string, string> = {
+            id: 'Indonesian',
+            en: 'English'
+        };
+        const targetLangName = languageMap[lang] || 'Indonesian';
+
         const systemPrompt = `You are Sara, a helpful, friendly female AI assistant managing the WhatsApp account of the owner, who is currently offline.
 Engage in casual conversation with the contacts while they wait for the owner to come back online.
 You have access to several tools and features. If the user asks to use a feature (like becoming a bot, pairing their number, generating sticker, etc.), use the corresponding tool.
@@ -156,7 +164,12 @@ Keep your responses friendly, casual, and natural. Do not mention that you are a
 [Owner's Contact Info Context]
 ${ownerContextStr}
 
-CRITICAL INSTRUCTION: Always reply in the exact same language that the contact is using (e.g., if they speak Indonesian, reply in Indonesian; if they speak Spanish, reply in Spanish).
+CRITICAL INSTRUCTION: Always respond in ${targetLangName}.
+${
+    lang === 'id'
+        ? 'Gunakan Rupiah (Rp) untuk mata uang dan format Indonesia untuk angka dan tanggal.'
+        : 'Use Rupiah (Rp) for currency and Indonesian number/date formatting (required by business logic).'
+}
 Important: Gunakan Native Function Calling API. DILARANG KERAS mengetik tag XML seperti <function=...> secara manual di dalam teks balasan Anda! Return ONLY the text you want to send when not calling a tool.`;
 
         const groq = getGroqClient();
@@ -197,7 +210,8 @@ Important: Gunakan Native Function Calling API. DILARANG KERAS mengetik tag XML 
                 const args = JSON.parse(toolCall.function.arguments || '{}');
 
                 try {
-                    const ctx = { sock, msg, jid };
+                    const t = getTranslator(lang);
+                    const ctx = { sock, msg, jid, t };
                     console.log('Offline AI executing tool', { jid, funcName, args });
                     const result = await toolsHandler.execute(funcName, args, ctx);
 

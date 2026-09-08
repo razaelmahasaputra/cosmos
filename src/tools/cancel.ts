@@ -31,7 +31,9 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         return cancelled;
     }
 
-    return 'You do not have any active operation or pending confirmation to cancel in this chat.';
+    return ctx.t
+        ? ctx.t('tools.cancel.no_active_session')
+        : 'You do not have any active operation or pending confirmation to cancel in this chat.';
 }
 
 const cancelTool: ToolModule = {

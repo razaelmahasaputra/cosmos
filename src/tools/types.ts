@@ -18,6 +18,7 @@ export interface ToolContext {
     sock: WASocket;
     msg: WAMessage;
     jid: string;
+    t: (key: string, args?: Record<string, any>) => string;
 }
 
 export interface ToolModule {

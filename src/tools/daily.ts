@@ -47,7 +47,7 @@ const dailyTool: ToolModule = {
                 await sock.sendMessage(
                     msg.key.remoteJid!,
                     {
-                        text: `⏳ You have already claimed your daily reward.\nPlease wait ${timeString} before claiming again.`
+                        text: `⏳ ${ctx.t('tools.daily.cooldown', { remaining: timeString })}`
                     },
                     { quoted: msg }
                 );
@@ -68,7 +68,7 @@ const dailyTool: ToolModule = {
         await sock.sendMessage(
             msg.key.remoteJid!,
             {
-                text: `🎉 *Daily Reward Claimed!*\n\nYou have received *${formatRupiah(reward)}*.\nYour new balance is *${formatRupiah(updatedUser.balance)}*.`
+                text: `🎉 ${ctx.t('tools.daily.claimed', { amount: formatRupiah(reward) })}\nYour new balance is *${formatRupiah(updatedUser.balance)}*.`
             },
             { quoted: msg }
         );

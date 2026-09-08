@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
 import { ToolModule, ToolContext } from './types.js';
+import { getTranslator } from '../utils/i18n.js';
 
 class ToolsHandler {
     private tools = new Map<string, ToolModule>();
@@ -105,6 +106,9 @@ class ToolsHandler {
     async execute(nameOrAlias: string, args: Record<string, any>, ctx: ToolContext): Promise<any> {
         const tool = this.getTool(nameOrAlias);
         if (!tool) throw new Error(`Tool not found: ${nameOrAlias}`);
+        if (!ctx.t) {
+            ctx.t = getTranslator('id');
+        }
         return await tool.execute(args, ctx);
     }
 }

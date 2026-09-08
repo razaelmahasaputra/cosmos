@@ -1,0 +1,67 @@
+{
+    "balance": {
+        "title": "💰 Balance",
+        "amount": "Your current balance is {{amount}}",
+        "no_account": "You don't have an account yet. Use .daily to start."
+    },
+    "daily": {
+        "claimed": "Congratulations! You have claimed your daily reward of {{amount}}.",
+        "cooldown": "You have already claimed your daily reward. Please try again in {{remaining}}."
+    },
+    "setlang": {
+        "usage": "Invalid format. Use: .setlang <id|en>",
+        "success": "Your language has been updated to {{language}}.",
+        "unsupported": "Language '{{lang}}' is not supported. Supported languages: {{supported}}"
+    },
+    "setgrouplang": {
+        "usage": "Invalid format. Use: .setgrouplang <id|en>",
+        "success": "Group language has been updated to {{language}}.",
+        "unsupported": "Language '{{lang}}' is not supported. Supported languages: {{supported}}",
+        "admin_only": "Only group admins or the bot owner can change the group language."
+    },
+    "help": {
+        "title": "📜 Cosmos Help Menu",
+        "description": "Here is the list of available commands:",
+        "command_not_found": "Command '{{command}}' not found."
+    },
+    "cancel": {
+        "no_active_session": "You do not have any active operation or pending confirmation to cancel in this chat.",
+        "success": "Active session has been cancelled."
+    },
+    "addbalance": {
+        "usage": "Invalid format. Use: .addbalance <user> <amount>",
+        "success": "Successfully added {{amount}} to the user's balance."
+    },
+    "transfer": {
+        "usage": "Invalid format. Use: .transfer <user> <amount>",
+        "insufficient": "Insufficient balance to complete the transfer.",
+        "success": "Successfully transferred {{amount}} to @{{target}}.",
+        "self_transfer": "You cannot transfer balance to yourself."
+    },
+    "inventory": {
+        "title": "🎒 Your Inventory",
+        "empty": "Your inventory is currently empty.",
+        "items_count_one": "You have 1 item.",
+        "items_count_other": "You have {{count}} items."
+    },
+    "shop": {
+        "title": "🏬 Cosmos Shop",
+        "category_title": "🏬 Cosmos Shop - Categories",
+        "select_category": "Select a category to browse:",
+        "item_not_found": "Item not found in the shop catalog.",
+        "buy_success": "Successfully purchased {{item}} for {{price}}.",
+        "insufficient_funds": "Insufficient balance to purchase this item."
+    },
+    "system_info": {
+        "title": "🖥️ Cosmos System Information",
+        "uptime": "Uptime: {{uptime}}",
+        "memory": "Memory Usage: {{memory}}",
+        "platform": "Platform: {{platform}}"
+    },
+    "items": {
+        "pedang_emas": {
+            "name": "Golden Sword",
+            "description": "A powerful golden sword"
+        }
+    }
+}

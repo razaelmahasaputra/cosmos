@@ -9,6 +9,7 @@ import { handleOfflineAiResponder } from '#/utils/offlineAi.js';
 import { isUserRegistering, processRegistrationStep } from '#/utils/idCard.js';
 import { formatMentions } from '#/utils/casino.js';
 import { hasCancellableSession, cancelActiveSession } from '#/utils/cancellationManager.js';
+import { getTranslator } from '#/utils/i18n.js';
 
 function getUnwrappedMessage(m: any): any {
     if (!m) return null;
@@ -136,6 +137,26 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         (botRawLid !== null && senderRaw === botRawLid) ||
         (ownerNumber !== null && senderRaw === ownerNumber);
 
+    // Resolve chat language preference
+    let chatLang = 'id';
+    try {
+        if (jid.endsWith('@g.us')) {
+            const group = await prisma.whitelistedGroup.findUnique({ where: { jid } });
+            if (group?.language) {
+                chatLang = group.language.toLowerCase();
+            }
+        } else if (senderJidDb) {
+            const user = await prisma.user.findUnique({ where: { id: senderJidDb } });
+            if (user?.language) {
+                chatLang = user.language.toLowerCase();
+            }
+        }
+    } catch {
+        /* fallback to id */
+    }
+
+    const t = getTranslator(chatLang);
+
     const trimmedText = text.trim();
 
     // Check if it's a bare number replying to a play search result
@@ -206,23 +227,19 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
 
         if (commandName === '.addgroup' || commandName === '.addwhitelist') {
             if (!isOwner) {
-                await sock.sendMessage(
-                    jid,
-                    { text: 'This command can only be used by the bot owner.' },
-                    { quoted: msg }
-                );
+                await sock.sendMessage(jid, { text: t('core.owner_only') }, { quoted: msg });
                 return;
             }
             console.log('Command executed', { command: '.addgroup', jid });
             if (!jid.endsWith('@g.us')) {
-                await sock.sendMessage(jid, { text: 'This command can only be executed within a group.' });
+                await sock.sendMessage(jid, { text: t('core.group_only') });
                 return;
             }
             const success = await addGroup(jid);
             if (success) {
-                await sock.sendMessage(jid, { text: 'Group successfully added to the whitelist!' });
+                await sock.sendMessage(jid, { text: t('core.group_add_success') });
             } else {
-                await sock.sendMessage(jid, { text: 'Failed to add group to the database.' });
+                await sock.sendMessage(jid, { text: t('core.group_add_failed') });
             }
             return;
         }
@@ -232,11 +249,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
             // Check owner permission constraints
             const isOwnerOnly = tool.definition?.owner === true;
             if (isOwnerOnly && !isOwner) {
-                await sock.sendMessage(
-                    jid,
-                    { text: 'This command can only be used by the bot owner.' },
-                    { quoted: msg }
-                );
+                await sock.sendMessage(jid, { text: t('core.owner_only') }, { quoted: msg });
                 return;
             }
 
@@ -322,7 +335,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
             }
 
             await sock.sendPresenceUpdate('composing', jid);
-            const result = await toolsHandler.execute(commandName, args, { sock, msg, jid });
+            const result = await toolsHandler.execute(commandName, args, { sock, msg, jid, t });
             if (result && typeof result === 'string' && result.trim().length > 0) {
                 const matches = result.match(/@(\d+)/g);
                 const mentions = matches ? formatMentions(matches.map((m) => m.substring(1))) : [];
@@ -334,7 +347,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
 
     // Offline AI Responder
     if (!isOwner) {
-        const handled = await handleOfflineAiResponder(sock, msg, jid, text);
+        const handled = await handleOfflineAiResponder(sock, msg, jid, text, chatLang);
         if (handled) return;
     }
 
@@ -400,7 +413,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         console.log('[Message Handler] Auto sticker executing for jid:', jid);
 
         await sock.sendPresenceUpdate('composing', jid);
-        const result = await toolsHandler.execute('sticker_maker', {}, { sock, msg, jid });
+        const result = await toolsHandler.execute('sticker_maker', {}, { sock, msg, jid, t });
         if (result && typeof result === 'string') {
             if (result.startsWith('Failed') || result.startsWith('Error') || result.startsWith('Gagal')) {
                 await sock.sendMessage(jid, { text: result }, { quoted: msg });
