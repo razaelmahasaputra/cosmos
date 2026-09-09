@@ -63,8 +63,8 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     return (
         `${t('tools.system_info.title')}\n\n` +
         `${t('tools.system_info.latency', { latency: latencyStr })}\n` +
-        `${t('tools.system_info.os', { os: os.type(), release: os.release() })}\n` +
-        `${t('tools.system_info.cpu', { cpu: cpuModel, arch: cpuArch })}\n` +
+        `${t('tools.system_info.os', { type: os.type(), release: os.release() })}\n` +
+        `${t('tools.system_info.cpu', { model: cpuModel, arch: cpuArch })}\n` +
         `${t('tools.system_info.ram', { used: usedMem, total: totalMem, free: freeMem })}\n` +
         `${t('tools.system_info.server_uptime', { uptime: systemUptime })}\n` +
         `${t('tools.system_info.bot_uptime', { uptime: botUptime })}\n` +
