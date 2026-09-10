@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cosmos — Your Universe, In One Chat</title>
+<meta name="description" content="Cosmos is a feature-rich WhatsApp bot with a living economy, jobs, item shops, and more — powered by real IDR exchange rates." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css?v=2" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
+</head>
+<body>
+
+<!-- ============ NAVBAR ============ -->
+<header class="nav" id="nav">
+  <div class="container nav-inner">
+    <a href="#top" class="logo"><span class="logo-star">✦</span> Cosmos</a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#features">Features</a>
+      <a href="#jobs">Jobs</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#changelog">Changelog</a>
+      <a href="#docs">Docs</a>
+    </nav>
+    <div class="nav-right">
+      <a href="https://wa.me/6281234567890?text=Hi%20Cosmos!%20I%20want%20to%20add%20you%20to%20my%20group." target="_blank" rel="noopener" class="btn btn-primary btn-sm">Add to WhatsApp</a>
+      <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#features">Features</a>
+    <a href="#jobs">Jobs</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#changelog">Changelog</a>
+    <a href="#docs">Docs</a>
+    <a href="https://wa.me/6281234567890" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Add to WhatsApp</a>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="top">
+  <canvas id="starfield"></canvas>
+  <div class="hero-glow hero-glow-a"></div>
+  <div class="hero-glow hero-glow-b"></div>
+  <div class="container hero-inner">
+    <div class="hero-copy reveal">
+      <div class="badge-pill"><span class="pulse-dot"></span> ✦ Now with Economy System &amp; Jobs</div>
+      <h1>Your Universe,<br /><span class="grad">In One Chat.</span></h1>
+      <p class="subtitle">Cosmos is a feature-rich WhatsApp bot with a living economy, jobs, item shops, and more — powered by real IDR exchange rates.</p>
+      <div class="cta-row">
+        <a href="https://wa.me/6281234567890?text=Hi%20Cosmos!%20I%20want%20to%20add%20you%20to%20my%20group." target="_blank" rel="noopener" class="btn btn-primary btn-glow">Add to WhatsApp</a>
+        <a href="#jobs" class="btn btn-ghost">View Demo</a>
+      </div>
+      <p class="social-proof">Trusted by <strong>500+ groups</strong> · <strong>10,000+ users</strong></p>
+      <div class="hero-stats">
+        <div><strong id="statGroups">500+</strong><span>groups</span></div>
+        <div><strong>10k+</strong><span>users</span></div>
+        <div><strong>6+</strong><span>jobs</span></div>
+      </div>
+    </div>
+    <div class="hero-visual reveal">
+      <div class="phone-wrap" id="phoneTilt">
+        <div class="phone-glow"></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="chat-header">
+              <div class="chat-avatar">✦</div>
+              <div><strong>Cosmos Bot</strong><small>● online</small></div>
+            </div>
+            <div class="chat-body">
+              <div class="bubble out">.work</div>
+              <div class="bubble in">
+                <div class="report-title">✓ Work Report</div>
+                <div class="report-row"><span>Job</span><b>Office Work</b></div>
+                <div class="report-row"><span>Earned</span><b class="green">Rp250.000</b></div>
+                <div class="report-row"><span>Next shift</span><b>24 hours</b></div>
+                <div class="report-row"><span>Balance</span><b>Rp1.250.000</b></div>
+              </div>
+              <div class="bubble out">.job list</div>
+            </div>
+            <div class="chat-input"><span>Type a message…</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section class="section" id="features">
+  <div class="container">
+    <p class="section-label reveal">Why Cosmos</p>
+    <h2 class="reveal">Everything your group chat<br />was missing.</h2>
+    <p class="section-sub reveal">A living virtual world — jobs, shops, inflation and identity — all inside WhatsApp.</p>
+    <div class="grid features-grid">
+      <div class="card reveal"><div class="icon">💼</div><h3>Job System</h3><p>6 jobs with dynamic IDR-based salaries. Daily shifts, gig work &amp; weekly dividends.</p><a href="#jobs" class="card-link">Explore jobs →</a></div>
+      <div class="card reveal"><div class="icon">🏪</div><h3>Item Shop</h3><p>Buy Pickaxes, MacBooks &amp; licenses that unlock higher-paying career paths.</p></div>
+      <div class="card reveal"><div class="icon">📈</div><h3>Live Economy</h3><p>Salaries fluctuate with real USD/IDR rates via <code>EconomyMultiplier</code>.</p></div>
+      <div class="card reveal"><div class="icon">🪪</div><h3>Virtual ID Card</h3><p>Required for all economy actions. No ID, no work — fair and bot-proof.</p></div>
+      <div class="card reveal"><div class="icon">🤝</div><h3>Sub-Bot Pairing</h3><p>Run multiple bots under one subscription. Shared DB, zero duplicate cost.</p><a href="#subbots" class="card-link">How pairing works →</a></div>
+      <div class="card reveal"><div class="icon">📋</div><h3>Changelog</h3><p>Always up-to-date feature history, auto-pulled from GitHub Releases.</p><a href="#changelog" class="card-link">What's new →</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ JOBS (from ISSUE.md) ============ -->
+<section class="section section-alt" id="jobs">
+  <div class="container">
+    <p class="section-label reveal">Job &amp; Salary System</p>
+    <h2 class="reveal">Work hard. Earn real<br />(virtual) Rupiah.</h2>
+    <p class="section-sub reveal">A non-gambling way to earn balance. Pick a career, grab the required item, and <code>.work</code> your shift. Payouts scale with the live economy.</p>
+
+    <div class="id-banner reveal">
+      <span class="id-icon">🪪</span>
+      <div><strong>Global Requirement — Virtual ID Card</strong><p>All jobs strictly require a registered virtual <code>IdCard</code>. Users without one cannot apply or work.</p></div>
+    </div>
+
+    <div class="grid jobs-grid" id="jobsGrid"><!-- rendered by JS --></div>
+
+    <!-- Economy playground -->
+    <div class="economy-box reveal">
+      <div class="economy-text">
+        <h3>📈 Dynamic salary calculation</h3>
+        <p><code>Final Salary = Base Salary × EconomyMultiplier</code></p>
+        <p class="muted">The multiplier is updated from the <code>ExchangeRateLog</code> (EODHD USD/IDR feed). Base salaries can be defined in USD and converted on the fly. All outputs use <code>formatRupiah</code> → <code>Rp50.000</code>.</p>
+        <label class="slider-label">EconomyMultiplier: <strong id="multVal">1.00×</strong></label>
+        <input type="range" id="multSlider" min="50" max="250" value="100" />
+        <p class="muted small">Drag to simulate inflation / deflation. Job cards above update live.</p>
+      </div>
+      <div class="economy-demo">
+        <div class="demo-title">Try it — Formal English reply</div>
+        <div class="demo-chat mono" id="demoReply">You have successfully completed your shift as a Taxi Driver and earned Rp133.333.</div>
+        <div class="demo-row">
+          <select id="demoJob">
+            <option>Coal Miner</option><option>Iron Miner</option><option>Gold Miner</option><option>Diamond Miner</option>
+            <option selected>Office Work</option><option>Taxi Driving</option><option>Cooking</option><option>Gojek</option><option>Entrepreneurship</option>
+          </select>
+          <button class="btn btn-primary btn-sm" id="demoWork">.work</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRICING ============ -->
+<section class="section" id="pricing">
+  <div class="container">
+    <p class="section-label reveal">Pricing</p>
+    <h2 class="reveal">Pick your orbit.</h2>
+    <p class="section-sub reveal">Full economy features on every tier. Upgrade for more groups and sub-bots.</p>
+    <div class="grid pricing-grid">
+      <div class="card price reveal">
+        <h3>Free</h3>
+        <p class="price-num">Rp0<small>/month</small></p>
+        <ul class="check-list">
+          <li><b>5</b> groups</li><li><b>2</b> sub-bots</li>
+          <li class="yes">Full economy features</li><li class="yes">Live IDR economy</li>
+          <li>Low-level priority support</li><li class="no">Custom prefix</li><li class="no">Early access</li>
+        </ul>
+        <a href="https://wa.me/6281234567890" class="btn btn-ghost btn-block" target="_blank" rel="noopener">Get Started</a>
+      </div>
+      <div class="card price featured reveal">
+        <div class="popular">Most Popular</div>
+        <h3>Subsidized</h3>
+        <p class="price-num">Rp10.000<small>/month</small></p>
+        <ul class="check-list">
+          <li><b>10</b> groups</li><li><b>5</b> sub-bots</li>
+          <li class="yes">Full economy features</li><li class="yes">Live IDR economy</li>
+          <li>Medium-level priority support</li><li class="yes">Custom prefix</li><li class="no">Early access</li>
+        </ul>
+        <a href="https://wa.me/6281234567890?text=I%20want%20Cosmos%20Subsidized" class="btn btn-primary btn-block btn-glow" target="_blank" rel="noopener">Subscribe</a>
+      </div>
+      <div class="card price partner reveal">
+        <h3>Partner</h3>
+        <p class="price-num">Rp32.000<small>/month</small></p>
+        <ul class="check-list">
+          <li><b>25</b> groups</li><li><b>12</b> sub-bots</li>
+          <li class="yes">Full economy features</li><li class="yes">Live IDR economy</li>
+          <li>High-level priority support</li><li class="yes">Custom prefix</li><li class="yes">Early access to updates</li>
+        </ul>
+        <a href="https://wa.me/6281234567890?text=I%20want%20to%20become%20a%20Cosmos%20Partner" class="btn btn-partner btn-block" target="_blank" rel="noopener">Become a Partner</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SUB-BOT PAIRING ============ -->
+<section class="section section-alt" id="subbots">
+  <div class="container subbot-grid">
+    <div class="reveal">
+      <p class="section-label">Multi-Bot Architecture</p>
+      <h2>One Subscription.<br />Multiple Bots.</h2>
+      <p class="section-sub left">Pair secondary WhatsApp numbers as sub-bots under your primary Cosmos account. All bots share the same group economy, user database, and subscription — no duplicate costs.</p>
+      <ul class="check-list">
+        <li class="yes">Shared economy &amp; user database</li>
+        <li class="yes">Centralized admin control</li>
+        <li class="yes">Independent bot prefixes per number</li>
+        <li class="yes">Sub-bots inherit primary's subscription tier</li>
+      </ul>
+      <a href="https://wa.me/6281234567890?text=How%20do%20I%20pair%20a%20sub-bot?" class="btn btn-primary" target="_blank" rel="noopener">Pair a Sub-Bot</a>
+    </div>
+    <div class="reveal">
+      <div class="diagram card">
+        <svg viewBox="0 0 360 220" class="topo" aria-hidden="true">
+          <line x1="180" y1="62" x2="80" y2="150" class="link" />
+          <line x1="180" y1="62" x2="280" y2="150" class="link" />
+          <g class="node primary"><circle cx="180" cy="48" r="26"/><text x="180" y="53" text-anchor="middle">✦</text></g>
+          <g class="node sub"><circle cx="80" cy="160" r="22"/><text x="80" y="165" text-anchor="middle">✦</text></g>
+          <g class="node sub"><circle cx="280" cy="160" r="22"/><text x="280" y="165" text-anchor="middle">✦</text></g>
+          <text x="180" y="22" text-anchor="middle" class="svg-label">Primary Bot</text>
+          <text x="80" y="196" text-anchor="middle" class="svg-label">Sub-Bot A</text>
+          <text x="280" y="196" text-anchor="middle" class="svg-label">Sub-Bot B</text>
+        </svg>
+        <p class="muted small center">Shared: Economy DB · User records · Subscription</p>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="stepper reveal">
+      <div class="step"><span>1</span><div><strong>Add Primary Bot</strong><p>Add the main number to your group.</p></div></div>
+      <div class="step"><span>2</span><div><strong>Register Number</strong><p>Whitelist it via bot command — no dashboard needed.</p></div></div>
+      <div class="step"><span>3</span><div><strong>Link Sub-Bot</strong><p>Confirm the secondary number via OTP.</p></div></div>
+      <div class="step"><span>4</span><div><strong>Done!</strong><p>Both bots are live and in sync.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DOCS / COMMANDS ============ -->
+<section class="section" id="docs">
+  <div class="container narrow">
+    <p class="section-label reveal">Docs</p>
+    <h2 class="reveal">Command reference.</h2>
+    <p class="section-sub reveal">Persisted with Prisma. All currency via <code>formatRupiah</code>, all replies in Formal English.</p>
+    <div class="doc-card card reveal">
+      <div class="doc-row"><code>.job list</code><p>Displays available jobs, base salaries and cooldowns.</p></div>
+      <div class="doc-row"><code>.job join &lt;JobName|JobID&gt;</code><p>Apply or switch jobs — e.g. <code>.job join 1</code> or <code>.job join Mining</code>. Switching may trigger a cooldown.</p></div>
+      <div class="doc-row"><code>.work</code><p>Claim salary. Checks <code>lastWorkedAt</code> vs cooldown, applies <code>EconomyMultiplier</code>, updates <code>balance</code> + <code>lastWorkedAt</code>, replies formally.</p></div>
+      <div class="schema mono">model JobCatalog {
+  id             Int
+  name           String  // 'Mining', 'Office Work'
+  baseSalary     BigInt
+  cooldownMinutes Int
+  requiredItemId String?
+  isActive       Boolean
+}</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CHANGELOG ============ -->
+<section class="section section-alt" id="changelog">
+  <div class="container narrow">
+    <p class="section-label reveal">Changelog</p>
+    <h2 class="reveal">What's New</h2>
+    <p class="section-sub reveal">Cosmos is actively developed. Here's a running log of every update.</p>
+    <div class="filters reveal" id="filters">
+      <button class="chip active" data-filter="All">All</button>
+      <button class="chip" data-filter="Economy">Economy</button>
+      <button class="chip" data-filter="Commands">Commands</button>
+      <button class="chip" data-filter="Bug Fixes">Bug Fixes</button>
+      <button class="chip" data-filter="Infrastructure">Infrastructure</button>
+    </div>
+    <div class="timeline" id="timeline"></div>
+    <div class="center"><button class="btn btn-ghost" id="loadMore">Load more updates</button></div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="container footer-grid">
+    <div>
+      <a href="#top" class="logo"><span class="logo-star">✦</span> Cosmos</a>
+      <p class="muted">Your universe, in one chat.</p>
+      <div class="socials">
+        <a href="https://wa.me/6281234567890" aria-label="WhatsApp" target="_blank" rel="noopener">✆</a>
+        <a href="#" aria-label="Discord">◈</a>
+        <a href="#" aria-label="GitHub">⬡</a>
+      </div>
+    </div>
+    <div><h4>Product</h4><a href="#pricing">Pricing</a><a href="#changelog">Changelog</a><a href="#docs">Docs</a></div>
+    <div><h4>Community</h4><a href="#">Discord</a><a href="#">GitHub</a><a href="#">Twitter</a></div>
+    <div><h4>Legal</h4><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Contact</a></div>
+  </div>
+  <div class="container footer-bottom">
+    <span>© 2026 Cosmos. Made with ♥ in Indonesia.</span>
+    <span class="ticker">Current USD/IDR: <strong id="idrTicker">Rp16.240</strong> <span class="live-dot"></span></span>
+  </div>
+</footer>
+
+<script src="script.js?v=2"></script>
+</body>
+</html>
