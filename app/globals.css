@@ -267,3 +267,22 @@ input[type=range]{width:100%;accent-color:var(--primary)}
   .demo-row{flex-direction:column}
   .filters{flex-wrap:wrap}
 }
+
+/* ---------- Active nav link (Next.js routes) ---------- */
+.nav-links a.active{color:var(--foreground);background:var(--accent)}
+.mobile-menu a.active{color:var(--foreground);background:var(--accent)}
+
+/* ---------- Lucide icons ---------- */
+.logo-star svg{display:inline-block;vertical-align:-3px}
+.badge-pill svg{width:.8rem;height:.8rem}
+.chat-avatar svg{width:1rem;height:1rem}
+.report-title{display:flex;align-items:center;gap:.3rem}
+.report-title svg{width:.85rem;height:.85rem}
+.card .icon svg{width:1.2rem;height:1.2rem}
+.job-emoji{display:inline-flex}
+.job-emoji svg{width:1.3rem;height:1.3rem}
+.id-icon{display:inline-flex}
+.economy-text h3{display:flex;align-items:center;gap:.5rem}
+.socials a svg{width:1rem;height:1rem}
+.footer-bottom svg{display:inline-block;vertical-align:-1px}
+.topo .node-icon{color:var(--foreground)}
