@@ -101,5 +101,6 @@ storage/active_sessions.json
 storage/transaction/*
 !storage/transaction/.gitkeep
 
-# Issue markdown files
+# Markdown files
 ISSUE*.md
+REVIEW.md
