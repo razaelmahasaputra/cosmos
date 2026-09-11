@@ -5,7 +5,8 @@ import toolsHandler from '#tools/handler.js';
 
 import { startAutoBackup } from '#utils/backup.js';
 import { startBankInterestCron } from '#services/bankService.js';
-import { connectToWhatsApp } from '#utils/connectionManager.js';
+import { startLoanSchedulerCron } from '#services/loanService.js';
+import { connectToWhatsApp, activeConnections } from '#utils/connectionManager.js';
 import { getTelegramClient, isTelegramConfigured } from '#utils/telegramClient.js';
 import { seedItems } from '#seed_item.js';
 import { prisma } from '#db.js';
@@ -19,6 +20,9 @@ startAutoBackup();
 
 // Start scheduled daily bank interest distribution (daily at 00:00 WIB)
 startBankInterestCron();
+
+// Start scheduled loan monitoring & 5-day reminders (hourly)
+startLoanSchedulerCron(() => activeConnections.get('default'));
 
 async function startSystem(): Promise<void> {
     await toolsHandler.loadTools();

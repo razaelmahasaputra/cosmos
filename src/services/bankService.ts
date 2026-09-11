@@ -280,6 +280,15 @@ export async function depositToBank(
                 }
             });
 
+            await tx.activityLog.create({
+                data: {
+                    userId,
+                    type: 'DEPOSIT',
+                    amount: BigInt(amount),
+                    description: `Cash deposit of ${formatRupiah(amount)}`
+                }
+            });
+
             return freshAccount;
         });
 
@@ -370,6 +379,15 @@ export async function withdrawFromBank(
                     type: 'WITHDRAWAL',
                     amount: BigInt(amount),
                     description: 'Cash withdrawal via ATM / Teller'
+                }
+            });
+
+            await tx.activityLog.create({
+                data: {
+                    userId,
+                    type: 'WITHDRAWAL',
+                    amount: BigInt(amount),
+                    description: `Cash withdrawal of ${formatRupiah(amount)}`
                 }
             });
 
