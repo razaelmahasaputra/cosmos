@@ -131,3 +131,8 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 
 - **i18n Integration:** Seluruh tool dan modul wajib mendukung sistem multibahasa dengan menggunakan `ctx.t` dan `ctx.lang` dari `src/locales/i18n.config.ts`. Dilarang menggabungkan string terjemahan dengan teks statis bahasa Inggris manual (_mixed-language_).
 - **Safe Key Detection & Build Sync:** Deteksi kunci terjemahan WAJIB menggunakan `i18n.exists()`. File terjemahan JSON di `src/locales/` wajib disinkronkan ke `dist/locales/` saat proses build melalui `scripts/copy-locales.ts`. Rujuk panduan lengkap di `.agents/skills/i18n-localization-standards/SKILL.md`.
+
+### P. Subsistem Perbankan Cosmos (Cosmos Central Bank Standards)
+
+- **ACID Double-Entry Ledger:** Seluruh mutasi perbankan (`DEPOSIT`, `WITHDRAW`, `TRANSFER_IN`, `TRANSFER_OUT`, `INTEREST`, `REGISTRATION_FEE`) **WAJIB** dijalankan secara atomik melalui `prisma.$transaction` dengan merekam `balanceAfter` pada model `BankTransaction`.
+- **KTP Gate & Konfirmasi Interaktif:** Pembuatan rekening bank wajib memverifikasi kepemilikan KTP (`isRegistered = true`). Transaksi transfer wajib menggunakan alur konfirmasi interaktif 3 menit yang terintegrasi dengan `cancellationManager` (`.cancel`) dan resolusi bahasa dinamis untuk penerima transfer. Rujuk panduan lengkap di `.agents/skills/cosmos-central-bank/SKILL.md`.
