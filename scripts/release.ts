@@ -59,9 +59,7 @@ async function main() {
     run(`git push -u origin ${targetBranch}`);
 
     // 6. Extract release notes from CHANGELOG.md for this version
-    const versionHeaderRegex = new RegExp(
-        `## \\[${version}\\][^\n]*\n([\\s\\S]*?)(?=\\n## \\[|\\n---\\s*\\n## \\[|$)`
-    );
+    const versionHeaderRegex = new RegExp(`## \\[${version}\\][^\n]*\n([\\s\\S]*?)(?=\\n## \\[|\\n---\\s*\\n## \\[|$)`);
     const notesMatch = changelog.match(versionHeaderRegex);
     const releaseNotes = notesMatch ? notesMatch[1].trim() : `Pre-release ${version}`;
 
