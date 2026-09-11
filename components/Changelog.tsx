@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { CHANGELOG, CHANGELOG_FILTERS } from "@/lib/data";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 const PAGE_SIZE = 5;
 
@@ -30,9 +33,11 @@ export default function Changelog() {
         </p>
         <div className="filters reveal" id="filters">
           {CHANGELOG_FILTERS.map((f) => (
-            <button
+            <Button
               key={f}
               type="button"
+              variant={activeFilter === f ? "secondary" : "ghost"}
+              size="sm"
               className={`chip${activeFilter === f ? " active" : ""}`}
               data-filter={f}
               onClick={() => {
@@ -41,7 +46,7 @@ export default function Changelog() {
               }}
             >
               {f}
-            </button>
+            </Button>
           ))}
         </div>
         <div className="timeline" id="timeline">
@@ -49,37 +54,39 @@ export default function Changelog() {
             <p className="muted center">No updates in this category yet.</p>
           ) : (
             visible.map((e) => (
-              <article className="entry" key={`${e.ver}-${e.title}`}>
-                <div className="entry-top">
-                  <span className="date-badge">{e.date}</span>
-                  <span className="ver">{e.ver}</span>
-                  {e.cats.map((c) => (
-                    <span key={c} className={`tag ${c.replace(/ /g, "")}`}>
-                      {c}
-                    </span>
-                  ))}
-                </div>
-                <h3>{e.title}</h3>
-                <p>{e.desc}</p>
-                <ul>
-                  {e.changes.map((c) => (
-                    <li key={c}>{c}</li>
-                  ))}
-                </ul>
-              </article>
+              <Card className="entry" key={`${e.ver}-${e.title}`}>
+                <CardContent className="p-0">
+                  <div className="entry-top">
+                    <Badge variant="outline" className="date-badge">{e.date}</Badge>
+                    <Badge variant="secondary" className="ver">{e.ver}</Badge>
+                    {e.cats.map((c) => (
+                      <Badge key={c} variant="outline" className={`tag ${c.replace(/ /g, "")}`}>
+                        {c}
+                      </Badge>
+                    ))}
+                  </div>
+                  <h3>{e.title}</h3>
+                  <p>{e.desc}</p>
+                  <ul>
+                    {e.changes.map((c) => (
+                      <li key={c}>{c}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
             ))
           )}
         </div>
         <div className="center">
           {filtered.length > shown && (
-            <button
-              className="btn btn-ghost"
+            <Button
+              variant="outline"
               id="loadMore"
               type="button"
               onClick={() => setShown((s) => s + PAGE_SIZE)}
             >
               Load more updates
-            </button>
+            </Button>
           )}
         </div>
       </div>

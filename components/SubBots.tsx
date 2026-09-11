@@ -1,5 +1,7 @@
 import { Sparkles } from "lucide-react";
 import { WA_LINKS } from "@/lib/data";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const STEPS = [
   { title: "Add Primary Bot", desc: "Add the main number to your group." },
@@ -30,17 +32,18 @@ export default function SubBots() {
             <li className="yes">Independent bot prefixes per number</li>
             <li className="yes">Sub-bots inherit primary&apos;s subscription tier</li>
           </ul>
-          <a
-            href={WA_LINKS.subbot}
-            className="btn btn-primary"
-            target="_blank"
-            rel="noopener"
-          >
-            Pair a Sub-Bot
-          </a>
+          <Button asChild>
+            <a
+              href={WA_LINKS.subbot}
+              target="_blank"
+              rel="noopener"
+            >
+              Pair a Sub-Bot
+            </a>
+          </Button>
         </div>
         <div className="reveal">
-          <div className="diagram card">
+          <Card className="diagram card">
             <svg viewBox="0 0 360 220" className="topo" aria-hidden="true">
               <line x1="180" y1="62" x2="80" y2="150" className="link" />
               <line x1="180" y1="62" x2="280" y2="150" className="link" />
@@ -69,19 +72,19 @@ export default function SubBots() {
             <p className="muted small center">
               Shared: Economy DB · User records · Subscription
             </p>
-          </div>
+          </Card>
         </div>
       </div>
       <div className="container">
         <div className="stepper reveal">
           {STEPS.map((s, i) => (
-            <div className="step" key={s.title}>
+            <Card className="step" key={s.title}>
               <span>{i + 1}</span>
               <div>
                 <strong>{s.title}</strong>
                 <p>{s.desc}</p>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       </div>

@@ -4,6 +4,9 @@ import { useMemo, useState } from "react";
 import { IdCard, TrendingUp } from "lucide-react";
 import { DEMO_JOB_NAMES, JOBS } from "@/lib/data";
 import { formatRupiah } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 function demoLabel(name: string): string {
   return name === "Taxi Driving" ? "Taxi Driver" : name;
@@ -46,24 +49,26 @@ export default function Jobs() {
 
         <div className="grid jobs-grid" id="jobsGrid">
           {JOBS.map((j) => (
-            <div
+            <Card
               key={j.name}
               className="card job-card reveal visible"
             >
-              <div className="job-top">
-                <span className="job-emoji"><j.icon size={20} /></span>
-                <span className="cooldown">{j.cooldown}</span>
-              </div>
-              <h3>{j.name}</h3>
-              <div className="job-salary" data-base={j.base}>
-                {formatRupiah(j.base * mult)}
-              </div>
-              <div className="job-req">
-                Requires: <b>{j.req}</b> + ID Card
-              </div>
-              <p className="job-desc muted">{j.desc}</p>
-              <span className={`risk ${j.riskCls}`}>● {j.risk}</span>
-            </div>
+              <CardContent className="flex flex-col gap-2 p-6">
+                <div className="job-top">
+                  <span className="job-emoji"><j.icon size={20} /></span>
+                  <Badge variant="secondary" className="cooldown">{j.cooldown}</Badge>
+                </div>
+                <h3>{j.name}</h3>
+                <div className="job-salary" data-base={j.base}>
+                  {formatRupiah(j.base * mult)}
+                </div>
+                <div className="job-req">
+                  Requires: <b>{j.req}</b> + ID Card
+                </div>
+                <p className="job-desc muted">{j.desc}</p>
+                <span className={`risk ${j.riskCls}`}>● {j.risk}</span>
+              </CardContent>
+            </Card>
           ))}
         </div>
 
@@ -113,13 +118,13 @@ export default function Jobs() {
                   </option>
                 ))}
               </select>
-              <button
-                className="btn btn-primary btn-sm"
+              <Button
+                size="sm"
                 id="demoWork"
                 type="button"
               >
                 .work
-              </button>
+              </Button>
             </div>
           </div>
         </div>

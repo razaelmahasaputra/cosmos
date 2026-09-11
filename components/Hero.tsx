@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { Bot, Check, Sparkles } from "lucide-react";
 import Starfield from "./Starfield";
 import { WA_LINKS } from "@/lib/data";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function Hero() {
   const tiltRef = useRef<HTMLDivElement>(null);
@@ -47,10 +49,10 @@ export default function Hero() {
       <div className="hero-glow hero-glow-b"></div>
       <div className="container hero-inner">
         <div className="hero-copy reveal">
-          <div className="badge-pill">
+          <Badge variant="secondary" className="badge-pill mb-5">
             <span className="pulse-dot"></span> <Sparkles size={12} /> Now with Economy System &amp;
             Jobs
-          </div>
+          </Badge>
           <h1>
             Your Universe,
             <br />
@@ -61,17 +63,14 @@ export default function Hero() {
             item shops, and more — powered by real IDR exchange rates.
           </p>
           <div className="cta-row">
-            <a
-              href={WA_LINKS.add}
-              target="_blank"
-              rel="noopener"
-              className="btn btn-primary btn-glow"
-            >
-              Add to WhatsApp
-            </a>
-            <a href="/jobs" className="btn btn-ghost">
-              View Demo
-            </a>
+            <Button asChild className="btn-glow">
+              <a href={WA_LINKS.add} target="_blank" rel="noopener">
+                Add to WhatsApp
+              </a>
+            </Button>
+            <Button asChild variant="outline">
+              <a href="/jobs">View Demo</a>
+            </Button>
           </div>
           <p className="social-proof">
             Trusted by <strong>500+ groups</strong> ·{" "}

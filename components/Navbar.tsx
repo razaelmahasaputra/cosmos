@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sparkles } from "lucide-react";
 import { WA_LINKS } from "@/lib/data";
+import { Button } from "@/components/ui/button";
 
 const LINKS = [
   { href: "/features", label: "Features" },
@@ -36,14 +37,11 @@ export default function Navbar() {
           ))}
         </nav>
         <div className="nav-right">
-          <a
-            href={WA_LINKS.add}
-            target="_blank"
-            rel="noopener"
-            className="btn btn-primary btn-sm"
-          >
-            Add to WhatsApp
-          </a>
+          <Button asChild size="sm">
+            <a href={WA_LINKS.add} target="_blank" rel="noopener">
+              Add to WhatsApp
+            </a>
+          </Button>
           <button
             className="hamburger"
             id="hamburger"
@@ -68,14 +66,11 @@ export default function Navbar() {
             {l.label}
           </Link>
         ))}
-        <a
-          href={WA_LINKS.bare}
-          target="_blank"
-          rel="noopener"
-          className="btn btn-primary btn-sm"
-        >
-          Add to WhatsApp
-        </a>
+        <Button asChild size="sm" className="mt-2">
+          <a href={WA_LINKS.bare} target="_blank" rel="noopener">
+            Add to WhatsApp
+          </a>
+        </Button>
       </div>
     </header>
   );
