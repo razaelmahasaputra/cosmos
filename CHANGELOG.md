@@ -3,7 +3,7 @@
 All notable changes to the **Cosmos WhatsApp Bot Framework** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to the `RF-YYMM-BUILD` version formatting.
 
 ---
 
@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.2.0] - 2026-09-11
+## [RF-2609-03] - 2026-09-11
 
 ### Added
 
@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.1.0] - 2026-09-11
+## [RF-2609-02] - 2026-09-11
 
 ### Added
 
@@ -94,7 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.0] - 2026-09-06
+## [RF-2609-01] - 2026-09-06
 
 ### Added
 
@@ -132,7 +132,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.9.0] - 2026-08-15 (Beta)
+## [RF-2608-01] - 2026-08-15 (Beta)
 
 ### Added
 
@@ -243,8 +243,8 @@ model Loan {
 }
 ```
 
-[Unreleased]: https://github.com/razaelmahasaputra/cosmos/compare/v1.2.0...HEAD
-[1.2.0]: https://github.com/razaelmahasaputra/cosmos/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/razaelmahasaputra/cosmos/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/razaelmahasaputra/cosmos/compare/v0.9.0...v1.0.0
-[0.9.0]: https://github.com/razaelmahasaputra/cosmos/releases/tag/v0.9.0
+[Unreleased]: https://github.com/razaelmahasaputra/cosmos/compare/RF-2609-03...HEAD
+[RF-2609-03]: https://github.com/razaelmahasaputra/cosmos/compare/RF-2609-02...RF-2609-03
+[RF-2609-02]: https://github.com/razaelmahasaputra/cosmos/compare/RF-2609-01...RF-2609-02
+[RF-2609-01]: https://github.com/razaelmahasaputra/cosmos/compare/RF-2608-01...RF-2609-01
+[RF-2608-01]: https://github.com/razaelmahasaputra/cosmos/releases/tag/RF-2608-01
