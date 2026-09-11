@@ -1,6 +1,6 @@
 {
     "name": "cosmos",
-    "version": "1.0.0",
+    "version": "RF-2609-03",
     "description": "A modern, enterprise-grade WhatsApp Bot framework",
     "repository": {
         "type": "git",
@@ -27,7 +27,8 @@
         "typecheck": "tsc --noEmit",
         "lint": "eslint .",
         "format": "prettier --write .",
-        "validate:i18n": "tsx scripts/validate-i18n.ts"
+        "validate:i18n": "tsx scripts/validate-i18n.ts",
+        "release:pre": "tsx scripts/release.ts"
     },
     "keywords": [],
     "author": "",
