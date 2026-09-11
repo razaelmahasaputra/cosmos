@@ -4,6 +4,7 @@ import { loadAutoDlSettings } from '#utils/autodl.js';
 import toolsHandler from '#tools/handler.js';
 
 import { startAutoBackup } from '#utils/backup.js';
+import { startBankInterestCron } from '#services/bankService.js';
 import { connectToWhatsApp } from '#utils/connectionManager.js';
 import { getTelegramClient, isTelegramConfigured } from '#utils/telegramClient.js';
 import { seedItems } from '#seed_item.js';
@@ -15,6 +16,9 @@ dotenv.config();
 
 // Start auto backup (on startup and daily at 00:00 WIB)
 startAutoBackup();
+
+// Start scheduled daily bank interest distribution (daily at 00:00 WIB)
+startBankInterestCron();
 
 async function startSystem(): Promise<void> {
     await toolsHandler.loadTools();
