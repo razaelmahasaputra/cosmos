@@ -103,12 +103,27 @@ model User {
   updatedAt DateTime @updatedAt
 
   creditScore          Int                   @default(500) // Default starting credit score
+  currentJobId         Int?
+  currentJob           JobCatalog?           @relation(fields: [currentJobId], references: [id], onDelete: SetNull)
+  lastWorkedAt         DateTime?
   inventories          UserInventory[]
   propertyTransactions PropertyTransaction[]
   idCard               IdCard?
   bankAccount          BankAccount?
   loans                Loan[]
   activities           ActivityLog[]
+}
+
+model JobCatalog {
+  id              Int     @id @default(autoincrement())
+  name            String  @unique // e.g., 'Mining', 'Office Work'
+  description     String
+  baseSalary      BigInt  // Base payout before economy multiplier
+  cooldownMinutes Int     @default(60)
+  requiredItemId  String? // Links to an Item.id or shortId (e.g., Pickaxe, MacBook)
+  isActive        Boolean @default(true)
+
+  workers         User[]
 }
 
 model HouseVault {

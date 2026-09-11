@@ -56,6 +56,38 @@ export const INITIAL_ITEMS = [
         type: 'collectible',
         price: BigInt(500000),
         isAvailable: true
+    },
+    {
+        name: 'Pickaxe',
+        shortId: 'pickaxe',
+        description: 'A sturdy mining pickaxe required to mine coal, iron, gold, and diamonds.',
+        type: 'equipment',
+        price: BigInt(50000),
+        isAvailable: true
+    },
+    {
+        name: 'MacBook',
+        shortId: 'macbook',
+        description: 'A high-performance laptop required for office work and technology ventures.',
+        type: 'equipment',
+        price: BigInt(15000000),
+        isAvailable: true
+    },
+    {
+        name: 'iPhone',
+        shortId: 'iphone',
+        description: 'A premium mobile smartphone suitable for running digital enterprises.',
+        type: 'equipment',
+        price: BigInt(12000000),
+        isAvailable: true
+    },
+    {
+        name: "Driver's License",
+        shortId: 'driver_license',
+        description: 'An official driver license required for taxi and commercial transport work.',
+        type: 'equipment',
+        price: BigInt(100000),
+        isAvailable: true
     }
 ];
 

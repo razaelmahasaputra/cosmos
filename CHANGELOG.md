@@ -2,8 +2,8 @@
 
 All notable changes to the **Cosmos WhatsApp Bot Framework** will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to the `RF-YYMM-BUILD` version formatting.
 
 ---
 
@@ -11,7 +11,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.1.0] - 2026-09-11
+## [RF-2609-03] - 2026-09-11
+
+### Added
+
+- **Job and Salary Career System (`src/services/jobs.ts`, `src/tools/job.ts`, `src/tools/work.ts`):**
+    - Alternative, non-gambling economic progression system allowing users to choose professions and earn dynamic salaries.
+    - 6 initial career tracks:
+        - **Mining**: Daily shifts with high-variance mineral discoveries (Coal: Rp233.333, Iron: Rp166.666, Gold: Rp333.333, Diamond: Rp666.666). Requires `Pickaxe`.
+        - **Office Work**: Stable corporate software development and administration (~Rp250.000/day, Rp7.500.000/month). Requires `MacBook`.
+        - **Taxi Driving**: Daily metropolitan passenger transport (~Rp133.333/day, Rp4.000.000/month). Requires `Driver's License`.
+        - **Cooking**: Daily restaurant kitchen orders and culinary preparation (~Rp150.000/day, Rp4.500.000/month).
+        - **Gojek**: On-demand gig courier and ride-hailing economy (~Rp2.500/delivery + tips) on a 1-hour cooldown.
+        - **Entrepreneurship**: Startup enterprise management paying weekly dividends (~Rp1.250.000/week) with market fluctuation cycles (Boom: 1.8x, Normal: 1.0x–1.3x, Sluggish: 0.4x, Deficit: 0). Requires initial investment capital (Rp250.000) and `MacBook` or `iPhone`.
+    - Dynamic IDR salary scaling tied to the macroeconomic `EconomyMultiplier` (driven by EODHD exchange rate logs).
+    - Strict Virtual ID Card verification gate (`requireIdCard`) preventing users without a registered ID Card from applying or working.
+    - ACID double-entry logging recording all salary claims and initial capital investments to `ActivityLog`.
+- **Career Management Commands (`src/tools/job.ts`, `src/tools/work.ts`):**
+    - `.job list` to browse available professions, requirements, base salaries, and cooldowns.
+    - `.job join <JobName|JobID>` to apply or switch jobs using name or numeric ID.
+    - `.job status` / `.job info` displaying current position, base salary, shift status, and cooldown timers.
+    - `.job leave` / `.job resign` to resign from current employment.
+    - `.work` to clock in for shifts, enforce cooldowns, compute dynamic payouts, and output shift narratives using `formatRupiah`.
+- **Inventory & Shop Items (`src/seed_item.ts`):**
+    - Added `Pickaxe` (`pickaxe`), `MacBook` (`macbook`), `iPhone` (`iphone`), and `Driver's License` (`driver_license`) equipment items to the shop catalog.
+- **Driver License Application Integration (`src/tools/apply_license.ts`):**
+    - Granted official `Driver's License` equipment item to `UserInventory` upon meeting age requirement (>= 17) and passing the driving test.
+- **Database Schema Updates (`prisma/schema.prisma`):**
+    - Added `JobCatalog` model tracking jobs, descriptions, base salaries, cooldowns, and required items.
+    - Added `currentJobId`, `currentJob`, and `lastWorkedAt` to `User` model.
+- **Test Suite (`tests/job.test.ts`):**
+    - Comprehensive 10-suite unit and integration test coverage for the Job and Salary System.
+
+### Changed
+
+- Refactored `apply_job.ts` into a feature-complete `.job` command module supporting `.apply-job` aliases.
+- Updated bilingual locale dictionaries (`src/locales/en/tools.json`, `src/locales/id/tools.json`) with job and work translation keys.
+
+---
+
+## [RF-2609-02] - 2026-09-11
 
 ### Added
 
@@ -55,7 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.0] - 2026-09-06
+## [RF-2609-01] - 2026-09-06
 
 ### Added
 
@@ -93,7 +132,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.9.0] - 2026-08-15 (Beta)
+## [RF-2608-01] - 2026-08-15 (Beta)
 
 ### Added
 
@@ -128,13 +167,16 @@ cosmos/
 │   ├── locales/               # Multilingual JSON dictionary (en, id)
 │   ├── services/
 │   │   ├── bankService.ts     # Central Bank transactions, limits & interest
+│   │   ├── jobs.ts            # Career catalog, salary calculations & cooldowns
 │   │   ├── loanService.ts     # Loan underwriting, credit score & asset seizure
 │   │   └── shopService.ts     # Item store and purchasing service
 │   ├── tools/
 │   │   ├── bank.ts            # .bank command handler
+│   │   ├── job.ts             # .job career management command handler
 │   │   ├── loan.ts            # .loan command handler
 │   │   ├── property_buy.ts    # .buy property handler
 │   │   ├── property_sell.ts   # .sell / .pawn property handler
+│   │   ├── work.ts            # .work shift execution handler
 │   │   └── ...
 │   ├── utils/
 │   │   ├── cancellationManager.ts # Global .cancel interactive registry
@@ -144,6 +186,7 @@ cosmos/
 │   └── index.ts               # Application entrypoint & cron scheduler startup
 ├── tests/
 │   ├── bank.test.ts           # Central Bank test suite (9 tests)
+│   ├── job.test.ts            # Job and Salary System test suite (10 tests)
 │   └── loan.test.ts           # Bank Loan System test suite (10 tests)
 ├── AGENTS.md                  # Mandatory AI Agent rules and regulations
 └── package.json               # NPM workspace scripts and dependencies
@@ -155,15 +198,29 @@ cosmos/
 
 ```prisma
 model User {
-  id             String    @id // WA JID (e.g. 628123456789@s.whatsapp.net)
-  lid            String?   @unique // WhatsApp Local Identifier (LID)
+  id             String       @id // WA JID (e.g. 628123456789@s.whatsapp.net)
+  lid            String?      @unique // WhatsApp Local Identifier (LID)
   pushName       String?
-  balance        BigInt    @default(10000)
-  creditScore    Int       @default(500)
+  balance        BigInt       @default(10000)
+  creditScore    Int          @default(500)
+  currentJobId   Int?
+  currentJob     JobCatalog?  @relation(fields: [currentJobId], references: [id], onDelete: SetNull)
+  lastWorkedAt   DateTime?
   bankAccount    BankAccount?
   loans          Loan[]
   activities     ActivityLog[]
   inventories    UserInventory[]
+}
+
+model JobCatalog {
+  id              Int     @id @default(autoincrement())
+  name            String  @unique // e.g., 'Mining', 'Office Work'
+  description     String
+  baseSalary      BigInt  // Base payout before economy multiplier
+  cooldownMinutes Int     @default(60)
+  requiredItemId  String? // Links to an Item.id or shortId (e.g., Pickaxe, MacBook)
+  isActive        Boolean @default(true)
+  workers         User[]
 }
 
 model BankAccount {
@@ -185,3 +242,9 @@ model Loan {
   reminders       LoanReminder[]
 }
 ```
+
+[Unreleased]: https://github.com/razaelmahasaputra/cosmos/compare/RF-2609-03...HEAD
+[RF-2609-03]: https://github.com/razaelmahasaputra/cosmos/compare/RF-2609-02...RF-2609-03
+[RF-2609-02]: https://github.com/razaelmahasaputra/cosmos/compare/RF-2609-01...RF-2609-02
+[RF-2609-01]: https://github.com/razaelmahasaputra/cosmos/compare/RF-2608-01...RF-2609-01
+[RF-2608-01]: https://github.com/razaelmahasaputra/cosmos/releases/tag/RF-2608-01

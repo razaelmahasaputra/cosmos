@@ -142,3 +142,13 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 - **Underwriting AI & Dynamic Tiers:** Penilaian pinjaman wajib melalui Groq LLM Native Function Calling dengan batasan terikat (suhu 0.1, bunga 2%–15%, tenor 7–30 hari) dan fallback deterministik. Skor kredit dibatasi secara ketat antara 0 hingga 1000 berdasarkan `ActivityLog` 30 hari terakhir.
 - **Proteksi Mutlak Race Condition:** Setiap eksekusi pengajuan, pencairan dana, dan pelunasan pinjaman **WAJIB** dilindungi dengan mutex memori in-flight (`Set<string>`) dan validasi ulang status pinjaman/saldo langsung di dalam transaksi database `prisma.$transaction`.
 - **Penyitaan Aset Otomatis & Pembekuan Rekening:** Gagal bayar pinjaman jatuh tempo wajib memicu pembekuan rekening bank (`status = 'FROZEN'`) dan likuidasi aset inventaris/properti terurut dari nilai tertinggi ke terendah (`ownershipStatus = 'Pawned'`) hingga hutang tertutupi. Rujuk panduan lengkap di `.agents/skills/bank-loan-system/SKILL.md`.
+### R. Subsistem Pekerjaan & Gaji Dinamis (Job and Salary System Standards)
+
+- **KTP Gate & Prasyarat Inventaris:** Seluruh akses pendaftaran pekerjaan (`.job join`) dan shift kerja (`.work`) **WAJIB** memverifikasi kepemilikan Virtual ID Card (`requireIdCard`) dan kepemilikan item peralatan aktif di inventaris (`UserInventory` dengan `ownershipStatus === 'Owned'`).
+- **Skalabilitas Makroekonomi & Payout Atomik:** Pembayaran gaji wajib dikalikan dengan `EconomyMultiplier` terkini. Pembaruan saldo pengguna dan pelacakan cooldown shift (`lastWorkedAt`) wajib dieksekusi secara atomik menggunakan `prisma.$transaction` serta dicatat ke `ActivityLog`. Rujuk panduan lengkap di `.agents/skills/job-and-salary-system/SKILL.md`.
+
+### S. Format Versi Rilis RF (RF-YYMM-BUILD Versioning Standards)
+
+- **Skema Penomoran Versi:** Penomoran rilis dan versi Cosmos wajib menggunakan format `RF-YYMM-BUILD` (misal: `RF-2609-03`). Dilarang menggunakan semver biasa (`v1.2.0`) pada tag rilis atau changelog.
+- **Otomasi Pre-Release:** Seluruh pembuatan tag rilis dan publikasi halaman release di GitHub didelegasikan melalui script otomasi `scripts/release.ts` (`pnpm run release:pre`).
+
