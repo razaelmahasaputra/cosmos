@@ -1,7 +1,7 @@
-import { Sparkles } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { WA_LINKS } from "@/lib/data";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 
 const STEPS = [
   { title: "Add Primary Bot", desc: "Add the main number to your group." },
@@ -26,11 +26,18 @@ export default function SubBots() {
             Cosmos account. All bots share the same group economy, user
             database, and subscription — no duplicate costs.
           </p>
-          <ul className="check-list">
-            <li className="yes">Shared economy &amp; user database</li>
-            <li className="yes">Centralized admin control</li>
-            <li className="yes">Independent bot prefixes per number</li>
-            <li className="yes">Sub-bots inherit primary&apos;s subscription tier</li>
+          <ul className="check-list mb-6">
+            {[
+              "Shared economy & user database",
+              "Centralized admin control",
+              "Independent bot prefixes per number",
+              "Sub-bots inherit primary's subscription tier",
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-2">
+                <Check size={15} className="mt-0.5 shrink-0 text-emerald-500" />
+                <span>{item}</span>
+              </li>
+            ))}
           </ul>
           <Button asChild>
             <a
@@ -43,7 +50,8 @@ export default function SubBots() {
           </Button>
         </div>
         <div className="reveal">
-          <Card className="diagram card">
+          <Card className="diagram card p-5">
+            <CardContent className="p-0">
             <svg viewBox="0 0 360 220" className="topo" aria-hidden="true">
               <line x1="180" y1="62" x2="80" y2="150" className="link" />
               <line x1="180" y1="62" x2="280" y2="150" className="link" />
@@ -69,9 +77,10 @@ export default function SubBots() {
                 Sub-Bot B
               </text>
             </svg>
-            <p className="muted small center">
+            <CardDescription className="muted small center mt-3">
               Shared: Economy DB · User records · Subscription
-            </p>
+            </CardDescription>
+            </CardContent>
           </Card>
         </div>
       </div>
@@ -79,11 +88,13 @@ export default function SubBots() {
         <div className="stepper reveal">
           {STEPS.map((s, i) => (
             <Card className="step" key={s.title}>
+              <CardContent className="flex gap-3 p-4">
               <span>{i + 1}</span>
               <div>
-                <strong>{s.title}</strong>
-                <p>{s.desc}</p>
+                <CardTitle className="text-[0.85rem]">{s.title}</CardTitle>
+                <CardDescription className="text-xs">{s.desc}</CardDescription>
               </div>
+              </CardContent>
             </Card>
           ))}
         </div>

@@ -1,3 +1,27 @@
+import { Card, CardContent, CardDescription } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+
+const COMMANDS = [
+  {
+    cmd: ".job list",
+    desc: "Displays available jobs, base salaries and cooldowns.",
+  },
+  {
+    cmd: ".job join <JobName|JobID>",
+    desc: "Apply or switch jobs — e.g. `.job join 1` or `.job join Mining`. Switching may trigger a cooldown.",
+  },
+  {
+    cmd: ".work",
+    desc: "Claim salary. Checks `lastWorkedAt` vs cooldown, applies `EconomyMultiplier`, updates `balance` + `lastWorkedAt`, replies formally.",
+  },
+];
+
+function renderInlineCode(text: string) {
+  return text.split("`").map((part, i) =>
+    i % 2 === 1 ? <code key={i}>{part}</code> : <span key={i}>{part}</span>
+  );
+}
+
 export default function Docs() {
   return (
     <section className="section" id="docs">
@@ -8,27 +32,16 @@ export default function Docs() {
           Persisted with Prisma. All currency via <code>formatRupiah</code>,
           all replies in Formal English.
         </p>
-        <div className="doc-card card reveal">
-          <div className="doc-row">
-            <code>.job list</code>
-            <p>Displays available jobs, base salaries and cooldowns.</p>
-          </div>
-          <div className="doc-row">
-            <code>.job join &lt;JobName|JobID&gt;</code>
-            <p>
-              Apply or switch jobs — e.g. <code>.job join 1</code> or{" "}
-              <code>.job join Mining</code>. Switching may trigger a cooldown.
-            </p>
-          </div>
-          <div className="doc-row">
-            <code>.work</code>
-            <p>
-              Claim salary. Checks <code>lastWorkedAt</code> vs cooldown,
-              applies <code>EconomyMultiplier</code>, updates{" "}
-              <code>balance</code> + <code>lastWorkedAt</code>, replies
-              formally.
-            </p>
-          </div>
+        <Card className="doc-card card reveal overflow-hidden p-0">
+          {COMMANDS.map((c, i) => (
+            <div key={c.cmd}>
+              <CardContent className="doc-row p-0">
+                <code>{c.cmd}</code>
+                <CardDescription className="mt-1">{renderInlineCode(c.desc)}</CardDescription>
+              </CardContent>
+              {i < COMMANDS.length - 1 && <Separator />}
+            </div>
+          ))}
           <div className="schema mono">
             {`model JobCatalog {
   id             Int
@@ -39,7 +52,7 @@ export default function Docs() {
   isActive       Boolean
 }`}
           </div>
-        </div>
+        </Card>
       </div>
     </section>
   );

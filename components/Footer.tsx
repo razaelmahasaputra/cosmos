@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Gamepad2, GitBranch, Heart, MessageCircle, Sparkles } from "lucide-react";
 import { WA_LINKS } from "@/lib/data";
 import { formatRupiah } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function Footer() {
   const [rate, setRate] = useState(16240);
@@ -28,20 +30,26 @@ export default function Footer() {
           </Link>
           <p className="muted">Your universe, in one chat.</p>
           <div className="socials">
-            <a
-              href={WA_LINKS.bare}
-              aria-label="WhatsApp"
-              target="_blank"
-              rel="noopener"
-            >
-              <MessageCircle size={16} />
-            </a>
-            <a href="#" aria-label="Discord">
-              <Gamepad2 size={16} />
-            </a>
-            <a href="#" aria-label="GitHub">
-              <GitBranch size={16} />
-            </a>
+            <Button asChild variant="outline" size="icon" className="rounded-full">
+              <a
+                href={WA_LINKS.bare}
+                aria-label="WhatsApp"
+                target="_blank"
+                rel="noopener"
+              >
+                <MessageCircle size={16} />
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="icon" className="rounded-full">
+              <a href="#" aria-label="Discord">
+                <Gamepad2 size={16} />
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="icon" className="rounded-full">
+              <a href="#" aria-label="GitHub">
+                <GitBranch size={16} />
+              </a>
+            </Button>
           </div>
         </div>
         <div>
@@ -65,10 +73,10 @@ export default function Footer() {
       </div>
       <div className="container footer-bottom">
         <span>© 2026 Cosmos. Made with <Heart size={12} fill="currentColor" /> in Indonesia.</span>
-        <span className="ticker">
+        <Badge variant="secondary" className="ticker font-normal">
           Current USD/IDR: <strong id="idrTicker">{formatRupiah(rate)}</strong>{" "}
           <span className="live-dot"></span>
-        </span>
+        </Badge>
       </div>
     </footer>
   );

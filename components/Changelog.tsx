@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { CHANGELOG, CHANGELOG_FILTERS } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const PAGE_SIZE = 5;
 
@@ -31,24 +32,27 @@ export default function Changelog() {
           Cosmos is actively developed. Here&apos;s a running log of every
           update.
         </p>
-        <div className="filters reveal" id="filters">
-          {CHANGELOG_FILTERS.map((f) => (
-            <Button
-              key={f}
-              type="button"
-              variant={activeFilter === f ? "secondary" : "ghost"}
-              size="sm"
-              className={`chip${activeFilter === f ? " active" : ""}`}
-              data-filter={f}
-              onClick={() => {
-                setActiveFilter(f);
-                setShown(PAGE_SIZE);
-              }}
-            >
-              {f}
-            </Button>
-          ))}
-        </div>
+        <Tabs
+          value={activeFilter}
+          onValueChange={(v) => {
+            setActiveFilter(v);
+            setShown(PAGE_SIZE);
+          }}
+          className="reveal"
+        >
+          <TabsList className="filters" id="filters">
+            {CHANGELOG_FILTERS.map((f) => (
+              <TabsTrigger
+                key={f}
+                value={f}
+                className="chip data-[state=active]:border data-[state=active]:bg-background"
+                data-filter={f}
+              >
+                {f}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
         <div className="timeline" id="timeline">
           {visible.length === 0 ? (
             <p className="muted center">No updates in this category yet.</p>
@@ -65,8 +69,8 @@ export default function Changelog() {
                       </Badge>
                     ))}
                   </div>
-                  <h3>{e.title}</h3>
-                  <p>{e.desc}</p>
+                  <CardTitle className="my-1 text-[0.92rem]">{e.title}</CardTitle>
+                  <CardDescription>{e.desc}</CardDescription>
                   <ul>
                     {e.changes.map((c) => (
                       <li key={c}>{c}</li>

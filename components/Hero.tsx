@@ -6,6 +6,8 @@ import Starfield from "./Starfield";
 import { WA_LINKS } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function Hero() {
   const tiltRef = useRef<HTMLDivElement>(null);
@@ -102,15 +104,23 @@ export default function Hero() {
             <div className="phone-glow"></div>
             <div className="phone" ref={phoneRef}>
               <div className="phone-notch"></div>
-              <div className="phone-screen">
+              <Card className="phone-screen border-0 bg-[#0c0c0e] shadow-none">
                 <div className="chat-header">
-                  <div className="chat-avatar"><Bot size={16} /></div>
+                  <Avatar className="chat-avatar h-8 w-8">
+                    <AvatarFallback>
+                      <Bot size={16} />
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
                     <strong>Cosmos Bot</strong>
-                    <small>● online</small>
+                    <small>
+                      <Badge variant="outline" className="border-0 bg-transparent p-0 text-[0.7rem] text-[#10b981]">
+                        ● online
+                      </Badge>
+                    </small>
                   </div>
                 </div>
-                <div className="chat-body">
+                <CardContent className="chat-body p-[0.85rem]">
                   <div className="bubble out">.work</div>
                   <div className="bubble in">
                     <div className="report-title"><Check size={13} /> Work Report</div>
@@ -132,11 +142,11 @@ export default function Hero() {
                     </div>
                   </div>
                   <div className="bubble out">.job list</div>
-                </div>
+                </CardContent>
                 <div className="chat-input">
                   <span>Type a message…</span>
                 </div>
-              </div>
+              </Card>
             </div>
           </div>
         </div>

@@ -9,9 +9,11 @@ import {
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default function Features() {
   return (
@@ -34,13 +36,15 @@ export default function Features() {
               <CardTitle>Job System</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>
+              <CardDescription>
                 6 jobs with dynamic IDR-based salaries. Daily shifts, gig work
                 &amp; weekly dividends.
-              </p>
-              <a href="/jobs" className="card-link">
-                Explore jobs →
-              </a>
+              </CardDescription>
+              <Button asChild variant="link" className="card-link h-auto p-0">
+                <a href="/jobs">
+                  Explore jobs →
+                </a>
+              </Button>
             </CardContent>
           </Card>
           <Card className="reveal">
@@ -49,10 +53,10 @@ export default function Features() {
               <CardTitle>Item Shop</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>
+              <CardDescription>
                 Buy Pickaxes, MacBooks &amp; licenses that unlock higher-paying
                 career paths.
-              </p>
+              </CardDescription>
             </CardContent>
           </Card>
           <Card className="reveal">
@@ -61,10 +65,10 @@ export default function Features() {
               <CardTitle>Live Economy</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>
+              <CardDescription>
                 Salaries fluctuate with real USD/IDR rates via{" "}
                 <code>EconomyMultiplier</code>.
-              </p>
+              </CardDescription>
             </CardContent>
           </Card>
           <Card className="reveal">
@@ -73,10 +77,10 @@ export default function Features() {
               <CardTitle>Virtual ID Card</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>
+              <CardDescription>
                 Required for all economy actions. No ID, no work — fair and
                 bot-proof.
-              </p>
+              </CardDescription>
             </CardContent>
           </Card>
           <Card className="reveal">
@@ -85,13 +89,15 @@ export default function Features() {
               <CardTitle>Sub-Bot Pairing</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>
+              <CardDescription>
                 Run multiple bots under one subscription. Shared DB, zero
                 duplicate cost.
-              </p>
-              <a href="/#subbots" className="card-link">
-                How pairing works →
-              </a>
+              </CardDescription>
+              <Button asChild variant="link" className="card-link h-auto p-0">
+                <a href="/#subbots">
+                  How pairing works →
+                </a>
+              </Button>
             </CardContent>
           </Card>
           <Card className="reveal">
@@ -100,13 +106,15 @@ export default function Features() {
               <CardTitle>Changelog</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>
+              <CardDescription>
                 Always up-to-date feature history, auto-pulled from GitHub
                 Releases.
-              </p>
-              <a href="/changelog" className="card-link">
-                What&apos;s new →
-              </a>
+              </CardDescription>
+              <Button asChild variant="link" className="card-link h-auto p-0">
+                <a href="/changelog">
+                  What&apos;s new →
+                </a>
+              </Button>
             </CardContent>
           </Card>
         </div>

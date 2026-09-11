@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles } from "lucide-react";
+import { Menu, Sparkles, X } from "lucide-react";
 import { WA_LINKS } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 
@@ -42,17 +42,16 @@ export default function Navbar() {
               Add to WhatsApp
             </a>
           </Button>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             className="hamburger"
-            id="hamburger"
             aria-label="Menu"
             aria-expanded={open ? "true" : "false"}
             onClick={() => setOpen((v) => !v)}
           >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
+            {open ? <X size={18} /> : <Menu size={18} />}
+          </Button>
         </div>
       </div>
       <div className={`mobile-menu${open ? " open" : ""}`} id="mobileMenu">

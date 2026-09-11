@@ -1,12 +1,30 @@
+import { Check, X } from "lucide-react";
 import { WA_LINKS } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
+  CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
+function FeatureItem({ included, children }: { included?: boolean; children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-2">
+      {included === true ? (
+        <Check size={15} className="mt-0.5 shrink-0 text-emerald-500" />
+      ) : included === false ? (
+        <X size={15} className="mt-0.5 shrink-0 opacity-50" />
+      ) : (
+        <span className="mt-0.5 text-muted-foreground">•</span>
+      )}
+      <span className={included === false ? "opacity-50" : undefined}>{children}</span>
+    </li>
+  );
+}
 
 export default function Pricing() {
   return (
@@ -22,87 +40,93 @@ export default function Pricing() {
           <Card className="price reveal">
             <CardHeader>
               <CardTitle>Free</CardTitle>
-              <p className="price-num">
+              <CardDescription className="price-num">
                 Rp0<small>/month</small>
-              </p>
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-1 flex-col">
               <ul className="check-list">
-                <li>
+                <FeatureItem>
                   <b>5</b> groups
-                </li>
-                <li>
+                </FeatureItem>
+                <FeatureItem>
                   <b>2</b> sub-bots
-                </li>
-                <li className="yes">Full economy features</li>
-                <li className="yes">Live IDR economy</li>
-                <li>Low-level priority support</li>
-                <li className="no">Custom prefix</li>
-                <li className="no">Early access</li>
+                </FeatureItem>
+                <FeatureItem included>Full economy features</FeatureItem>
+                <FeatureItem included>Live IDR economy</FeatureItem>
+                <FeatureItem>Low-level priority support</FeatureItem>
+                <FeatureItem included={false}>Custom prefix</FeatureItem>
+                <FeatureItem included={false}>Early access</FeatureItem>
               </ul>
-              <Button asChild variant="outline" className="btn-block">
+            </CardContent>
+            <CardFooter>
+              <Button asChild variant="outline" className="btn-block mt-0 w-full">
                 <a href={WA_LINKS.bare} target="_blank" rel="noopener">
                   Get Started
                 </a>
               </Button>
-            </CardContent>
+            </CardFooter>
           </Card>
           <Card className="price featured reveal">
             <CardHeader>
               <Badge className="popular w-fit">Most Popular</Badge>
               <CardTitle>Subsidized</CardTitle>
-              <p className="price-num">
+              <CardDescription className="price-num">
                 Rp10.000<small>/month</small>
-              </p>
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-1 flex-col">
               <ul className="check-list">
-                <li>
+                <FeatureItem>
                   <b>10</b> groups
-                </li>
-                <li>
+                </FeatureItem>
+                <FeatureItem>
                   <b>5</b> sub-bots
-                </li>
-                <li className="yes">Full economy features</li>
-                <li className="yes">Live IDR economy</li>
-                <li>Medium-level priority support</li>
-                <li className="yes">Custom prefix</li>
-                <li className="no">Early access</li>
+                </FeatureItem>
+                <FeatureItem included>Full economy features</FeatureItem>
+                <FeatureItem included>Live IDR economy</FeatureItem>
+                <FeatureItem>Medium-level priority support</FeatureItem>
+                <FeatureItem included>Custom prefix</FeatureItem>
+                <FeatureItem included={false}>Early access</FeatureItem>
               </ul>
-              <Button asChild className="btn-block btn-glow">
+            </CardContent>
+            <CardFooter>
+              <Button asChild className="btn-block btn-glow mt-0 w-full">
                 <a href={WA_LINKS.subsidized} target="_blank" rel="noopener">
                   Subscribe
                 </a>
               </Button>
-            </CardContent>
+            </CardFooter>
           </Card>
           <Card className="price partner reveal">
             <CardHeader>
               <CardTitle>Partner</CardTitle>
-              <p className="price-num">
+              <CardDescription className="price-num">
                 Rp32.000<small>/month</small>
-              </p>
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-1 flex-col">
               <ul className="check-list">
-                <li>
+                <FeatureItem>
                   <b>25</b> groups
-                </li>
-                <li>
+                </FeatureItem>
+                <FeatureItem>
                   <b>12</b> sub-bots
-                </li>
-                <li className="yes">Full economy features</li>
-                <li className="yes">Live IDR economy</li>
-                <li>High-level priority support</li>
-                <li className="yes">Custom prefix</li>
-                <li className="yes">Early access to updates</li>
+                </FeatureItem>
+                <FeatureItem included>Full economy features</FeatureItem>
+                <FeatureItem included>Live IDR economy</FeatureItem>
+                <FeatureItem>High-level priority support</FeatureItem>
+                <FeatureItem included>Custom prefix</FeatureItem>
+                <FeatureItem included>Early access to updates</FeatureItem>
               </ul>
-              <Button asChild variant="secondary" className="btn-block">
+            </CardContent>
+            <CardFooter>
+              <Button asChild variant="secondary" className="btn-block mt-0 w-full">
                 <a href={WA_LINKS.partner} target="_blank" rel="noopener">
                   Become a Partner
                 </a>
               </Button>
-            </CardContent>
+            </CardFooter>
           </Card>
         </div>
       </div>
