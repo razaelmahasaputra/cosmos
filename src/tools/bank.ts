@@ -1,5 +1,5 @@
 import { ToolDefinition, ToolContext, ToolModule } from './types.js';
-import { getSenderJid, cleanId, getUser } from '#utils/casino.js';
+import { getSenderJid, cleanId, getUser, formatMentions } from '#utils/casino.js';
 import { formatRupiah, parseCurrencyAmount } from '#utils/currency.js';
 import { registerCancellableSession, unregisterCancellableSessionByUser } from '#utils/cancellationManager.js';
 import { prisma } from '#db.js';
@@ -12,7 +12,7 @@ import {
     getBankStatement,
     BANK_TRANSFER_FEE
 } from '#services/bankService.js';
-import { getTranslator } from '#utils/i18n.js';
+import { getTranslator, getChatLanguage } from '#utils/i18n.js';
 
 export interface PendingTransfer {
     senderAccountNumber: string;
@@ -104,10 +104,13 @@ export async function processBankTransferConfirmation(
     if (targetUserJidRaw) {
         (async () => {
             try {
-                const targetJid = targetUserJidRaw.includes('@')
-                    ? targetUserJidRaw
-                    : `${targetUserJidRaw}@s.whatsapp.net`;
-                const notification = t('tools.bank.transfer_receiver_notification', {
+                const targetJids = formatMentions(targetUserJidRaw);
+                const targetJid =
+                    targetJids[0] ||
+                    (targetUserJidRaw.includes('@') ? targetUserJidRaw : `${targetUserJidRaw}@s.whatsapp.net`);
+                const receiverLang = await getChatLanguage(targetJid);
+                const receiverT = getTranslator(receiverLang);
+                const notification = receiverT('tools.bank.transfer_receiver_notification', {
                     amount: formatRupiah(pending.amount),
                     senderAccount: pending.senderAccountNumber,
                     senderName: msg.pushName || pending.senderUserJid.split('@')[0]
@@ -134,6 +137,14 @@ export const definition: ToolDefinition = {
             action: {
                 type: 'string',
                 description: 'Bank action: register, balance, deposit, withdraw, transfer'
+            },
+            account: {
+                type: 'string',
+                description: 'Target bank account number for transfer'
+            },
+            amount: {
+                type: 'string',
+                description: 'Amount for deposit, withdraw, or transfer'
             }
         }
     }
@@ -170,7 +181,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         case 'depo':
         case 'nabung':
         case 'setor': {
-            const amountInput = remainingParts[0] || '';
+            const amountInput = remainingParts[0] || args.amount || '';
             const user = await getUser(prisma as any, senderJid, ctx.msg.pushName || undefined);
             const amount = parseCurrencyAmount(amountInput, user?.balance);
 
@@ -192,7 +203,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         case 'withdraw':
         case 'wd':
         case 'tarik': {
-            const amountInput = remainingParts[0] || '';
+            const amountInput = remainingParts[0] || args.amount || '';
             const statement = await getBankStatement(senderJid);
             const bankBalance = statement ? statement.bankBalance : undefined;
             const amount = parseCurrencyAmount(amountInput, bankBalance);
@@ -216,8 +227,8 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         case 'tf':
         case 'kirim': {
             // Format: .bank transfer <account_number> <amount>
-            const targetAccountInput = remainingParts[0] || '';
-            const amountInput = remainingParts[1] || '';
+            const targetAccountInput = remainingParts[0] || args.account || '';
+            const amountInput = remainingParts[1] || args.amount || '';
 
             if (!targetAccountInput || !amountInput) {
                 return t('tools.bank.transfer_usage');
