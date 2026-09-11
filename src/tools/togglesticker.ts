@@ -1,5 +1,5 @@
 import { ToolDefinition, ToolContext } from './types.js';
-import { toggleAutoSticker } from '#/utils/autoSticker.js';
+import { toggleAutoSticker } from '#utils/autoSticker.js';
 
 export const definition: ToolDefinition = {
     name: 'togglesticker',
@@ -27,8 +27,8 @@ export const definition: ToolDefinition = {
 export async function execute(_args: Record<string, any>, ctx: ToolContext): Promise<string> {
     const isEnabled = await toggleAutoSticker(ctx.jid);
     if (isEnabled) {
-        return '✨ *Auto Sticker Maker ACTIVATED* for this chat.\n\nEvery photo, video, or GIF sent in this chat will automatically be converted into a sticker.\n\nType *.stoptogglesticker* (or *.stopautosticker* / *.stoptgls*) to disable.';
+        return ctx.t('utilities.autosticker.enabled');
     } else {
-        return '🔴 *Auto Sticker Maker DEACTIVATED* for this chat.';
+        return ctx.t('utilities.autosticker.disabled');
     }
 }

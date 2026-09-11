@@ -1,0 +1,322 @@
+{
+    "balance": {
+        "title": "💰 Saldo",
+        "amount": "Saldo Anda saat ini: {{amount}}",
+        "keep_playing": "Terus bermain dan klaim reward harian Anda!",
+        "other_user": "@{{user}} saat ini memiliki {{amount}}.",
+        "no_account": "Anda belum memiliki akun. Gunakan .daily untuk memulai.",
+        "owner_only_other": "❌ Hanya pemilik bot yang dapat memeriksa saldo pengguna lain."
+    },
+    "daily": {
+        "claimed": "Selamat! Anda telah mengklaim reward harian sebesar {{amount}}.",
+        "new_balance": "Saldo baru Anda adalah *{{balance}}*.",
+        "cooldown": "Anda sudah mengklaim reward harian. Silakan coba lagi dalam {{remaining}}.",
+        "hours_one": "1 jam",
+        "hours_other": "{{count}} jam",
+        "minutes_one": "1 menit",
+        "minutes_other": "{{count}} menit",
+        "and": " dan ",
+        "less_than_minute": "kurang dari satu menit"
+    },
+    "setlang": {
+        "usage": "Format tidak valid. Gunakan: .setlang <id|en>",
+        "success": "Bahasa Anda telah diubah ke {{language}}.",
+        "unsupported": "Bahasa '{{lang}}' tidak didukung. Bahasa yang didukung: {{supported}}"
+    },
+    "setgrouplang": {
+        "usage": "Format tidak valid. Gunakan: .setgrouplang <id|en>",
+        "success": "Bahasa grup telah diubah ke {{language}}.",
+        "unsupported": "Bahasa '{{lang}}' tidak didukung. Bahasa yang didukung: {{supported}}",
+        "admin_only": "Hanya admin grup atau pemilik bot yang dapat mengubah bahasa grup."
+    },
+    "help": {
+        "title": "📜 Menu Bantuan Cosmos",
+        "description": "Berikut adalah daftar perintah yang tersedia:",
+        "command_not_found": "Perintah '{{command}}' tidak ditemukan.",
+        "category_menu_title": "*Cosmos - MENU {{category}}*\n\n",
+        "alias": "Alias: {{aliases}}",
+        "desc": "Deskripsi: {{description}}",
+        "tip_categories": "*Tips:* Gunakan ```{{prefix}}``` untuk melihat semua kategori yang tersedia.",
+        "category_not_found": "*Error:* Kategori '{{category}}' tidak ditemukan.\n\n*Kategori yang Tersedia:*\n{{available}}",
+        "categories_title": "*Cosmos - KATEGORI PERINTAH*\n\n",
+        "tip_view_category": "*Tips:* Ketik ```{{prefix}} <kategori>``` untuk melihat perintah dalam kategori tersebut (contoh: ```{{prefix}} media```).",
+        "owner_badge": " *(Pemilik)*",
+        "alias_label": "Alias: ",
+        "desc_label": "Deskripsi: ",
+        "category_tip": "*Tips:* Gunakan ```{{prefix}}``` untuk melihat semua kategori yang tersedia.",
+        "categories_tip": "*Tips:* Ketik ```{{prefix}} <kategori>``` untuk melihat perintah dalam kategori tersebut (contoh: ```{{prefix}} media```)."
+    },
+    "cancel": {
+        "no_active_session": "Tidak ada sesi interaktif aktif yang dapat dibatalkan.",
+        "success": "Sesi aktif berhasil dibatalkan.",
+        "sender_identity_error": "Tidak dapat menentukan identitas pengirim Anda."
+    },
+    "addbalance": {
+        "usage": "Format tidak valid. Gunakan: .addbalance <user> <jumlah>",
+        "mention_required": "❌ Silakan sebutkan (@mention) pengguna untuk menambahkan koin. Contoh: .addbalance @user 50",
+        "invalid_amount": "❌ Jumlah tidak valid. Silakan tentukan jumlah koin yang valid.",
+        "success": "✅ *Saldo Ditambahkan!*\n\nBerhasil menambahkan *{{amount}}* ke @{{user}} dari house vault.",
+        "failed": "❌ Gagal menambahkan saldo: {{error}}"
+    },
+    "forceupdate": {
+        "contacting": "⏳ *Menghubungi Pasar Dunia...*\nMengambil data dan berkonsultasi dengan AI...",
+        "success": "✅ *Pasar diperbarui secara manual!*\nPengali baru adalah *{{multiplier}}x*. Siaran sedang dikirim ke {{count}} grup yang masuk dalam whitelist.",
+        "failed": "⚠️ *PERINGATAN SISTEM: Pembaruan Ekonomi Gagal*\n\nPembaruan gagal.\n_Error: {{error}}_\n\nEkonomi akan tetap berada pada pengali saat ini."
+    },
+    "system_info": {
+        "title": "*⚡ STATUS BOT & SERVER*",
+        "latency": "• *Latensi:* {{latency}}",
+        "os": "• *OS:* {{type}} ({{release}})",
+        "cpu": "• *CPU:* {{model}} ({{arch}})",
+        "ram": "• *RAM:* {{used}} / {{total}} (Bebas: {{free}})",
+        "server_uptime": "• *Waktu Aktif Server:* {{uptime}}",
+        "bot_uptime": "• *Waktu Aktif Bot:* {{uptime}}",
+        "nodejs": "• *Node.js:* {{version}}"
+    },
+    "transfer": {
+        "usage": "Format tidak valid. Gunakan: .transfer <user> <jumlah>",
+        "mention_required": "❌ Silakan sebutkan pengguna untuk mentransfer koin. Contoh: .transfer @user 50",
+        "self_transfer": "❌ Anda tidak dapat mentransfer saldo ke diri sendiri.",
+        "invalid_amount": "❌ Jumlah tidak valid. Silakan tentukan jumlah koin yang valid untuk ditransfer.",
+        "insufficient": "❌ Saldo tidak mencukupi. Anda hanya memiliki {{balance}}.",
+        "success": "💸 *Transfer Berhasil!*\n\nAnda berhasil mentransfer *{{amount}}* ke @{{target}}.\nSisa saldo Anda adalah *{{remaining}}*.",
+        "failed": "❌ Transfer gagal: {{error}}"
+    },
+    "loan": {
+        "invalid_amount": "Silakan tentukan jumlah pinjaman yang valid (contoh: .loan 5000000).",
+        "approved": "Verifikasi identitas berhasil. Pinjaman sebesar {{amount}} telah disetujui dan terdaftar di bawah NIK: {{nik}}."
+    },
+    "vault": {
+        "title": "🏦 *Statistik House Vault*",
+        "income": "📈 *Total Pemasukan:* {{income}}",
+        "payout": "📉 *Total Pengeluaran:* {{payout}}",
+        "net_profit": "💰 *Keuntungan Bersih:* {{profit}}",
+        "quote": "🏦 Sistem Brankas Global Cosmos"
+    },
+    "top": {
+        "group_only": "❌ Perintah ini hanya dapat digunakan dalam obrolan grup. Gunakan .topglobal untuk melihat papan peringkat global.",
+        "roulette_title": "🔫 *Papan Peringkat Roulette Grup* 🔫\n\n",
+        "casino_title": "👥 *Papan Peringkat Kasino Grup* 👥\n\n",
+        "empty": "📭 Belum ada pemain yang terdaftar dalam database untuk papan peringkat ini.",
+        "roulette_row": "{{badge}} *{{rank}}.* @{{user}} - *{{wins}}* Menang / *{{rounds}}* Pertandingan\n",
+        "casino_row": "{{badge}} *{{rank}}.* @{{user}}{{name}} - *{{balance}}*\n",
+        "failed": "❌ Gagal mengambil papan peringkat grup.",
+        "roulette_entry": "{{icon}} *{{rank}}.* @{{user}} - *{{wins}}* Menang / *{{matches}}* Pertandingan",
+        "casino_entry": "{{icon}} *{{rank}}.* @{{user}}{{name}} - *{{balance}}"
+    },
+    "topglobal": {
+        "roulette_title": "🌍 *Papan Peringkat Roulette Global* 🌍\n\n",
+        "casino_title": "🌍 *Papan Peringkat Kasino Global* 🌍\n\n",
+        "empty": "Tidak ada pemain yang ditemukan.",
+        "roulette_row": "{{badge}} *{{rank}}.* @{{user}} - *{{wins}}* Menang / *{{rounds}}* Pertandingan\n",
+        "casino_row": "{{badge}} *{{rank}}.* @{{user}}{{name}} - *{{balance}}*\n",
+        "footer": "\n_Diperbarui setiap 5 menit._",
+        "roulette_entry": "{{icon}} *{{rank}}.* @{{user}} - *{{wins}}* Menang / *{{matches}}* Pertandingan",
+        "casino_entry": "{{icon}} *{{rank}}.* @{{user}}{{name}} - *{{balance}}"
+    },
+    "apply_job": {
+        "specify_role": "Silakan tentukan posisi pekerjaan yang Anda lamar (contoh: .apply-job Developer).",
+        "success": "Lamaran Anda telah dikirim. Kontrak untuk '{{role}}' telah didaftarkan atas nama {{name}}, bertempat tinggal di {{address}}."
+    },
+    "apply_license": {
+        "age_denied": "Permohonan Ditolak. Anda harus berusia minimal 17 tahun untuk mengajukan permohonan SIM. (Usia terhitung: {{age}} tahun).",
+        "success": "Identitas terverifikasi! Nama: {{name}}. Syarat usia terpenuhi ({{age}} tahun). Memulai ujian mengemudi virtual untuk SIM {{type}} sekarang..."
+    },
+    "market": {
+        "unavailable": "Data ekonomi saat ini tidak tersedia.",
+        "title": "*📊 Status Pasar Terkini*\n\n",
+        "multiplier": "• *Pengali:* {{multiplier}}x",
+        "updated": "• *Terakhir Diperbarui:* {{date}}\n",
+        "rate": "• *Kurs Saat Ini:* {{rate}} / USD\n\n",
+        "tip": "_Tips: Jual jarahan Anda sekarang saat inflasi tinggi! 💰_",
+        "status_title": "*📊 Status Pasar Terkini*",
+        "last_updated": "• *Terakhir Diperbarui:* {{date}}",
+        "current_rate": "• *Kurs Saat Ini:* {{rate}} / USD"
+    },
+    "shop": {
+        "title": "🏬 Toko Cosmos",
+        "category_title": "🏬 Kategori Toko Cosmos",
+        "select_category": "Pilih kategori untuk melihat:\n",
+        "item_not_found": "Item tidak ditemukan dalam katalog toko.",
+        "buy_success": "Berhasil membeli {{item}} seharga {{price}}.",
+        "insufficient_funds": "Saldo Anda tidak mencukupi untuk membeli item ini.",
+        "all_items_hint": "• `.shop items` _(Lihat semua item umum)_\n\n",
+        "usage": "*Penggunaan:*\n• Ketik `.shop <kategori>` untuk melihat item dalam suatu kategori.\n• Ketik `.buy <short_id> [jumlah]` untuk membeli item.",
+        "property_catalog_empty": "Katalog properti saat ini kosong.",
+        "property_catalog_title": "*🏬 Katalog Properti Cosmos*\n\n",
+        "property_usage": "_Gunakan `.buy <nama_properti>` untuk membeli properti._",
+        "no_items_category": "Item tidak ditemukan dalam kategori \"{{category}}\". Gunakan `.shop` untuk melihat kategori yang tersedia.",
+        "items_title": "*🛍️ Toko Cosmos - {{title}}*\n\n",
+        "buy_hint": "_Untuk membeli item, gunakan: `.buy <short_id> [jumlah]`_",
+        "categories_title": "*🏬 Toko Cosmos - Kategori*",
+        "categories_select": "Pilih kategori untuk dijelajahi:",
+        "categories_items_view": "• `.shop items` _(Lihat semua item umum)_",
+        "categories_usage": "*Penggunaan:*\n• Ketik `.shop <kategori>` untuk melihat item dalam suatu kategori.\n• Ketik `.buy <short_id> [jumlah]` untuk membeli item.",
+        "properties_empty": "Katalog properti saat ini kosong.",
+        "properties_title": "*🏬 Katalog Properti Cosmos*\n\n",
+        "properties_buy_tip": "_Gunakan `.buy <nama_properti>` untuk membeli properti._",
+        "no_items": "Tidak ada item yang ditemukan dalam kategori \"{{category}}\". Gunakan `.shop` untuk melihat kategori yang tersedia.",
+        "header_title": "*🛍️ Toko Cosmos - {{title}}*",
+        "buy_tip": "_Untuk membeli item, gunakan: `.buy <short_id> [jumlah]`_"
+    },
+    "property_buy": {
+        "specify_target": "Silakan tentukan item atau properti yang ingin Anda beli. Format: `.buy <short_id> [jumlah]`",
+        "insufficient_funds_item": "Saldo Anda tidak mencukupi untuk membeli {{quantity}}x *{{name}}*. Total biaya: {{cost}}, saldo Anda: {{balance}}.",
+        "buy_item_success": "🎉 Pembelian berhasil! Anda membeli *{{quantity}}x {{name}}* seharga *{{cost}}*.\nSisa saldo: *{{remaining}}*.",
+        "not_found": "Item atau properti \"{{target}}\" tidak ditemukan. Gunakan `.shop` untuk melihat item yang tersedia.",
+        "already_owned": "Anda sudah memiliki *{{name}}*. Anda tidak dapat membeli properti yang sama lebih dari satu kali.",
+        "insufficient_funds_property": "Saldo Anda tidak mencukupi untuk membeli {{name}}. Harga properti {{cost}}, saldo Anda: {{balance}}.",
+        "buy_property_success": "🎉 Selamat! Anda telah berhasil membeli *{{name}}* seharga {{cost}}.",
+        "specify_item": "Silakan tentukan item atau properti yang ingin Anda beli. Format: `.buy <short_id> [jumlah]`",
+        "insufficient_item_funds": "Saldo Anda tidak mencukupi untuk membeli {{quantity}}x *{{name}}*. Total biaya: {{cost}}, saldo Anda: {{balance}}.",
+        "item_success": "🎉 Pembelian berhasil! Anda membeli *{{quantity}}x {{name}}* seharga *{{cost}}*.\nSisa saldo: *{{balance}}*.",
+        "insufficient_prop_funds": "Saldo Anda tidak mencukupi untuk membeli {{name}}. Harga properti {{cost}}, saldo Anda: {{balance}}.",
+        "prop_success": "🎉 Selamat! Anda telah berhasil membeli *{{name}}* seharga {{cost}}.",
+        "db_error": "Terjadi kesalahan basis data saat memproses pembelian properti."
+    },
+    "property_catalog": {
+        "empty": "Katalog properti saat ini kosong.",
+        "title": "*🏬 Katalog Properti Cosmos*\n\n",
+        "usage": "_Gunakan perintah \"buy\" untuk membeli properti._",
+        "buy_tip": "_Gunakan perintah \"buy\" untuk membeli properti._"
+    },
+    "inventory": {
+        "title": "*📦 Inventaris Cosmos*\n\n",
+        "empty": "Inventaris Anda masih kosong. Kunjungi toko menggunakan `.shop` untuk melihat item!",
+        "items_count_one": "Anda memiliki 1 item.",
+        "items_count_other": "Anda memiliki {{count}} item.",
+        "items_title": "*Item & Perlengkapan:*\n",
+        "properties_title": "*Properti yang Dimiliki:*\n",
+        "other_assets_title": "*Aset Lainnya:*\n",
+        "footer": "_Gunakan `.shop` untuk membeli lebih banyak item atau `.sell <nama_properti>` untuk menjual properti._",
+        "items_header": "*Item & Perlengkapan:*",
+        "quantity_label": "   Jumlah: {{quantity}}",
+        "type_label": "   Tipe: {{type}}",
+        "properties_header": "*Properti yang Dimiliki:*",
+        "original_value_label": "   Nilai Asli: {{price}}",
+        "acquired_label": "   Diperoleh: {{date}}",
+        "other_assets_header": "*Aset Lainnya:*",
+        "footer_tip": "_Gunakan `.shop` untuk membeli lebih banyak item atau `.sell <nama_properti>` untuk melikuidasi properti._"
+    },
+    "property_sell": {
+        "specify_property": "Silakan tentukan nama properti yang akan dijual. Format: /sell <nama_properti> <negosiasi_opsional>",
+        "not_owned": "Anda tidak memiliki properti bernama \"{{name}}\" atau properti tersebut sudah digadaikan/dijual.",
+        "definition_not_found": "Definisi properti tidak ditemukan untuk {{name}}.",
+        "negotiation_failed_fallback": "Saya saat ini tidak dapat bernegosiasi. Saya akan memberikan penawaran standar.",
+        "sold_title": "*🤝 Properti Terjual*\n\n",
+        "sold_name": "Anda menjual *{{name}}*.\n",
+        "original_price": "Harga Asli: {{price}}\n",
+        "base_offer": "Penawaran Dasar: {{price}}\n",
+        "negotiated_price": "Harga Kesepakatan Negosiasi: {{price}}\n\n",
+        "broker_says": "*Broker berkata:* \"{{message}}\"",
+        "final_price": "Harga Kesepakatan Akhir: {{price}}\n\n",
+        "negotiate_hint": "_Anda dapat menegosiasikan harga dengan menggunakan: /sell {{name}} <pesan persuasi Anda>_"
+    },
+    "autodl": {
+        "invalid_platform": "❌ Platform tidak valid. Didukung: tiktok, ig, pin, yt, tg, twitter, fb, threads, autodelete, all.",
+        "status_title": "*📋 Status Auto-Downloader*\n\n",
+        "all_success": "✅ Auto-download untuk semua platform media telah di{{state}}kan.",
+        "save_failed": "❌ Gagal menyimpan pengaturan auto-download.",
+        "autodelete_success": "✅ Auto-delete untuk media dan tautan unduhan sekarang {{state}}.",
+        "platform_success": "✅ Auto-download untuk {{platform}} telah di{{state}}kan.",
+        "settings_title": "*⚙️ Pengaturan*"
+    },
+    "profile_photo": {
+        "target_not_found": "Tidak dapat menentukan pengguna target. Silakan balas pesan, sebutkan seseorang, atau gunakan perintah secara langsung.",
+        "fetch_failed": "Gagal mengambil foto profil. Pengguna mungkin menyembunyikannya atau tidak memilikinya.",
+        "processing": "Memproses foto profil...",
+        "caption": "Foto profil (Hapus otomatis dalam 10 detik)",
+        "hidden_or_none": "Foto profil disembunyikan atau tidak ada.",
+        "error": "Terjadi kesalahan saat mencoba mengambil foto profil."
+    },
+    "quoted": {
+        "reply_required": "Silakan balas pesan yang mengutip pesan lain.",
+        "too_old": "Pesan yang dikutip semula sudah terlalu lama dan tidak lagi ada di cache.",
+        "not_found": "Tidak dapat menemukan pesan yang valid untuk diteruskan.",
+        "forward_failed": "Gagal meneruskan pesan."
+    },
+    "stt": {
+        "quote_required": "Gagal: Silakan kutip pesan suara terlebih dahulu, lalu jalankan perintah ini.",
+        "not_ptt": "Gagal: Pesan yang dikutip bukan pesan suara push-to-talk.",
+        "no_text": "Gagal: Tidak ada teks yang terdeteksi dari pesan suara ini.",
+        "error": "Gagal: Terjadi kesalahan saat menyalin pesan suara."
+    },
+    "idcard": {
+        "duplicate": "Anda sudah memiliki KTP Virtual yang terdaftar (NIK: {{nik}}). Pendaftaran ganda tidak diizinkan. Mengambil kartu Anda sekarang...",
+        "active_in_progress": "Anda sudah memiliki proses pendaftaran yang sedang aktif. Silakan balas pesan atau ketik *.cancel* untuk membatalkan.",
+        "not_registered": "Anda belum memiliki KTP Virtual. Silakan daftarkan identitas Anda terlebih dahulu menggunakan perintah *.register-id*.",
+        "fetching": "⏳ Mengambil KTP Virtual Anda...",
+        "generate_error": "Terjadi kesalahan saat membuat KTP Virtual Anda. Silakan coba lagi nanti.",
+        "card_title": "Berikut adalah KTP Virtual Anda.\n\n"
+    },
+    "offlineai": {
+        "activated": "🤖 *Offline AI Responder DIAKTIFKAN*\n\nPesan masuk sekarang akan menerima balasan AI santai saat Anda offline.\n\nKetik *.toggleofflineai* lagi untuk menonaktifkan.",
+        "deactivated": "🔴 *Offline AI Responder DINONAKTIFKAN*"
+    },
+    "autocorrection": {
+        "already_active": "⚠️ *Peringatan:* Auto-Correction sudah AKTIF dalam obrolan ini! Jika ingin menonaktifkannya, ketik *.stopautocorrection*.",
+        "activated": "✨ *Auto-Correction DIAKTIFKAN* untuk obrolan ini.\n\nPesan terkirim akan otomatis dianalisis dan diperbaiki oleh AI OpenRouter jika terdeteksi salah ketik atau kata yang keliru.\n\nKetik *.stopautocorrection* (atau *.autocorrect*) untuk menonaktifkan.",
+        "not_active": "⚠️ *Peringatan:* Auto-Correction tidak aktif dalam obrolan ini.",
+        "deactivated": "🔴 *Auto-Correction DINONAKTIFKAN* untuk obrolan ini."
+    },
+    "tgadd": {
+        "specify_link": "Error: Silakan berikan tautan undangan, tautan posting pribadi, atau ID chat numerik.",
+        "already_registered": "Chat tersebut sudah terdaftar di database sebagai \"{{title}}\".",
+        "save_failed": "Error: Chat berhasil diikuti, tetapi tidak dapat disimpan ke database.",
+        "join_success": "Sukses: Akun dummy telah bergabung dan mendaftarkan \"{{title}}\". Postingan privat dari grup tersebut sekarang dapat diunduh.",
+        "join_failed": "Error: Akun dummy tidak dapat bergabung menggunakan undangan tersebut. Undangan mungkin sudah kedaluwarsa, dicabut, atau klien Telegram belum terhubung.",
+        "invalid_format": "Error: Format tidak menyerupai tautan undangan yang valid, tautan posting pribadi, atau ID chat numerik. Tautan posting pribadi berbentuk seperti https://t.me/c/1234567890/15.",
+        "already_registered_id": "Chat tersebut ({{chatId}}) sudah terdaftar di database.",
+        "register_success": "Sukses: Chat {{chatId}}{{title}} telah didaftarkan. Harap pastikan akun dummy adalah anggota grup tersebut."
+    },
+    "tgdel": {
+        "specify_id": "Error: Harap berikan ID chat numerik, contoh .tgdel 1234567890. Gunakan .tglist untuk melihat chat yang terdaftar.",
+        "not_found": "Error: Chat {{chatId}} tidak ditemukan dalam registri.",
+        "success": "Sukses: Chat {{chatId}} telah dihapus dari registri dan tidak dapat lagi diproksi."
+    },
+    "tglist": {
+        "empty": "Belum ada chat privat Telegram yang terdaftar. Gunakan .tgadd untuk mendaftarkannya.",
+        "title": "*Chat Privat Telegram yang Terdaftar ({{count}}):*\n\n"
+    },
+    "items": {
+        "pedang_emas": {
+            "name": "Pedang Emas",
+            "description": "Pedang emas yang kuat"
+        }
+    },
+    "bank": {
+        "usage": "*🏦 Cosmos Central Bank*\n\nPerintah yang tersedia:\n• *.bank register* - Buka rekening bank baru\n• *.bank balance* - Lihat mutasi & saldo rekening\n• *.bank deposit <jumlah>* - Setor uang tunai ke bank\n• *.bank withdraw <jumlah>* - Tarik uang dari bank ke tunai\n• *.bank transfer <rekening> <jumlah>* - Transfer ke rekening lain",
+        "sender_identity_error": "Could not determine your sender identity.",
+        "register_success": "Your bank account has been successfully created. Your new Account Number is {{accountNumber}}.",
+        "no_id_card": "Access denied. You must register for a Virtual ID (KTP) before you can open a bank account.",
+        "already_registered": "You already possess an active bank account. Your Account Number is {{accountNumber}}.",
+        "registration_fee_insufficient": "Registration failed. Opening a bank account requires a setup fee of {{fee}}. Your current cash balance is {{cashBalance}}.",
+        "account_not_found": "You do not have an active bank account yet. Please register first using *.bank register*.",
+        "account_frozen": "Your bank account is currently {{status}}. Please contact administration.",
+        "deposit_success": "Deposit successful. {{amount}} has been securely transferred to your bank account. Your new bank balance is {{newBankBalance}}.",
+        "deposit_invalid_amount": "Invalid deposit amount. Please specify a valid amount greater than 0.",
+        "insufficient_cash": "Transaction failed. You do not have sufficient cash on hand. Your current cash balance is {{cashBalance}}.",
+        "withdrawal_success": "Withdrawal successful. {{amount}} has been dispensed to your cash balance. Your remaining bank balance is {{newBankBalance}}.",
+        "withdrawal_invalid_amount": "Invalid withdrawal amount. Please specify a valid amount greater than 0.",
+        "insufficient_bank_balance": "Transaction failed. Your bank account does not have sufficient funds for this withdrawal. Your current bank balance is {{bankBalance}}.",
+        "transfer_usage": "Invalid transfer format. Usage: *.bank transfer <account_number> <amount>*",
+        "transfer_self": "Transaction failed. You cannot transfer funds to your own bank account.",
+        "transfer_target_not_found": "Transaction failed. The specified target Account Number ({{targetAccount}}) does not exist.",
+        "transfer_target_frozen": "Transaction failed. The recipient bank account is currently {{status}}.",
+        "transfer_invalid_amount": "Invalid transfer amount. Please specify a valid amount greater than 0.",
+        "transfer_insufficient_funds": "Transaction failed. You do not have sufficient funds in your bank account to complete this transfer (including {{fee}} transfer fee).",
+        "transfer_limit_exceeded": "Transaction failed. This transfer exceeds your daily transfer limit of {{limit}}. Remaining limit today: {{remaining}}.",
+        "transfer_confirm_prompt": "You are about to transfer {{amount}} to Account Number {{targetAccount}} ({{targetName}}) with an administrative fee of {{fee}}.\n\nPlease reply with 'confirm' to proceed, or type '.cancel' to abort this transaction.",
+        "transfer_pending_exists": "You already have a pending transfer transaction awaiting confirmation. Please reply with 'confirm' or type '.cancel'.",
+        "transfer_cancelled": "The transfer transaction has been successfully cancelled.",
+        "transfer_sender_success": "Transfer successful. {{amount}} has been sent to Account Number {{targetAccount}}. Your new bank balance is {{newBankBalance}}.",
+        "transfer_receiver_notification": "You have received a transfer of {{amount}} from Account Number {{senderAccount}} ({{senderName}}).",
+        "statement_header": "=== [ Cosmos Central Bank ] ===",
+        "statement_holder": "Account Holder : {{fullName}}",
+        "statement_account": "Account Number : {{accountNumber}}",
+        "statement_balance": "Current Balance: {{bankBalance}}",
+        "statement_recent_title": "\nRecent Transactions:",
+        "statement_no_transactions": "  No recent transactions recorded.",
+        "statement_footer": "==============================="
+    }
+}

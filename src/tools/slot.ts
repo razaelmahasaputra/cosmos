@@ -35,12 +35,12 @@ const slotTool: ToolModule = {
 
         const inputStr = String(args.bet || '').trim();
         if (!inputStr) {
-            return `❌ Please specify your bet amount. Example: .slot 1.000.000`;
+            return ctx.t('games.slot.bet_required');
         }
 
         const bet = parseBet(inputStr, Number(user.balance));
         if (bet === null) {
-            return `❌ Invalid bet amount. Minimum bet is ${formatRupiah(MIN_BET)}.`;
+            return ctx.t('games.slot.invalid_bet', { min: formatRupiah(MIN_BET) });
         }
 
         // Pre-roll the winning symbol to determine the multiplier
@@ -59,7 +59,8 @@ const slotTool: ToolModule = {
             80,
             sock,
             msg,
-            winItem.bonus
+            winItem.bonus,
+            ctx.t
         );
 
         if (!result.success) {
@@ -80,14 +81,19 @@ const slotTool: ToolModule = {
         }
 
         const winMsg = result.isWin
-            ? `🎉 *JACKPOT!* You got 3 ${winItem.symbol} (${winItem.multiplier}x + ${formatRupiah(winItem.bonus)} Bonus) and won *${formatRupiah(result.winAmount)}*!`
-            : `💀 *YOU LOSE!* You lost *${formatRupiah(bet)}*.`;
+            ? ctx.t('games.slot.jackpot', {
+                  symbol: winItem.symbol,
+                  multiplier: winItem.multiplier,
+                  bonus: formatRupiah(winItem.bonus),
+                  amount: formatRupiah(result.winAmount)
+              })
+            : ctx.t('games.slot.lost', { amount: formatRupiah(bet) });
 
         const text =
-            `🎰 *SLOT MACHINE* 🎰\n\n` +
+            `${ctx.t('games.slot.title')}\n\n` +
             `[ ${slot1} | ${slot2} | ${slot3} ]\n\n` +
             `${winMsg}\n` +
-            `Current Balance: *${formatRupiah(result.newBalance)}*`;
+            `${ctx.t('games.slot.current_balance', { balance: formatRupiah(result.newBalance) })}`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: msg });

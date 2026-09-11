@@ -1,5 +1,6 @@
 import { ToolDefinition, ToolContext } from './types.js';
-import { setAutoDl, isAutoDlEnabled } from '#/utils/autodl.js';
+import { setAutoDl, isAutoDlEnabled } from '#utils/autodl.js';
+import { getTranslator } from '#utils/i18n.js';
 
 export const definition: ToolDefinition = {
     name: 'autodl',
@@ -45,7 +46,8 @@ const VALID_PLATFORMS = [
     'list'
 ];
 
-export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string | void> {
+export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string> {
+    const t = ctx?.t || getTranslator('en');
     let { platform, state } = args;
 
     if (platform && typeof platform === 'string' && platform.includes(' ') && !state) {
@@ -55,9 +57,18 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     }
     const jid = ctx.jid;
 
-    // Check permissions
-    if (jid.endsWith('@g.us')) {
-        // Group: Admin or Owner
+    // Check if called in a private chat (not a group)
+    if (!jid.endsWith('@g.us')) {
+        const ownerNumber = process.env.BOT_PHONE_NUMBER
+            ? process.env.BOT_PHONE_NUMBER.split(':')[0].split('@')[0].trim()
+            : null;
+        const senderRaw = jid.split(':')[0].split('@')[0];
+        const isOwner = Boolean(ctx.msg.key.fromMe) || (ownerNumber !== null && senderRaw === ownerNumber);
+        if (!isOwner) {
+            return '❌ ' + t('core.owner_only_private');
+        }
+    } else {
+        // Check group permissions
         const groupMetadata = await ctx.sock.groupMetadata(jid);
         const senderJid = ctx.msg.key.participant || ctx.msg.key.remoteJid;
 
@@ -76,22 +87,12 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         const isOwner = Boolean(ctx.msg.key.fromMe) || (ownerNumber !== null && senderRaw === ownerNumber);
 
         if (!isAdmin && !isOwner) {
-            return '❌ This command can only be used by group admins or the bot owner.';
-        }
-    } else {
-        // Private chat: only owner can toggle
-        const ownerNumber = process.env.BOT_PHONE_NUMBER
-            ? process.env.BOT_PHONE_NUMBER.split(':')[0].split('@')[0]
-            : null;
-        const senderRaw = jid.split(':')[0].split('@')[0];
-        const isOwner = Boolean(ctx.msg.key.fromMe) || (ownerNumber !== null && senderRaw === ownerNumber);
-        if (!isOwner) {
-            return '❌ This command can only be used by the bot owner in private chats.';
+            return '❌ ' + t('core.admin_or_owner');
         }
     }
 
     if (!platform || typeof platform !== 'string') {
-        return '❌ Invalid platform. Supported: tiktok, ig, pin, yt, tg, twitter, fb, threads, autodelete, all.';
+        return t('tools.autodl.invalid_platform');
     }
 
     const platRaw = platform.toLowerCase().trim();
@@ -113,7 +114,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                         : platRaw;
 
     if (!VALID_PLATFORMS.includes(platTarget)) {
-        return '❌ Invalid platform. Supported: tiktok, ig, pin, yt, tg, twitter, fb, threads, autodelete, all.';
+        return t('tools.autodl.invalid_platform');
     }
 
     const enabled = state ? state.toLowerCase() === 'on' || state === 'true' || state === '1' : true;
@@ -122,13 +123,13 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
     if (platTarget === 'list') {
         const platformsToCheck = ['tiktok', 'ig', 'pin', 'yt', 'tg', 'twitter', 'fb', 'threads'];
-        let msg = '*📋 Auto-Downloader Status*\n\n';
+        let msg = t('tools.autodl.status_title');
         for (const p of platformsToCheck) {
             const status = isAutoDlEnabled(jid, p) ? '✅ ON' : '❌ OFF';
             msg += `- ${p.toUpperCase()}: ${status}\n`;
         }
 
-        msg += '\n*⚙️ Settings*\n';
+        msg += `\n${t('tools.autodl.settings_title')}\n`;
         const adStatus = isAutoDlEnabled(jid, 'autodelete') ? '✅ ON' : '❌ OFF';
         msg += `- AUTODELETE: ${adStatus}\n`;
 
@@ -143,20 +144,23 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         }
         if (success) {
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
-            return `✅ Auto-download for all media platforms has been turned ${enabled ? 'ON' : 'OFF'}.`;
+            return t('tools.autodl.all_success', { state: enabled ? 'ON' : 'OFF' });
         } else {
-            return '❌ Failed to save auto-download settings.';
+            return t('tools.autodl.save_failed');
         }
     } else {
         const success = await setAutoDl(jid, platTarget, enabled);
         if (success) {
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
             if (platTarget === 'autodelete') {
-                return `✅ Auto-delete for downloaded media and links is now ${enabled ? 'ON' : 'OFF'}.`;
+                return t('tools.autodl.autodelete_success', { state: enabled ? 'ON' : 'OFF' });
             }
-            return `✅ Auto-download for ${platTarget.toUpperCase()} has been turned ${enabled ? 'ON' : 'OFF'}.`;
+            return t('tools.autodl.platform_success', {
+                platform: platTarget.toUpperCase(),
+                state: enabled ? 'ON' : 'OFF'
+            });
         } else {
-            return '❌ Failed to save auto-download settings.';
+            return t('tools.autodl.save_failed');
         }
     }
 }

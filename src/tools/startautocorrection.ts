@@ -1,5 +1,5 @@
 import { ToolDefinition, ToolContext } from './types.js';
-import { enableAutoCorrection, isAutoCorrectionEnabled } from '#/utils/autoCorrection.js';
+import { enableAutoCorrection, isAutoCorrectionEnabled } from '#utils/autoCorrection.js';
 
 export const definition: ToolDefinition = {
     name: 'startautocorrection',
@@ -17,8 +17,8 @@ export const definition: ToolDefinition = {
 
 export async function execute(_args: Record<string, any>, ctx: ToolContext): Promise<string> {
     if (isAutoCorrectionEnabled(ctx.jid)) {
-        return '⚠️ *Warning:* Auto-Correction is already ACTIVE in this chat! If you want to disable it, type *.stopautocorrection*.';
+        return ctx.t('utilities.autocorrection.already_active');
     }
     await enableAutoCorrection(ctx.jid);
-    return '✨ *Auto-Correction ACTIVATED* for this chat.\n\nSent messages will automatically be analyzed and corrected by OpenRouter AI if typos or misspoken words are detected.\n\nType *.stopautocorrection* (or *.autocorrect*) to disable.';
+    return ctx.t('utilities.autocorrection.activated');
 }

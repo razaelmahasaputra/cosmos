@@ -1,6 +1,6 @@
 import { WASocket, proto } from '@whiskeysockets/baileys';
 import { isAutoDlEnabled } from './autodl.js';
-import { prisma } from '#/db.js';
+import { prisma } from '#db.js';
 
 let cleanupInterval: NodeJS.Timeout | null = null;
 let currentSock: WASocket | null = null;

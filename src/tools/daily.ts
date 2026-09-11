@@ -2,6 +2,7 @@ import { ToolModule, ToolContext } from './types.js';
 import { prisma } from '../db.js';
 import { getSenderJid, getUser } from '../utils/casino.js';
 import { formatRupiah } from '../utils/currency.js';
+import { getTranslator } from '../utils/i18n.js';
 
 const dailyTool: ToolModule = {
     definition: {
@@ -15,6 +16,7 @@ const dailyTool: ToolModule = {
         }
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
+        const t = ctx?.t || getTranslator('en');
         const { msg, sock } = ctx;
         const senderJid = getSenderJid(msg, sock);
 
@@ -34,20 +36,26 @@ const dailyTool: ToolModule = {
 
                 let timeString = '';
                 if (remainingHours > 0) {
-                    timeString += `${remainingHours} hour${remainingHours > 1 ? 's' : ''}`;
+                    timeString +=
+                        remainingHours === 1
+                            ? t('tools.daily.hours_one')
+                            : t('tools.daily.hours_other', { count: remainingHours });
                 }
                 if (remainingMinutes > 0) {
-                    if (timeString) timeString += ' and ';
-                    timeString += `${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`;
+                    if (timeString) timeString += t('tools.daily.and');
+                    timeString +=
+                        remainingMinutes === 1
+                            ? t('tools.daily.minutes_one')
+                            : t('tools.daily.minutes_other', { count: remainingMinutes });
                 }
                 if (!timeString) {
-                    timeString = 'less than a minute';
+                    timeString = t('tools.daily.less_than_minute');
                 }
 
                 await sock.sendMessage(
                     msg.key.remoteJid!,
                     {
-                        text: `⏳ You have already claimed your daily reward.\nPlease wait ${timeString} before claiming again.`
+                        text: `⏳ ${t('tools.daily.cooldown', { remaining: timeString })}`
                     },
                     { quoted: msg }
                 );
@@ -68,7 +76,7 @@ const dailyTool: ToolModule = {
         await sock.sendMessage(
             msg.key.remoteJid!,
             {
-                text: `🎉 *Daily Reward Claimed!*\n\nYou have received *${formatRupiah(reward)}*.\nYour new balance is *${formatRupiah(updatedUser.balance)}*.`
+                text: `🎉 ${t('tools.daily.claimed', { amount: formatRupiah(reward) })}\n${t('tools.daily.new_balance', { balance: formatRupiah(updatedUser.balance) })}`
             },
             { quoted: msg }
         );

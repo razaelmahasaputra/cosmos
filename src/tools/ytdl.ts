@@ -128,7 +128,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     ctx.jid,
                     {
                         video: { url: file },
-                        caption: '✅ The video has been successfully downloaded.',
+                        caption: ctx.t('media.ytdl.video_success'),
                         mentions: senderJid ? [senderJid] : undefined,
                         contextInfo: { isForwarded: true, forwardingScore: 1 }
                     },
@@ -143,7 +143,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     ctx.jid,
                     {
                         image: { url: file },
-                        caption: '✅ The image has been successfully downloaded.',
+                        caption: ctx.t('media.ytdl.image_success'),
                         mentions: senderJid ? [senderJid] : undefined,
                         contextInfo: { isForwarded: true, forwardingScore: 1 }
                     },

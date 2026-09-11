@@ -1,11 +1,16 @@
 import { jidNormalizedUser, WASocket, WAMessage } from '@whiskeysockets/baileys';
-import { addGroup, isGroupWhitelisted, prisma } from '#/db.js';
-import toolsHandler from '#/tools/handler.js';
-import { isAutoStickerEnabled } from '#/utils/autoSticker.js';
-import { isAutoCorrectionEnabled, analyzeAndCorrectText } from '#/utils/autoCorrection.js';
-import { isMessageProcessed, markMessageProcessed } from '#/utils/messageCache.js';
-import { processAutoDl } from '#/utils/autodl.js';
-import { handleOfflineAiResponder } from '#/utils/offlineAi.js';
+import { addGroup, isGroupWhitelisted, prisma } from '#db.js';
+import toolsHandler from '#tools/handler.js';
+import { isAutoStickerEnabled } from '#utils/autoSticker.js';
+import { isAutoCorrectionEnabled, analyzeAndCorrectText } from '#utils/autoCorrection.js';
+import { isMessageProcessed, markMessageProcessed } from '#utils/messageCache.js';
+import { processAutoDl } from '#utils/autodl.js';
+import { handleOfflineAiResponder } from '#utils/offlineAi.js';
+import { isUserRegistering, processRegistrationStep } from '#utils/idCard.js';
+import { processBankTransferConfirmation } from '#tools/bank.js';
+import { formatMentions } from '#utils/casino.js';
+import { hasCancellableSession, cancelActiveSession } from '#utils/cancellationManager.js';
+import { getTranslator } from '#utils/i18n.js';
 
 function getUnwrappedMessage(m: any): any {
     if (!m) return null;
@@ -133,6 +138,35 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         (botRawLid !== null && senderRaw === botRawLid) ||
         (ownerNumber !== null && senderRaw === ownerNumber);
 
+    // Resolve chat language preference
+    let chatLang = 'id';
+    try {
+        if (jid.endsWith('@g.us')) {
+            const group = await prisma.whitelistedGroup.findUnique({ where: { jid } });
+            if (group?.language) {
+                chatLang = group.language.toLowerCase();
+            }
+        } else {
+            let user = senderJidDb
+                ? await prisma.user.findFirst({
+                      where: { OR: [{ id: senderJidDb }, { lid: senderJidDb }] }
+                  })
+                : null;
+            if (!user && senderLidDb && senderLidDb !== senderJidDb) {
+                user = await prisma.user.findFirst({
+                    where: { OR: [{ id: senderLidDb }, { lid: senderLidDb }] }
+                });
+            }
+            if (user?.language) {
+                chatLang = user.language.toLowerCase();
+            }
+        }
+    } catch {
+        /* fallback to id */
+    }
+
+    const t = getTranslator(chatLang);
+
     const trimmedText = text.trim();
 
     // Check if it's a bare number replying to a play search result
@@ -142,10 +176,60 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         if (quotedMsg) {
             const extText = quotedMsg.extendedTextMessage;
             const quotedText = quotedMsg.conversation || extText?.text || extText?.matchedText || '';
-            if (quotedText.toLowerCase().includes('reply with a number') && quotedText.includes('results for')) {
+            if (
+                (quotedText.toLowerCase().includes('reply with a number') ||
+                    quotedText.toLowerCase().includes('balas dengan angka')) &&
+                (quotedText.includes('results for') || quotedText.includes('hasil teratas untuk'))
+            ) {
                 isPlayReply = true;
             }
         }
+    }
+
+    // Global cancellation check: if user sends a cancel keyword (.cancel, cancel, .batal, batal, .abort, abort)
+    const lowerText = trimmedText.toLowerCase();
+    const isCancelKeyword =
+        lowerText === '.cancel' ||
+        lowerText === 'cancel' ||
+        lowerText === '.batal' ||
+        lowerText === 'batal' ||
+        lowerText === '.abort' ||
+        lowerText === 'abort';
+
+    if (senderRaw && isCancelKeyword && hasCancellableSession(senderRaw, jid)) {
+        const cancelMsg = await cancelActiveSession(senderRaw, jid, sock, msg);
+        if (cancelMsg && typeof cancelMsg === 'string' && cancelMsg.trim().length > 0) {
+            await sock.sendMessage(jid, { text: cancelMsg }, { quoted: msg });
+        }
+        return;
+    }
+
+    // Ignore programmatic bot responses from being processed as registration step input
+    let isQuotingCommand = false;
+    if (msg.key.fromMe && msg.message) {
+        const qMsg =
+            msg.message.videoMessage?.contextInfo?.quotedMessage ||
+            msg.message.imageMessage?.contextInfo?.quotedMessage ||
+            msg.message.documentMessage?.contextInfo?.quotedMessage ||
+            msg.message.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (qMsg) {
+            const qText = qMsg.conversation || qMsg.extendedTextMessage?.text || '';
+            if (qText.trim().startsWith('.')) isQuotingCommand = true;
+        }
+    }
+
+    // Check if sender is currently in an active ID Card registration flow in this chat
+    if (senderRaw && !isQuotingCommand && isUserRegistering(senderRaw, jid)) {
+        if (!trimmedText.startsWith('.')) {
+            const handled = await processRegistrationStep(sock, msg, senderRaw, jid, trimmedText, t);
+            if (handled) return;
+        }
+    }
+
+    // Check if sender is confirming a pending bank transfer
+    if (senderRaw && !trimmedText.startsWith('.')) {
+        const handledBankConfirm = await processBankTransferConfirmation(sock, msg, senderRaw, jid, trimmedText, t);
+        if (handledBankConfirm) return;
     }
 
     if (trimmedText.startsWith('.') || isPlayReply) {
@@ -163,23 +247,19 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
 
         if (commandName === '.addgroup' || commandName === '.addwhitelist') {
             if (!isOwner) {
-                await sock.sendMessage(
-                    jid,
-                    { text: 'This command can only be used by the bot owner.' },
-                    { quoted: msg }
-                );
+                await sock.sendMessage(jid, { text: t('core.owner_only') }, { quoted: msg });
                 return;
             }
             console.log('Command executed', { command: '.addgroup', jid });
             if (!jid.endsWith('@g.us')) {
-                await sock.sendMessage(jid, { text: 'This command can only be executed within a group.' });
+                await sock.sendMessage(jid, { text: t('core.group_only') });
                 return;
             }
             const success = await addGroup(jid);
             if (success) {
-                await sock.sendMessage(jid, { text: 'Group successfully added to the whitelist!' });
+                await sock.sendMessage(jid, { text: t('core.group_add_success') });
             } else {
-                await sock.sendMessage(jid, { text: 'Failed to add group to the database.' });
+                await sock.sendMessage(jid, { text: t('core.group_add_failed') });
             }
             return;
         }
@@ -189,11 +269,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
             // Check owner permission constraints
             const isOwnerOnly = tool.definition?.owner === true;
             if (isOwnerOnly && !isOwner) {
-                await sock.sendMessage(
-                    jid,
-                    { text: 'This command can only be used by the bot owner.' },
-                    { quoted: msg }
-                );
+                await sock.sendMessage(jid, { text: t('core.owner_only') }, { quoted: msg });
                 return;
             }
 
@@ -279,17 +355,10 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
             }
 
             await sock.sendPresenceUpdate('composing', jid);
-            const result = await toolsHandler.execute(commandName, args, { sock, msg, jid });
+            const result = await toolsHandler.execute(commandName, args, { sock, msg, jid, t });
             if (result && typeof result === 'string' && result.trim().length > 0) {
-                const mentions: string[] = [];
                 const matches = result.match(/@(\d+)/g);
-                if (matches) {
-                    for (const match of matches) {
-                        const num = match.substring(1);
-                        mentions.push(`${num}@s.whatsapp.net`);
-                        mentions.push(`${num}@lid`);
-                    }
-                }
+                const mentions = matches ? formatMentions(matches.map((m) => m.substring(1))) : [];
                 await sock.sendMessage(jid, { text: result, mentions }, { quoted: msg });
             }
             return;
@@ -298,7 +367,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
 
     // Offline AI Responder
     if (!isOwner) {
-        const handled = await handleOfflineAiResponder(sock, msg, jid, text);
+        const handled = await handleOfflineAiResponder(sock, msg, jid, text, chatLang);
         if (handled) return;
     }
 
@@ -338,7 +407,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
 
     // Auto sticker processing if enabled for this chat and message contains direct media
     // Ignore programmatic bot responses (which usually start with ✅, ⏳, or ❌, or quote a command) to prevent loops
-    let isQuotingCommand = false;
+    isQuotingCommand = false;
     if (msg.key.fromMe && msg.message) {
         const qMsg =
             msg.message.videoMessage?.contextInfo?.quotedMessage ||
@@ -364,7 +433,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         console.log('[Message Handler] Auto sticker executing for jid:', jid);
 
         await sock.sendPresenceUpdate('composing', jid);
-        const result = await toolsHandler.execute('sticker_maker', {}, { sock, msg, jid });
+        const result = await toolsHandler.execute('sticker_maker', {}, { sock, msg, jid, t });
         if (result && typeof result === 'string') {
             if (result.startsWith('Failed') || result.startsWith('Error') || result.startsWith('Gagal')) {
                 await sock.sendMessage(jid, { text: result }, { quoted: msg });

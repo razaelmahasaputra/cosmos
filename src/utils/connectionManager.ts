@@ -1,10 +1,10 @@
 import { makeWASocket, DisconnectReason, Browsers, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
 import pino from 'pino';
-import { handleMessage } from '#/handlers/message.js';
-import { cacheMessage, getCachedMessage } from '#/utils/messageCache.js';
-import { usePrismaAuthState } from '#/utils/prismaAuthState.js';
-import { initActiveSessions } from '#/utils/sessionStore.js';
-import { dbContext, getPrismaClient } from '#/db.js';
+import { handleMessage } from '#handlers/message.js';
+import { cacheMessage, getCachedMessage, markMessageProcessed } from '#utils/messageCache.js';
+import { usePrismaAuthState } from '#utils/prismaAuthState.js';
+import { initActiveSessions } from '#utils/sessionStore.js';
+import { dbContext, getPrismaClient } from '#db.js';
 
 const logger = pino({ level: 'debug' });
 const MAX_RECONNECT_ATTEMPTS = 15;
@@ -67,6 +67,15 @@ export async function connectToWhatsApp(options: ConnectOptions): Promise<void> 
             return undefined;
         }
     });
+
+    const originalSendMessage = sock.sendMessage.bind(sock);
+    sock.sendMessage = (async (...args: Parameters<typeof originalSendMessage>) => {
+        const result = await originalSendMessage(...args);
+        if (result?.key?.id) {
+            markMessageProcessed(result.key.id);
+        }
+        return result;
+    }) as typeof sock.sendMessage;
 
     activeConnections.set(sessionId, sock);
 

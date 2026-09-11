@@ -100,3 +100,6 @@ storage/scheduled_stories/*
 storage/active_sessions.json
 storage/transaction/*
 !storage/transaction/.gitkeep
+
+# Issue markdown files
+ISSUE*.md

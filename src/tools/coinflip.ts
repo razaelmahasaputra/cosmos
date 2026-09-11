@@ -3,6 +3,7 @@ import { prisma } from '../db.js';
 import { getSenderJid } from '../utils/casino.js';
 import { getUser, parseBet, executeGamble, MIN_BET } from '../utils/casino.js';
 import { formatRupiah } from '../utils/currency.js';
+import { getTranslator } from '../utils/i18n.js';
 
 const coinflipTool: ToolModule = {
     definition: {
@@ -18,6 +19,7 @@ const coinflipTool: ToolModule = {
         }
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
+        const t = ctx?.t || getTranslator('en');
         const { msg, sock, jid } = ctx;
         const senderJid = getSenderJid(msg, sock);
 
@@ -46,7 +48,7 @@ const coinflipTool: ToolModule = {
         }
 
         if (!guess) {
-            return `❌ Please specify your guess (heads/tails). Example: .coinflip heads 1.000.000`;
+            return `❌ ${t('games.coinflip.usage')}`;
         }
 
         // Remove the guess word to parse the bet
@@ -54,11 +56,11 @@ const coinflipTool: ToolModule = {
         const bet = parseBet(betStr, Number(user.balance));
 
         if (bet === null) {
-            return `❌ Invalid bet amount. Minimum bet is ${formatRupiah(MIN_BET)}.`;
+            return `❌ ${t('games.coinflip.min_bet', { min: formatRupiah(MIN_BET) })}`;
         }
 
         // Coinflip probabilities: 30% win, 70% lose
-        const result = await executeGamble(prisma, senderJid, bet, 2, 30, 70, sock, msg);
+        const result = await executeGamble(prisma, senderJid, bet, 2, 30, 70, sock, msg, 0, t);
 
         if (!result.success) {
             return `❌ ${result.error}`;
@@ -68,15 +70,15 @@ const coinflipTool: ToolModule = {
         const flippedEmoji = flipped === 'heads' ? '🦅 (Heads)' : '🪙 (Tails)';
 
         const winMsg = result.isWin
-            ? `🎉 *You Win!* You earned *${formatRupiah(result.winAmount)}*!`
-            : `💀 *You Lose!* You lost *${formatRupiah(bet)}*.`;
+            ? `🎉 ${t('games.coinflip.win_earned', { amount: formatRupiah(result.winAmount) })}`
+            : `💀 ${t('games.coinflip.lose_lost', { amount: formatRupiah(bet) })}`;
 
         const text =
-            `🪙 *COINFLIP* 🪙\n\n` +
-            `You guessed: *${guess.toUpperCase()}*\n` +
-            `Coin landed on: *${flippedEmoji}*\n\n` +
+            `${t('games.coinflip.title')}\n\n` +
+            `${t('games.coinflip.guessed', { guess: guess.toUpperCase() })}\n` +
+            `${t('games.coinflip.landed', { result: flippedEmoji })}\n\n` +
             `${winMsg}\n` +
-            `Current Balance: *${formatRupiah(result.newBalance)}*`;
+            `${t('games.coinflip.current_balance', { balance: formatRupiah(result.newBalance) })}`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: msg });

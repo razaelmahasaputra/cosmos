@@ -5,7 +5,7 @@ import { formatRupiah } from '../utils/currency.js';
 const propertyCatalogTool: ToolModule = {
     definition: {
         name: 'catalog',
-        aliases: ['propertycatalog', 'shop'],
+        aliases: ['propertycatalog', 'properties'],
         description: 'View the property catalog to purchase real-world assets.',
         category: 'Economy'
     },
@@ -17,11 +17,11 @@ const propertyCatalogTool: ToolModule = {
         });
 
         if (properties.length === 0) {
-            await sock.sendMessage(jid, { text: 'The property catalog is currently empty.' }, { quoted: msg });
+            await sock.sendMessage(jid, { text: ctx.t('tools.property_catalog.empty') }, { quoted: msg });
             return;
         }
 
-        let text = `*🏬 Cosmos Property Catalog*\n\n`;
+        let text = `${ctx.t('tools.property_catalog.title')}\n\n`;
         properties.forEach((p, index) => {
             text += `${index + 1}. *${p.name}*\n`;
             text += `   Type: ${p.typeCategory}\n`;
@@ -29,7 +29,7 @@ const propertyCatalogTool: ToolModule = {
             text += `   Depreciation: ${p.baseDepreciationRate * 100}%\n\n`;
         });
 
-        text += `_Use the "buy" command to purchase a property._`;
+        text += ctx.t('tools.property_catalog.buy_tip');
 
         await sock.sendMessage(jid, { text }, { quoted: msg });
     }

@@ -38,10 +38,10 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     const quotedMsgRaw = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
     if (!messageAId || !quotedMsgRaw) {
-        return 'Please reply to a message that quotes another message.';
+        return ctx.t('tools.quoted.reply_required');
     }
 
-    const { getCachedMessage } = await import('#/utils/messageCache.js');
+    const { getCachedMessage } = await import('#utils/messageCache.js');
 
     // Attempt to get the unstripped Message A from the cache
     const fullMessageA = getCachedMessage(messageAId) || quotedMsgRaw;
@@ -64,7 +64,7 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         }
 
         if (!targetMsg) {
-            return 'The originally quoted message is too old and no longer in the cache.';
+            return ctx.t('tools.quoted.too_old');
         }
     } else {
         // Message A is not a reply. Fallback to forwarding Message A itself.
@@ -74,7 +74,7 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     }
 
     if (!targetMsg) {
-        return 'Could not find a valid message to forward.';
+        return ctx.t('tools.quoted.not_found');
     }
 
     const unwrapMessage = (m: any): any => {
@@ -108,6 +108,6 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
         console.error('[Quoted Error]', err);
         console.error('Failed to forward quoted message', { error: err.message });
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
-        return 'Failed to forward message.';
+        return ctx.t('tools.quoted.forward_failed');
     }
 }

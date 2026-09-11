@@ -96,10 +96,14 @@ export async function executeGamble(
     baseLoseWeight: number,
     sock?: any,
     msg?: any,
-    fixedBonus: number = 0
+    fixedBonus: number = 0,
+    t?: (key: string, args?: Record<string, any>) => string
 ): Promise<GambleResult> {
     if (mutex.has(jid)) {
-        return { success: false, error: 'Please wait, transaction is being processed.' };
+        return {
+            success: false,
+            error: t ? t('utilities.casino.processing') : 'Please wait, transaction is being processed.'
+        };
     }
     mutex.add(jid);
 
@@ -115,14 +119,26 @@ export async function executeGamble(
             if (Number(user.balance) < bet) {
                 return {
                     success: false,
-                    error: `Insufficient balance. Your balance: ${formatRupiah(user.balance)}`
+                    error: t
+                        ? t('utilities.casino.insufficient_balance', { balance: formatRupiah(user.balance) })
+                        : `Insufficient balance. Your balance: ${formatRupiah(user.balance)}`
                 };
             }
             if (bet < MIN_BET) {
-                return { success: false, error: `Minimum bet is ${formatRupiah(MIN_BET)}.` };
+                return {
+                    success: false,
+                    error: t
+                        ? t('utilities.casino.min_bet', { min: formatRupiah(MIN_BET) })
+                        : `Minimum bet is ${formatRupiah(MIN_BET)}.`
+                };
             }
             if (bet > MAX_BET) {
-                return { success: false, error: `Maximum bet is ${formatRupiah(MAX_BET)}.` };
+                return {
+                    success: false,
+                    error: t
+                        ? t('utilities.casino.max_bet', { max: formatRupiah(MAX_BET) })
+                        : `Maximum bet is ${formatRupiah(MAX_BET)}.`
+                };
             }
 
             const now = Date.now();
@@ -132,7 +148,9 @@ export async function executeGamble(
                     const remainingSeconds = ((5100 - diff) / 1000).toFixed(1);
                     return {
                         success: false,
-                        error: `Please wait ${remainingSeconds} more seconds before betting again.`
+                        error: t
+                            ? t('utilities.casino.cooldown', { seconds: remainingSeconds })
+                            : `Please wait ${remainingSeconds} more seconds before betting again.`
                     };
                 }
             }
@@ -222,6 +240,19 @@ export const cleanId = (idStr: string | null | undefined): string => {
     return idStr.split(':')[0].split('@')[0];
 };
 
+export const formatMentions = (ids: string | string[]): string[] => {
+    const idArray = Array.isArray(ids) ? ids : [ids];
+    const mentions: string[] = [];
+    for (const id of idArray) {
+        if (!id) continue;
+        const cleaned = cleanId(id);
+        if (!cleaned) continue;
+        const isLid = id.includes('@lid') || cleaned.length > 14;
+        mentions.push(isLid ? `${cleaned}@lid` : `${cleaned}@s.whatsapp.net`);
+    }
+    return mentions;
+};
+
 export const lidToPnMap = new Map<string, string>();
 
 export const resolveId = async (
@@ -256,10 +287,9 @@ export const resolveId = async (
 };
 
 export const getSenderJid = (msg: any, sock?: any): string => {
-    // When the bot sends a command to itself (fromMe in a DM with its own number),
-    // msg.key.participant is empty and msg.key.remoteJid is the chat partner's JID,
-    // NOT the bot's own JID. Detect this case and return the bot's own cleaned JID.
-    if (msg.key.fromMe && !msg.key.participant && sock?.user?.id) {
+    // When the bot sends a command or message (fromMe in a DM or group),
+    // always return the bot's own cleaned JID.
+    if (msg.key.fromMe && sock?.user?.id) {
         return cleanId(sock.user.id);
     }
 

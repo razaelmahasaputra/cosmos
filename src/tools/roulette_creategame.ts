@@ -1,6 +1,9 @@
 import { ToolModule, ToolContext } from './types.js';
 import { gameSessions, generateSessionId, Player } from '../utils/roulette.js';
 import { getSenderJid } from '../utils/casino.js';
+import { prisma } from '../db.js';
+import { registerCancellableSession, unregisterCancellableSession } from '../utils/cancellationManager.js';
+import { getTranslator } from '../utils/i18n.js';
 
 const createGameTool: ToolModule = {
     definition: {
@@ -9,13 +12,14 @@ const createGameTool: ToolModule = {
         category: 'Games'
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
+        const t = ctx?.t || getTranslator('en');
         const { msg, sock, jid } = ctx;
         const senderJid = getSenderJid(msg, sock);
 
         // Check if there is already a game in this group
         for (const session of gameSessions.values()) {
             if (session.chatId === jid) {
-                return `❌ There is already an ongoing game in this group (ID: ${session.sessionId}).`;
+                return t('games.roulette.already_ongoing', { sessionId: session.sessionId });
             }
         }
 
@@ -23,9 +27,10 @@ const createGameTool: ToolModule = {
         const timeoutId = setTimeout(async () => {
             const session = gameSessions.get(sessionId);
             if (session && session.status === 'LOBBY' && session.players.length < 2) {
+                unregisterCancellableSession(`roulette_${sessionId}`);
                 gameSessions.delete(sessionId);
                 await sock.sendMessage(jid, {
-                    text: `❌ *GAME CANCELLED!*\nTime expired (30 seconds) and no one joined, or the betting requirements were not met. Bet balances have been refunded to each player.`
+                    text: t('games.roulette.cancelled_timeout')
                 });
             }
         }, 30000);
@@ -55,7 +60,37 @@ const createGameTool: ToolModule = {
             timeoutId
         });
 
-        return `🔫 *ROULETTE MINIGAME* 🔫\n\nRoom successfully created by 👑 @${creator.pushName}!\n🆔 *Session ID:* \`${sessionId}\`\n\nWaiting for other players to join...\n👉 Type *.joingame ${sessionId}* to join this session.\n⏱️ *Timeout:* 30 Seconds if no one joins.`;
+        registerCancellableSession({
+            sessionId: `roulette_${sessionId}`,
+            feature: 'roulette',
+            userJid: senderJid,
+            chatJid: jid,
+            description: 'Buckshot Roulette lobby',
+            onCancel: async () => {
+                const session = gameSessions.get(sessionId);
+                if (session && session.status === 'LOBBY') {
+                    if (session.timeoutId) {
+                        clearTimeout(session.timeoutId);
+                    }
+                    gameSessions.delete(sessionId);
+                    for (const player of session.players) {
+                        if (player.betAmount > 0) {
+                            try {
+                                await prisma.user.update({
+                                    where: { id: player.userId },
+                                    data: { balance: { increment: BigInt(player.betAmount) } }
+                                });
+                            } catch {
+                                // ignore
+                            }
+                        }
+                    }
+                    return t('games.roulette.cancelled_host', { sessionId });
+                }
+            }
+        });
+
+        return t('games.roulette.lobby_created', { creator: creator.pushName, sessionId });
     }
 };
 

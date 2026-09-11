@@ -10,9 +10,9 @@ import {
     parseTelegramPrivateRef,
     PrivateMediaFile,
     TelegramPostRef
-} from '#/utils/telegramClient.js';
-import { isTelegramChatRegistered, findTelegramChatByInviteLink } from '#/db.js';
-import { sendTelegramBotNotification } from '#/utils/backup.js';
+} from '#utils/telegramClient.js';
+import { isTelegramChatRegistered, findTelegramChatByInviteLink } from '#db.js';
+import { sendTelegramBotNotification } from '#utils/backup.js';
 
 const execAsync = promisify(exec);
 
@@ -169,7 +169,7 @@ async function sendPrivateMedia(ctx: ToolContext, file: PrivateMediaFile): Promi
             {
                 video: { url: file.filePath },
                 mimetype: file.mimeType,
-                caption: '✅ The Telegram video has been successfully retrieved.',
+                caption: ctx.t('media.telegramdl.video_retrieved'),
                 mentions
             },
             quoted
@@ -203,7 +203,7 @@ async function sendPrivateMedia(ctx: ToolContext, file: PrivateMediaFile): Promi
             ctx.jid,
             {
                 image: { url: file.filePath },
-                caption: '✅ The Telegram photo has been successfully retrieved.',
+                caption: ctx.t('media.telegramdl.photo_retrieved'),
                 mentions
             },
             quoted
@@ -284,7 +284,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
     const telegramUrl = extractTelegramUrl(targetText);
     if (!telegramUrl) {
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
-        return 'Error: Please provide a valid Telegram post link (for example https://t.me/channel/123).';
+        return ctx.t('media.telegramdl.invalid_url');
     }
 
     await ctx.sock.sendMessage(ctx.jid, { react: { text: '⏳', key: ctx.msg.key } });
@@ -296,22 +296,13 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         const knownChat = await findTelegramChatByInviteLink(ref.inviteHash);
         if (knownChat) {
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '✅', key: ctx.msg.key } });
-            return (
-                'That Telegram group has already been added to the database. Please provide the link of the ' +
-                'specific post you wish to download (for example https://t.me/c/' +
-                knownChat.chatId +
-                '/123).'
-            );
+            return ctx.t('media.telegramdl.group_registered', { chatId: knownChat.chatId });
         }
 
         console.log('[TelegramDL Tool] Unregistered invite link received; notifying the owner.');
         await notifyOwnerOfPendingChat(ctx, telegramUrl, ref);
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '🔒', key: ctx.msg.key } });
-        return (
-            'The bot has not been added to that Telegram group yet, so its content cannot be accessed at the ' +
-            'moment. The owner has been notified with your request and access will be available once the group ' +
-            'has been joined and registered. Please try again later.'
-        );
+        return ctx.t('media.telegramdl.bot_not_joined');
     }
 
     // --- Private post (t.me/c/<chatId>/<messageId>): proxy through the dummy account when registered. ---
@@ -321,11 +312,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             console.log(`[TelegramDL Tool] Request for unregistered private chat ${ref.chatId}; notifying the owner.`);
             await notifyOwnerOfPendingChat(ctx, telegramUrl, ref);
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '🔒', key: ctx.msg.key } });
-            return (
-                'The bot has not been added to that Telegram group yet, so its content cannot be accessed at ' +
-                'the moment. The owner has been notified with your request and access will be available once ' +
-                'the group has been joined and registered. Please try again later.'
-            );
+            return ctx.t('media.telegramdl.bot_not_joined');
         }
 
         let file: PrivateMediaFile | null = null;
@@ -337,7 +324,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                     `[TelegramDL Tool] Media ${file.fileName} (${file.sizeBytes} bytes) exceeds the 15MB limit.`
                 );
                 await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
-                return 'Error: This media exceeds the 15MB size limit and cannot be sent via WhatsApp.';
+                return ctx.t('media.telegramdl.size_exceeded');
             }
 
             await sendPrivateMedia(ctx, file);
@@ -346,10 +333,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
         } catch (error: any) {
             console.error('[TelegramDL Tool] Private media retrieval failed:', error);
             await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
-            return (
-                'Error: The media could not be retrieved from that private group. The dummy account may no ' +
-                'longer have access to it. The owner has been informed through the logs.'
-            );
+            return ctx.t('media.telegramdl.private_fetch_failed');
         } finally {
             // The downloaded file is always transient; remove it regardless of outcome.
             safeUnlink(file?.filePath);
@@ -399,14 +383,14 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             if (fs.statSync(downloadedFile).size > MAX_MEDIA_BYTES) {
                 console.error('[TelegramDL Tool] Downloaded video exceeds the 15MB limit.');
                 await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
-                return 'Error: The Telegram video exceeds the 15MB size limit and cannot be sent via WhatsApp.';
+                return ctx.t('media.telegramdl.video_size_exceeded');
             }
 
             const sentMsg3 = await ctx.sock.sendMessage(
                 ctx.jid,
                 {
                     video: { url: downloadedFile },
-                    caption: '✅ The Telegram video has been successfully downloaded.',
+                    caption: ctx.t('media.telegramdl.video_downloaded'),
                     mentions: senderJid ? [senderJid] : undefined,
                     contextInfo: { isForwarded: true, forwardingScore: 1 }
                 },
@@ -451,7 +435,7 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             if (fs.statSync(downloadedAudioOnly).size > MAX_MEDIA_BYTES) {
                 console.error('[TelegramDL Tool] Downloaded audio exceeds the 15MB limit.');
                 await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
-                return 'Error: The Telegram audio exceeds the 15MB size limit and cannot be sent via WhatsApp.';
+                return ctx.t('media.telegramdl.audio_size_exceeded');
             }
 
             const sentMsg5 = await ctx.sock.sendMessage(
@@ -477,11 +461,11 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
             '[TelegramDL Tool] No media found in post after yt-dlp execution (or extraction failed silently).'
         );
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
-        return 'Error: The media could not be retrieved. Please ensure the Telegram post contains a supported video.';
+        return ctx.t('media.telegramdl.no_media');
     } catch (error: any) {
         console.error('[TelegramDL Tool] Execution error:', error);
         await ctx.sock.sendMessage(ctx.jid, { react: { text: '❌', key: ctx.msg.key } });
-        return 'Error: An unexpected issue occurred while downloading the Telegram video.';
+        return ctx.t('media.telegramdl.unexpected_error');
     } finally {
         // Guarantee no temporary artifacts survive the request, even on failure.
         cleanupTempArtifacts(filePrefix);

@@ -1,5 +1,6 @@
-import { stopLyrics } from '#/utils/lyricsPlayer.js';
+import { stopLyrics } from '#utils/lyricsPlayer.js';
 import { ToolDefinition, ToolContext } from './types.js';
+import { getTranslator } from '#utils/i18n.js';
 
 export const definition: ToolDefinition = {
     name: 'stoplyrics',
@@ -15,11 +16,12 @@ export const definition: ToolDefinition = {
 };
 
 export async function execute(_args: Record<string, any>, ctx: ToolContext): Promise<string> {
+    const t = ctx?.t || getTranslator('en');
     try {
-        const result = await stopLyrics(ctx.jid, ctx.sock);
+        const result = await stopLyrics(ctx.jid, ctx.sock, t);
         return result;
     } catch (err) {
         console.error('Error in stoplyrics tool:', err);
-        return 'Failed: An error occurred while stopping lyrics playback.';
+        return t('media.stoplyrics.error');
     }
 }

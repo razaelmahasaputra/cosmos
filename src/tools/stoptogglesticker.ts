@@ -1,5 +1,5 @@
 import { ToolDefinition, ToolContext } from './types.js';
-import { disableAutoSticker, isAutoStickerEnabled } from '#/utils/autoSticker.js';
+import { disableAutoSticker, isAutoStickerEnabled } from '#utils/autoSticker.js';
 
 export const definition: ToolDefinition = {
     name: 'stoptogglesticker',
@@ -26,8 +26,8 @@ export const definition: ToolDefinition = {
 
 export async function execute(_args: Record<string, any>, ctx: ToolContext): Promise<string> {
     if (!isAutoStickerEnabled(ctx.jid)) {
-        return '⚠️ *Warning:* Auto Sticker Maker is not active in this chat.';
+        return ctx.t('utilities.autosticker.not_active');
     }
     await disableAutoSticker(ctx.jid);
-    return '🔴 *Auto Sticker Maker DEACTIVATED* for this chat.';
+    return ctx.t('utilities.autosticker.disabled');
 }

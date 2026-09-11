@@ -3,6 +3,7 @@ import { gameSessions, getSessionByChatId, handleElimination, nextTurn, checkRel
 import { getSenderJid, resolveId } from '../utils/casino.js';
 import { formatRupiah } from '../utils/currency.js';
 import { prisma } from '../db.js';
+import { getTranslator } from '../utils/i18n.js';
 
 const shootTool: ToolModule = {
     definition: {
@@ -18,6 +19,7 @@ const shootTool: ToolModule = {
         }
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
+        const t = ctx?.t || getTranslator('en');
         const { msg, sock, jid } = ctx;
         const senderJid = getSenderJid(msg, sock);
         const inputStr = String(args.input || '')
@@ -26,12 +28,12 @@ const shootTool: ToolModule = {
 
         const session = getSessionByChatId(jid);
         if (!session || session.status !== 'PLAYING') {
-            return `❌ No active Buckshot Roulette game in this group.`;
+            return t('games.roulette.no_session');
         }
 
         const currentPlayer = session.players[session.turnIndex];
         if (currentPlayer.userId !== senderJid) {
-            return `❌ It's not your turn!`;
+            return t('games.roulette.not_your_turn');
         }
 
         let targetId = '';
@@ -42,13 +44,13 @@ const shootTool: ToolModule = {
             if (mentionedJidList.length > 0) {
                 targetId = await resolveId(mentionedJidList[0], sock, msg.key.remoteJid);
             } else {
-                return `❌ Please specify a target. Example: .shoot @user or .shoot me`;
+                return t('games.roulette.specify_target');
             }
         }
 
         const target = session.players.find((p) => p.userId === targetId);
         if (!target || target.hp <= 0) {
-            return `❌ Target is invalid or already eliminated.`;
+            return t('games.roulette.invalid_target');
         }
 
         const currentShell = session.shells.pop(); // Remove front shell
@@ -59,7 +61,10 @@ const shootTool: ToolModule = {
         currentPlayer.handSawActive = false;
         session.lastActionAt = Date.now();
 
-        let outputMsg = `💥 @${currentPlayer.pushName} aims the shotgun at @${target.pushName}...\n`;
+        let outputMsg = t('games.roulette.aim_message', {
+            shooter: currentPlayer.pushName,
+            target: target.pushName
+        });
 
         await sock.sendMessage(jid, { text: outputMsg, mentions: [senderJid, targetId] });
         await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -67,26 +72,26 @@ const shootTool: ToolModule = {
         outputMsg = ''; // Reset for the result
 
         if (currentShell === 'LIVE') {
-            outputMsg += `*BANG!!!*\n🔴 *LIVE SHELL*\n`;
+            outputMsg += t('games.roulette.bang_live');
             target.hp -= damage;
 
             if (target.hp <= 0) {
                 targetEliminated = true;
-                outputMsg += handleElimination(session, target);
+                outputMsg += handleElimination(session, target, t);
             }
 
-            outputMsg += nextTurn(session, targetEliminated);
+            outputMsg += nextTurn(session, targetEliminated, t);
         } else {
-            outputMsg += `*CLICK!*\n⚪ *BLANK SHELL*\n@${target.pushName} survived the shot!\n`;
+            outputMsg += t('games.roulette.click_blank', { target: target.pushName });
 
             if (isSelfShoot) {
-                outputMsg += `\nTurn does not pass! You may continue your action.`;
+                outputMsg += t('games.roulette.turn_continues_self');
             } else {
-                outputMsg += nextTurn(session, false);
+                outputMsg += nextTurn(session, false, t);
             }
         }
 
-        outputMsg += `\n*(Remaining shells in barrel: ${session.shells.length})*`;
+        outputMsg += t('games.roulette.remaining_shells', { count: session.shells.length });
 
         // Check game over
         const alivePlayers = session.players.filter((p) => p.hp > 0);
@@ -111,18 +116,25 @@ const shootTool: ToolModule = {
                 });
             }
 
-            outputMsg += `\n\n🏆 *GAME OVER!* 🏆\n\nOnly one person has survived this deadly table...\nCongratulations to: *👑 @${winner.pushName}*!\n\n💰 *PRIZE AWARDED:*\nTakes the entire Pot worth *${formatRupiah(pot)}*!\n\n\`.top roulette\` statistics have been updated.\nType *.creategame* to start a new round of madness!`;
+            outputMsg += t('games.roulette.game_over_winner', {
+                winner: winner.pushName,
+                pot: formatRupiah(pot)
+            });
 
             gameSessions.delete(session.sessionId);
         } else {
-            const reloadMsg = checkReloadShells(session);
+            const reloadMsg = checkReloadShells(session, t);
             if (reloadMsg) {
                 outputMsg += `\n${reloadMsg}`;
                 // After reload, we need to show the next turn info again because it might have gotten buried
                 const nextP = session.players[session.turnIndex];
                 const inventoryStr =
                     nextP.inventory.length > 0 ? nextP.inventory.map((i) => i.replace('_', ' ')).join(', ') : 'Empty';
-                outputMsg += `\n👇 *TURN:* @${nextP.pushName}\n❤️ Lives: [${'❤️'.repeat(nextP.hp)}${'🖤'.repeat(5 - nextP.hp)}]\n🎒 Inventory: ${inventoryStr}`;
+                outputMsg += t('games.roulette.turn_info', {
+                    player: nextP.pushName,
+                    lives: `${'❤️'.repeat(nextP.hp)}${'🖤'.repeat(5 - nextP.hp)}`,
+                    inventory: inventoryStr
+                });
             }
         }
 

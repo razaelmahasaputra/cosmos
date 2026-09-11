@@ -28,15 +28,15 @@ const vaultTool: ToolModule = {
                 participant: '0@s.whatsapp.net'
             },
             message: {
-                conversation: '🏦 Cosmos Global Vault System'
+                conversation: ctx.t('tools.vault.quote')
             }
         };
 
         const text =
-            `🏦 *House Vault Statistics*\n\n` +
-            `📈 *Total Income:* ${formatRupiah(vault.income)}\n` +
-            `📉 *Total Payout:* ${formatRupiah(vault.payout)}\n` +
-            `💰 *Net Profit:* ${formatRupiah(vault.netProfit)}`;
+            `${ctx.t('tools.vault.title')}\n\n` +
+            `${ctx.t('tools.vault.income', { income: formatRupiah(vault.income) })}\n` +
+            `${ctx.t('tools.vault.payout', { payout: formatRupiah(vault.payout) })}\n` +
+            `${ctx.t('tools.vault.net_profit', { profit: formatRupiah(vault.netProfit) })}`;
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
         await sock.sendMessage(jid, { text }, { quoted: fakeCosmosQuote as any });

@@ -2,6 +2,7 @@ import { WASocket } from '@whiskeysockets/baileys';
 import { gameSessions, handleElimination, nextTurn, checkReloadShells } from './roulette.js';
 import { formatRupiah } from './currency.js';
 import { prisma } from '../db.js';
+import { getChatLanguage, getTranslator } from './i18n.js';
 
 let afkInterval: NodeJS.Timeout | null = null;
 
@@ -34,9 +35,14 @@ export function initRouletteAfkTimer(sock: WASocket) {
                     console.error('Failed to update AFK penalty:', err);
                 }
 
-                let outputMsg = `⏳ *AFK TIMEOUT!*\n@${currentPlayer.userId.split('@')[0]} did not respond for 60 seconds.\n@${currentPlayer.userId.split('@')[0]} has been kicked from the game table! Their bet is forfeited and remains in the Pot!\n`;
+                const lang = await getChatLanguage(session.chatId);
+                const t = getTranslator(lang);
 
-                outputMsg += handleElimination(session, currentPlayer);
+                let outputMsg = t('games.roulette.afk_timeout', {
+                    player: currentPlayer.userId.split('@')[0]
+                });
+
+                outputMsg += handleElimination(session, currentPlayer, t);
 
                 // Check if only 1 player is left
                 const alivePlayers = session.players.filter((p) => p.hp > 0);
@@ -62,14 +68,17 @@ export function initRouletteAfkTimer(sock: WASocket) {
                         console.error('Failed to update winner stats:', err);
                     }
 
-                    outputMsg += `\n\n🏆 *GAME OVER!* 🏆\n\nOnly one person has survived this deadly table...\nCongratulations to: *👑 @${winner.userId.split('@')[0]}*!\n\n💰 *PRIZE AWARDED:*\nTakes the entire Pot worth *${formatRupiah(pot)}*!\n\n\`.top roulette\` statistics have been updated.\nType *.creategame* to start a new round of madness!`;
+                    outputMsg += t('games.roulette.game_over_winner', {
+                        winner: winner.userId.split('@')[0],
+                        pot: formatRupiah(pot)
+                    });
 
                     gameSessions.delete(sessionId);
                 } else {
                     // Turn passes since player was kicked
-                    outputMsg += nextTurn(session, true); // Randomize next turn when someone dies
+                    outputMsg += nextTurn(session, true, t); // Randomize next turn when someone dies
 
-                    const reloadMsg = checkReloadShells(session);
+                    const reloadMsg = checkReloadShells(session, t);
                     if (reloadMsg) {
                         outputMsg += `\n${reloadMsg}`;
                         const nextP = session.players[session.turnIndex];
@@ -77,7 +86,11 @@ export function initRouletteAfkTimer(sock: WASocket) {
                             nextP.inventory.length > 0
                                 ? nextP.inventory.map((i) => i.replace('_', ' ')).join(', ')
                                 : 'Empty';
-                        outputMsg += `\n👇 *TURN:* @${nextP.userId.split('@')[0]}\n❤️ Lives: [${'❤️'.repeat(nextP.hp)}${'🖤'.repeat(5 - nextP.hp)}]\n🎒 Inventory: ${inventoryStr}`;
+                        outputMsg += t('games.roulette.turn_info', {
+                            player: nextP.userId.split('@')[0],
+                            lives: `${'❤️'.repeat(nextP.hp)}${'🖤'.repeat(5 - nextP.hp)}`,
+                            inventory: inventoryStr
+                        });
                     }
                 }
 

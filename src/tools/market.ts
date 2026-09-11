@@ -23,16 +23,16 @@ const marketTool: ToolModule = {
         });
 
         if (!latestData || !latestRate) {
-            await sock.sendMessage(jid, { text: 'Economy data is currently unavailable.' }, { quoted: msg });
+            await sock.sendMessage(jid, { text: ctx.t('tools.market.unavailable') }, { quoted: msg });
             return;
         }
 
         const text =
-            `*📊 Current Market Status*\n\n` +
-            `• *Multiplier:* ${latestData.multiplier}x\n` +
-            `• *Last Updated:* ${latestData.appliedAt.toLocaleString()}\n` +
-            `• *Current Rate:* ${formatRupiah(latestRate.rate)} / USD\n\n` +
-            `_Tip: Sell your loot now while inflation is high! 💰_`;
+            `${ctx.t('tools.market.status_title')}\n\n` +
+            `${ctx.t('tools.market.multiplier', { multiplier: latestData.multiplier })}\n` +
+            `${ctx.t('tools.market.last_updated', { date: latestData.appliedAt.toLocaleString() })}\n` +
+            `${ctx.t('tools.market.current_rate', { rate: formatRupiah(latestRate.rate) })}\n\n` +
+            `${ctx.t('tools.market.tip')}`;
 
         await sock.sendMessage(jid, { text }, { quoted: msg });
     }

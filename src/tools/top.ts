@@ -19,7 +19,7 @@ const topTool: ToolModule = {
         const { msg, sock, jid } = ctx;
 
         if (!jid.endsWith('@g.us')) {
-            return `❌ This command can only be used in a group chat. Use .topglobal to see the global leaderboard.`;
+            return ctx.t('tools.top.group_only');
         }
 
         try {
@@ -137,20 +137,36 @@ const topTool: ToolModule = {
 
             const finalTopUsers = participantStats.slice(0, 10);
 
-            let text = isRoulette ? `🔫 *Group Roulette Leaderboard* 🔫\n\n` : `👥 *Group Casino Leaderboard* 👥\n\n`;
+            let text = isRoulette
+                ? `${ctx.t('tools.top.roulette_title')}\n\n`
+                : `${ctx.t('tools.top.casino_title')}\n\n`;
             const mentions: string[] = [];
 
             if (finalTopUsers.length === 0) {
-                text += `📭 There are no players registered in the database for this leaderboard yet.`;
+                text += ctx.t('tools.top.empty');
             } else {
                 finalTopUsers.forEach((user: any, index: number) => {
                     mentions.push(user.mentionId);
                     const displayName = user.pushName ? ` (${user.pushName})` : '';
 
                     if (isRoulette) {
-                        text += `${index === 0 ? '👑' : '💀'} *${index + 1}.* @${user.cleanId} - *${user.rouletteWins}* Wins / *${user.rouletteRounds}* Matches\n`;
+                        text +=
+                            ctx.t('tools.top.roulette_entry', {
+                                icon: index === 0 ? '👑' : '💀',
+                                rank: index + 1,
+                                user: user.cleanId,
+                                wins: user.rouletteWins,
+                                matches: user.rouletteRounds
+                            }) + '\n';
                     } else {
-                        text += `${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️'} *${index + 1}.* @${user.cleanId}${displayName} - *${formatRupiah(user.balance)}*\n`;
+                        text +=
+                            ctx.t('tools.top.casino_entry', {
+                                icon: index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎗️',
+                                rank: index + 1,
+                                user: user.cleanId,
+                                name: displayName,
+                                balance: formatRupiah(user.balance)
+                            }) + '\n';
                     }
                 });
             }
@@ -159,7 +175,7 @@ const topTool: ToolModule = {
             await sock.sendMessage(jid, { text, mentions }, { quoted: msg });
         } catch (error) {
             console.error('[Top Command Error]', error);
-            return `❌ Failed to fetch group leaderboard.`;
+            return ctx.t('tools.top.failed');
         }
     }
 };

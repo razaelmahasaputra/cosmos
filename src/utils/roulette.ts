@@ -67,20 +67,33 @@ export function getSessionByChatId(chatId: string): GameSession | undefined {
     return undefined;
 }
 
-export function handleElimination(session: GameSession, deadPlayer: Player): string {
-    let msg = `\n💀 *ELIMINATED!*\n@${deadPlayer.pushName}'s lives have run out (0).\n`;
+export function handleElimination(
+    session: GameSession,
+    deadPlayer: Player,
+    t?: (key: string, args?: Record<string, any>) => string
+): string {
+    let msg = t
+        ? t('games.roulette.eliminated', { player: deadPlayer.pushName })
+        : `\n💀 *ELIMINATED!*\n@${deadPlayer.pushName}'s lives have run out (0).\n`;
 
     const alivePlayers = session.players.filter((p) => p.hp > 0);
 
     if (deadPlayer.inventory.length > 0 && alivePlayers.length > 0) {
-        msg += `\n🎁 *DEATH LOOT!*\n@${deadPlayer.pushName}'s inventory has been dropped...\n`;
+        msg += t
+            ? t('games.roulette.death_loot', { player: deadPlayer.pushName })
+            : `\n🎁 *DEATH LOOT!*\n@${deadPlayer.pushName}'s inventory has been dropped...\n`;
 
         for (const item of deadPlayer.inventory) {
             const eligiblePlayers = alivePlayers.filter((p) => p.inventory.length < 4);
             if (eligiblePlayers.length > 0) {
                 const receiver = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
                 receiver.inventory.push(item);
-                msg += `@${receiver.pushName} received *${item.replace('_', ' ')}*!\n`;
+                msg += t
+                    ? t('games.roulette.death_loot_item', {
+                          player: receiver.pushName,
+                          item: item.replace('_', ' ')
+                      })
+                    : `@${receiver.pushName} received *${item.replace('_', ' ')}*!\n`;
             }
         }
     }
@@ -88,7 +101,11 @@ export function handleElimination(session: GameSession, deadPlayer: Player): str
     return msg;
 }
 
-export function nextTurn(session: GameSession, shouldRandomize: boolean): string {
+export function nextTurn(
+    session: GameSession,
+    shouldRandomize: boolean,
+    t?: (key: string, args?: Record<string, any>) => string
+): string {
     const alivePlayers = session.players.filter((p) => p.hp > 0);
     if (alivePlayers.length <= 1) return '';
 
@@ -104,22 +121,37 @@ export function nextTurn(session: GameSession, shouldRandomize: boolean): string
     const nextPlayer = session.players[session.turnIndex];
     nextPlayer.hasUsedItemThisTurn = false;
 
-    let msg = `\n👉 *NEXT TURN:* @${nextPlayer.pushName}\n`;
+    let msg = t
+        ? t('games.roulette.next_turn', { player: nextPlayer.pushName })
+        : `\n👉 *NEXT TURN:* @${nextPlayer.pushName}\n`;
 
     if (nextPlayer.isHandcuffed) {
         nextPlayer.isHandcuffed = false;
-        msg += `🔗 @${nextPlayer.pushName}'s turn is skipped because they are handcuffed!\n`;
-        msg += nextTurn(session, false);
+        msg += t
+            ? t('games.roulette.handcuffed_skip', { player: nextPlayer.pushName })
+            : `🔗 @${nextPlayer.pushName}'s turn is skipped because they are handcuffed!\n`;
+        msg += nextTurn(session, false, t);
     } else {
         const inventoryStr =
             nextPlayer.inventory.length > 0 ? nextPlayer.inventory.map((i) => i.replace('_', ' ')).join(', ') : 'Empty';
-        msg += `❤️ Lives: [${'❤️'.repeat(nextPlayer.hp)}${'🖤'.repeat(5 - nextPlayer.hp)}]\n🎒 Inventory: ${inventoryStr}\n🔥 *Active Status:* ${nextPlayer.handSawActive ? 'Hand Saw (Damage x2)' : 'None'}`;
+        const livesStr = `${'❤️'.repeat(nextPlayer.hp)}${'🖤'.repeat(5 - nextPlayer.hp)}`;
+        const statusStr = nextPlayer.handSawActive ? 'Hand Saw (Damage x2)' : 'None';
+        msg += t
+            ? t('games.roulette.player_status', {
+                  lives: livesStr,
+                  inventory: inventoryStr,
+                  status: statusStr
+              })
+            : `❤️ Lives: [${livesStr}]\n🎒 Inventory: ${inventoryStr}\n🔥 *Active Status:* ${statusStr}`;
     }
 
     return msg;
 }
 
-export function checkReloadShells(session: GameSession): string {
+export function checkReloadShells(
+    session: GameSession,
+    t?: (key: string, args?: Record<string, any>) => string
+): string {
     if (session.shells.length > 0) return '';
 
     session.shells = generateShells();
@@ -132,5 +164,11 @@ export function checkReloadShells(session: GameSession): string {
     const liveCount = session.shells.filter((s) => s === 'LIVE').length;
     const blankCount = session.shells.length - liveCount;
 
-    return `\n🔄 *NEW ROUND BEGINS* 🔄\n\n*Dealer* loads shells into the shotgun...\n🔴 *Live:* ${liveCount}\n⚪ *Blank:* ${blankCount}\n*(Total ${session.shells.length} shells shuffled mysteriously...)*\n\n📦 *Item Distribution:* Each surviving player receives up to 2 random items!\n`;
+    return t
+        ? t('games.roulette.new_round', {
+              live: liveCount,
+              blank: blankCount,
+              total: session.shells.length
+          })
+        : `\n🔄 *NEW ROUND BEGINS* 🔄\n\n*Dealer* loads shells into the shotgun...\n🔴 *Live:* ${liveCount}\n⚪ *Blank:* ${blankCount}\n*(Total ${session.shells.length} shells shuffled mysteriously...)*\n\n📦 *Item Distribution:* Each surviving player receives up to 2 random items!\n`;
 }

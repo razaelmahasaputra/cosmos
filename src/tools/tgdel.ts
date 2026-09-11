@@ -1,5 +1,5 @@
-import { ToolDefinition } from './types.js';
-import { removeTelegramPrivateChat } from '#/db.js';
+import { ToolDefinition, ToolContext } from './types.js';
+import { removeTelegramPrivateChat } from '#db.js';
 
 export const definition: ToolDefinition = {
     name: 'tgdel',
@@ -20,16 +20,16 @@ export const definition: ToolDefinition = {
     }
 };
 
-export async function execute(args: Record<string, any>): Promise<string> {
+export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string> {
     const chatId = typeof args.chatId === 'string' ? args.chatId.trim() : '';
     if (!chatId || !/^\d{5,}$/.test(chatId)) {
-        return 'Error: Please provide the numeric chat id, for example .tgdel 1234567890. Use .tglist to see registered chats.';
+        return ctx.t('tools.tgdel.specify_id');
     }
 
     const removed = await removeTelegramPrivateChat(chatId);
     if (!removed) {
-        return `Error: Chat ${chatId} was not found in the registry.`;
+        return ctx.t('tools.tgdel.not_found', { chatId });
     }
     console.log(`[TGDel Tool] Unregistered private chat ${chatId}.`);
-    return `Success: Chat ${chatId} has been removed from the registry and can no longer be proxied.`;
+    return ctx.t('tools.tgdel.success', { chatId });
 }

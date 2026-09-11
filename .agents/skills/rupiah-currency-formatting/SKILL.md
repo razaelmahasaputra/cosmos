@@ -8,7 +8,7 @@ description: >
 
 ## Konteks & Ringkasan
 
-Seluruh fitur dalam repositori WAF yang menangani nilai uang/saldo/taruhan (ekonomi, kasino, minigame, transfer, reward, vault) **WAJIB** menggunakan konvensi format mata uang lokal Indonesia (bukan format internasional/ISO dengan koma ribuan).
+Seluruh fitur dalam repositori Cosmos yang menangani nilai uang/saldo/taruhan (ekonomi, kasino, minigame, transfer, reward, vault) **WAJIB** menggunakan konvensi format mata uang lokal Indonesia (bukan format internasional/ISO dengan koma ribuan).
 
 Semua format dan parsing nilai mata uang Rupiah harus didelegasikan ke modul utility global:
 `src/utils/currency.ts`.

@@ -74,14 +74,22 @@ export async function fetchLyricsOnline(query: string): Promise<string | null> {
 /**
  * Starts playing lyrics for a given JID.
  */
-export async function playLyrics(jid: string, sock: WASocket, songName: string, speedMultiplier = 2): Promise<string> {
+export async function playLyrics(
+    jid: string,
+    sock: WASocket,
+    songName: string,
+    speedMultiplier = 2,
+    t?: (key: string, args?: Record<string, any>) => string
+): Promise<string> {
     // 1. Validation
     if (!songName) {
-        return 'Failed: Lyric filename or song name must be specified. Example: .playlyrics faded';
+        return t
+            ? t('media.playlyrics.invalid_format')
+            : 'Failed: Lyric filename or song name must be specified. Example: .playlyrics faded';
     }
 
     if (isNaN(speedMultiplier) || speedMultiplier <= 0) {
-        return 'Failed: Speed multiplier must be a positive number.';
+        return t ? t('media.playlyrics.multiplier_positive') : 'Failed: Speed multiplier must be a positive number.';
     }
 
     const lyricsDir = path.resolve(process.cwd(), 'lyrics');
@@ -110,7 +118,9 @@ export async function playLyrics(jid: string, sock: WASocket, songName: string, 
             content = fs.readFileSync(filePath, 'utf-8');
         } catch (err) {
             console.error('Error reading lyrics file:', err);
-            return `Failed: Unable to read local lyric file "${songName}".`;
+            return t
+                ? t('media.playlyrics.read_failed', { song: songName })
+                : `Failed: Unable to read local lyric file "${songName}".`;
         }
     } else {
         // Try fetching online
@@ -125,18 +135,22 @@ export async function playLyrics(jid: string, sock: WASocket, songName: string, 
                 console.error('Error saving fetched lyrics to local file:', err);
             }
         } else {
-            return `Failed: Synchronized lyrics for "${songName}" were not found locally or online.`;
+            return t
+                ? t('media.playlyrics.not_found', { song: songName })
+                : `Failed: Synchronized lyrics for "${songName}" were not found locally or online.`;
         }
     }
 
     const parsed = parseLyrics(content);
     if (parsed.length === 0) {
-        return `Failed: Lyric for "${songName}" contains no lines with valid timestamps.`;
+        return t
+            ? t('media.playlyrics.no_timestamps', { song: songName })
+            : `Failed: Lyric for "${songName}" contains no lines with valid timestamps.`;
     }
 
     // 2. Stop existing session for this JID if running
     if (activeSessions.has(jid)) {
-        await stopLyrics(jid, sock);
+        await stopLyrics(jid, sock, t);
     }
 
     // 3. Create new session
@@ -208,16 +222,22 @@ export async function playLyrics(jid: string, sock: WASocket, songName: string, 
         }
     }
 
-    return `Starting lyrics playback for "${songName}" with a speed multiplier of ${speedMultiplier}x (${parsed.length} lines)...`;
+    return t
+        ? t('media.playlyrics.started', { song: songName, multiplier: speedMultiplier, count: parsed.length })
+        : `Starting lyrics playback for "${songName}" with a speed multiplier of ${speedMultiplier}x (${parsed.length} lines)...`;
 }
 
 /**
  * Stops playing lyrics for a given JID.
  */
-export async function stopLyrics(jid: string, sock: WASocket): Promise<string> {
+export async function stopLyrics(
+    jid: string,
+    sock: WASocket,
+    t?: (key: string, args?: Record<string, any>) => string
+): Promise<string> {
     const session = activeSessions.get(jid);
     if (!session) {
-        return 'Failed: There is no ongoing lyrics playback in this chat.';
+        return t ? t('media.stoplyrics.no_session') : 'Failed: There is no ongoing lyrics playback in this chat.';
     }
 
     // 1. Clear all timers first to prevent any race condition
@@ -236,5 +256,7 @@ export async function stopLyrics(jid: string, sock: WASocket): Promise<string> {
     // 3. Delete session
     activeSessions.delete(jid);
 
-    return `Lyrics playback for "${session.songName}" has been successfully stopped.`;
+    return t
+        ? t('media.stoplyrics.stopped', { song: session.songName })
+        : `Lyrics playback for "${session.songName}" has been successfully stopped.`;
 }

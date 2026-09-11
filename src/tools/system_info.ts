@@ -1,5 +1,6 @@
 import os from 'os';
 import { ToolDefinition, ToolContext } from './types.js';
+import { getTranslator } from '../utils/i18n.js';
 
 export const definition: ToolDefinition = {
     name: 'system_info',
@@ -28,6 +29,7 @@ function formatUptime(seconds: number): string {
 }
 
 export async function execute(_args: Record<string, any>, ctx: ToolContext): Promise<string> {
+    const t = ctx?.t || getTranslator('en');
     const systemUptime = formatUptime(os.uptime());
     const botUptime = formatUptime(process.uptime());
     const cpus = os.cpus();
@@ -59,13 +61,13 @@ export async function execute(_args: Record<string, any>, ctx: ToolContext): Pro
     }
 
     return (
-        `*⚡ BOT & SERVER STATUS*\n\n` +
-        `• *Latency:* ${latencyStr}\n` +
-        `• *OS:* ${os.type()} (${os.release()})\n` +
-        `• *CPU:* ${cpuModel} (${cpuArch})\n` +
-        `• *RAM:* ${usedMem} / ${totalMem} (Free: ${freeMem})\n` +
-        `• *Server Uptime:* ${systemUptime}\n` +
-        `• *Bot Uptime:* ${botUptime}\n` +
-        `• *Node.js:* ${process.version}`
+        `${t('tools.system_info.title')}\n\n` +
+        `${t('tools.system_info.latency', { latency: latencyStr })}\n` +
+        `${t('tools.system_info.os', { type: os.type(), release: os.release() })}\n` +
+        `${t('tools.system_info.cpu', { model: cpuModel, arch: cpuArch })}\n` +
+        `${t('tools.system_info.ram', { used: usedMem, total: totalMem, free: freeMem })}\n` +
+        `${t('tools.system_info.server_uptime', { uptime: systemUptime })}\n` +
+        `${t('tools.system_info.bot_uptime', { uptime: botUptime })}\n` +
+        `${t('tools.system_info.nodejs', { version: process.version })}`
     );
 }

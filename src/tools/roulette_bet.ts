@@ -3,6 +3,7 @@ import { getSessionByChatId } from '../utils/roulette.js';
 import { getSenderJid, MIN_BET, MAX_BET } from '../utils/casino.js';
 import { formatRupiah, parseCurrencyAmount } from '../utils/currency.js';
 import { prisma } from '../db.js';
+import { getTranslator } from '../utils/i18n.js';
 
 const betTool: ToolModule = {
     definition: {
@@ -18,40 +19,41 @@ const betTool: ToolModule = {
         }
     },
     execute: async (args: Record<string, any>, ctx: ToolContext) => {
+        const t = ctx?.t || getTranslator('en');
         const { msg, sock, jid } = ctx;
         const senderJid = getSenderJid(msg, sock);
         const user = await prisma.user.findFirst({ where: { OR: [{ id: senderJid }, { lid: senderJid }] } });
         const amount = parseCurrencyAmount(String(args.input || ''), user?.balance);
 
         if (amount === null || isNaN(amount) || amount < MIN_BET) {
-            return `❌ Minimum bet is ${formatRupiah(MIN_BET)}.`;
+            return t('games.roulette.min_bet', { min: formatRupiah(MIN_BET) });
         }
 
         if (amount > MAX_BET) {
-            return `❌ Maximum bet is ${formatRupiah(MAX_BET)}.`;
+            return t('games.roulette.max_bet', { max: formatRupiah(MAX_BET) });
         }
 
         const session = getSessionByChatId(jid);
         if (!session) {
-            return `❌ No active game session in this group.`;
+            return t('games.roulette.no_session');
         }
 
         if (session.status !== 'LOBBY') {
-            return `❌ Betting is closed. The game has already started.`;
+            return t('games.roulette.bet_closed');
         }
 
         const player = session.players.find((p) => p.userId === senderJid);
         if (!player) {
-            return `❌ You are not in this game session. Type .joingame ${session.sessionId} first.`;
+            return t('games.roulette.bet_not_in_room', { sessionId: session.sessionId });
         }
 
         if (player.betAmount > 0) {
-            return `❌ You have already placed a bet.`;
+            return t('games.roulette.bet_already_placed');
         }
 
         // Deduct from DB
         if (!user || Number(user.balance) < amount) {
-            return `❌ Insufficient balance. You have ${formatRupiah(user?.balance || 0)}.`;
+            return t('games.roulette.bet_insufficient', { balance: formatRupiah(user?.balance || 0) });
         }
 
         await prisma.user.update({
@@ -62,7 +64,11 @@ const betTool: ToolModule = {
         player.betAmount = amount;
         session.potAmount += amount;
 
-        return `💰 @${player.pushName} placed a bet of *${formatRupiah(amount)}*.\n📊 *Current Total Pot:* ${formatRupiah(session.potAmount)} (Waiting for other players...)`;
+        return t('games.roulette.bet_placed', {
+            player: player.pushName,
+            amount: formatRupiah(amount),
+            pot: formatRupiah(session.potAmount)
+        });
     }
 };
 
