@@ -223,6 +223,18 @@ export async function executeGamble(
                 }
             });
 
+            // Log activity for credit rating
+            await tx.activityLog.create({
+                data: {
+                    userId: user.id,
+                    type: isWin ? 'CASINO_WIN' : 'CASINO_LOSS',
+                    amount: isWin ? BigInt(winAmount) : BigInt(bet),
+                    description: isWin
+                        ? `Won ${formatRupiah(winAmount)} in casino.`
+                        : `Lost ${formatRupiah(bet)} in casino.`
+                }
+            });
+
             return {
                 success: true as const,
                 isWin,

@@ -247,6 +247,15 @@ const buyTool: ToolModule = {
                         amount: targetProp!.basePrice
                     }
                 });
+
+                await tx.activityLog.create({
+                    data: {
+                        userId: user!.id,
+                        type: 'REAL_ESTATE_PURCHASE',
+                        amount: targetProp!.basePrice,
+                        description: `Purchased property ${targetProp!.name}`
+                    }
+                });
             });
 
             await sock.sendMessage(

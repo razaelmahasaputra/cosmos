@@ -8,6 +8,7 @@ import { processAutoDl } from '#utils/autodl.js';
 import { handleOfflineAiResponder } from '#utils/offlineAi.js';
 import { isUserRegistering, processRegistrationStep } from '#utils/idCard.js';
 import { processBankTransferConfirmation } from '#tools/bank.js';
+import { processLoanConfirmation } from '#tools/loan.js';
 import { formatMentions } from '#utils/casino.js';
 import { hasCancellableSession, cancelActiveSession } from '#utils/cancellationManager.js';
 import { getTranslator } from '#utils/i18n.js';
@@ -230,6 +231,12 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
     if (senderRaw && !trimmedText.startsWith('.')) {
         const handledBankConfirm = await processBankTransferConfirmation(sock, msg, senderRaw, jid, trimmedText, t);
         if (handledBankConfirm) return;
+    }
+
+    // Check if sender is confirming a pending loan application
+    if (senderRaw && !trimmedText.startsWith('.')) {
+        const handledLoanConfirm = await processLoanConfirmation(sock, msg, senderRaw, jid, trimmedText, t);
+        if (handledLoanConfirm) return;
     }
 
     if (trimmedText.startsWith('.') || isPlayReply) {

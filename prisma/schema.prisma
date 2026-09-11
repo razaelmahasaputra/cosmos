@@ -102,10 +102,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  creditScore          Int                   @default(500) // Default starting credit score
   inventories          UserInventory[]
   propertyTransactions PropertyTransaction[]
   idCard               IdCard?
   bankAccount          BankAccount?
+  loans                Loan[]
+  activities           ActivityLog[]
 }
 
 model HouseVault {
@@ -223,3 +226,52 @@ model BankTransaction {
 
   account BankAccount @relation(fields: [accountNumber], references: [accountNumber], onDelete: Cascade)
 }
+
+model Loan {
+  id              String   @id @default(uuid())
+  userId          String
+  principalAmount BigInt   // The original borrowed amount
+  interestRate    Float    // Interest rate determined by AI (e.g., 0.05 for 5%)
+  dueDate         DateTime // Repayment deadline determined by AI
+  status          String   @default("ACTIVE") // "ACTIVE", "PAID", "DEFAULTED"
+  collateralItems String?  // JSON string representing pledged assets
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reminders LoanReminder[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String   // "LOAN_REPAYMENT", "LOAN_DEFAULT", "CASINO_LOSS", "CASINO_WIN", "REAL_ESTATE_PURCHASE", "DEPOSIT", "WITHDRAWAL", etc.
+  amount      BigInt?  // Relevant amount for the activity
+  description String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model LoanReminder {
+  id        String   @id @default(uuid())
+  loanId    String
+  userJid   String
+  chatJid   String?
+  remindAt  DateTime
+  sent      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([loanId])
+  @@index([remindAt, sent])
+}
+

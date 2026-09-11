@@ -136,3 +136,9 @@ Dokumen ini berisi panduan, instruksi, serta peraturan baku untuk AI Coding Agen
 
 - **ACID Double-Entry Ledger:** Seluruh mutasi perbankan (`DEPOSIT`, `WITHDRAW`, `TRANSFER_IN`, `TRANSFER_OUT`, `INTEREST`, `REGISTRATION_FEE`) **WAJIB** dijalankan secara atomik melalui `prisma.$transaction` dengan merekam `balanceAfter` pada model `BankTransaction`.
 - **KTP Gate & Konfirmasi Interaktif:** Pembuatan rekening bank wajib memverifikasi kepemilikan KTP (`isRegistered = true`). Transaksi transfer wajib menggunakan alur konfirmasi interaktif 3 menit yang terintegrasi dengan `cancellationManager` (`.cancel`) dan resolusi bahasa dinamis untuk penerima transfer. Rujuk panduan lengkap di `.agents/skills/cosmos-central-bank/SKILL.md`.
+
+### Q. Subsistem Pinjaman Bank & Penilaian Risiko Kredit AI (Bank Loan System Standards)
+
+- **Underwriting AI & Dynamic Tiers:** Penilaian pinjaman wajib melalui Groq LLM Native Function Calling dengan batasan terikat (suhu 0.1, bunga 2%–15%, tenor 7–30 hari) dan fallback deterministik. Skor kredit dibatasi secara ketat antara 0 hingga 1000 berdasarkan `ActivityLog` 30 hari terakhir.
+- **Proteksi Mutlak Race Condition:** Setiap eksekusi pengajuan, pencairan dana, dan pelunasan pinjaman **WAJIB** dilindungi dengan mutex memori in-flight (`Set<string>`) dan validasi ulang status pinjaman/saldo langsung di dalam transaksi database `prisma.$transaction`.
+- **Penyitaan Aset Otomatis & Pembekuan Rekening:** Gagal bayar pinjaman jatuh tempo wajib memicu pembekuan rekening bank (`status = 'FROZEN'`) dan likuidasi aset inventaris/properti terurut dari nilai tertinggi ke terendah (`ownershipStatus = 'Pawned'`) hingga hutang tertutupi. Rujuk panduan lengkap di `.agents/skills/bank-loan-system/SKILL.md`.
