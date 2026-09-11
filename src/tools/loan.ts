@@ -28,6 +28,7 @@ export interface PendingLoanApplication {
 }
 
 const pendingLoans = new Map<string, PendingLoanApplication>();
+const activeAssessments = new Set<string>();
 const LOAN_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes confirmation timeout
 
 export function getPendingLoan(userJid: string, remoteJid?: string): PendingLoanApplication | undefined {
@@ -241,107 +242,122 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
                 return t('tools.loan.pending_session_exists');
             }
 
-            // Fetch credit profile
-            const creditProfile = await getCreditProfile(senderJid);
-            if (!creditProfile) {
-                return t('tools.loan.rejected');
+            if (activeAssessments.has(cleanedSender)) {
+                return (
+                    t('tools.loan.assessment_in_progress') ||
+                    'A loan assessment is already in progress for your account. Please wait a moment.'
+                );
             }
+            activeAssessments.add(cleanedSender);
 
-            if (creditProfile.creditScore < 450) {
-                return t('tools.loan.credit_score_too_low', {
-                    score: creditProfile.creditScore,
-                    minScore: 450
-                });
-            }
+            try {
+                // Fetch credit profile
+                const creditProfile = await getCreditProfile(senderJid);
+                if (!creditProfile) {
+                    return t('tools.loan.rejected');
+                }
 
-            if (loanAmount > creditProfile.maxBorrowLimit) {
-                return t('tools.loan.amount_exceeds_limit', {
-                    amount: formatRupiah(loanAmount),
-                    limit: formatRupiah(creditProfile.maxBorrowLimit),
-                    score: creditProfile.creditScore
-                });
-            }
-
-            // Optional collateral check
-            let collateralName: string | undefined = undefined;
-            if (remainingParts.length > 1 || args.collateral) {
-                const candidateCollateral = (remainingParts.slice(1).join(' ') || args.collateral || '').trim();
-                if (candidateCollateral) {
-                    const ownedAsset = await prisma.userInventory.findFirst({
-                        where: {
-                            userId,
-                            ownershipStatus: 'Owned',
-                            OR: [
-                                { name: { contains: candidateCollateral } },
-                                { item: { name: { contains: candidateCollateral } } },
-                                { property: { name: { contains: candidateCollateral } } }
-                            ]
-                        },
-                        include: { item: true, property: true }
+                if (creditProfile.creditScore < 450) {
+                    return t('tools.loan.credit_score_too_low', {
+                        score: creditProfile.creditScore,
+                        minScore: 450
                     });
+                }
 
-                    if (!ownedAsset) {
-                        return t('tools.loan.collateral_not_found', { item: candidateCollateral });
+                if (loanAmount > creditProfile.maxBorrowLimit) {
+                    return t('tools.loan.amount_exceeds_limit', {
+                        amount: formatRupiah(loanAmount),
+                        limit: formatRupiah(creditProfile.maxBorrowLimit),
+                        score: creditProfile.creditScore
+                    });
+                }
+
+                // Optional collateral check
+                let collateralName: string | undefined = undefined;
+                if (remainingParts.length > 1 || args.collateral) {
+                    const candidateCollateral = (remainingParts.slice(1).join(' ') || args.collateral || '').trim();
+                    if (candidateCollateral) {
+                        const ownedAsset = await prisma.userInventory.findFirst({
+                            where: {
+                                userId,
+                                ownershipStatus: 'Owned',
+                                OR: [
+                                    { name: { contains: candidateCollateral } },
+                                    { item: { name: { contains: candidateCollateral } } },
+                                    { property: { name: { contains: candidateCollateral } } }
+                                ]
+                            },
+                            include: { item: true, property: true }
+                        });
+
+                        if (!ownedAsset) {
+                            return t('tools.loan.collateral_not_found', { item: candidateCollateral });
+                        }
+                        collateralName =
+                            ownedAsset.name ||
+                            ownedAsset.property?.name ||
+                            ownedAsset.item?.name ||
+                            candidateCollateral;
                     }
-                    collateralName =
-                        ownedAsset.name || ownedAsset.property?.name || ownedAsset.item?.name || candidateCollateral;
                 }
-            }
 
-            // AI Underwriting Assessment
-            const assessment = await assessLoanWithAI(loanAmount, creditProfile, collateralName);
+                // AI Underwriting Assessment
+                const assessment = await assessLoanWithAI(loanAmount, creditProfile, collateralName);
 
-            if (!assessment.approved) {
-                return t('tools.loan.rejected');
-            }
-
-            const interestAmount = Math.round(loanAmount * assessment.interestRate);
-            const totalRepayment = loanAmount + interestAmount;
-            const dueDate = new Date(Date.now() + assessment.termDays * 24 * 60 * 60 * 1000);
-            const formattedDueDate = dueDate.toLocaleDateString('en-GB', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric'
-            });
-
-            // Save pending loan application
-            const pending: PendingLoanApplication = {
-                userId,
-                chatJid: ctx.jid,
-                amount: loanAmount,
-                interestRate: assessment.interestRate,
-                interestAmount,
-                totalAmount: totalRepayment,
-                termDays: assessment.termDays,
-                collateralItemName: collateralName,
-                reasoning: assessment.reasoning,
-                createdAt: Date.now()
-            };
-            pendingLoans.set(cleanedSender, pending);
-
-            // Register with global cancellation system (.cancel)
-            registerCancellableSession({
-                sessionId: `loan_app_${cleanedSender}`,
-                feature: 'loan',
-                userJid: cleanedSender,
-                chatJid: ctx.jid,
-                description: 'loan application',
-                onCancel: async () => {
-                    pendingLoans.delete(cleanedSender);
-                    return t('tools.loan.cancelled');
+                if (!assessment.approved) {
+                    return t('tools.loan.rejected');
                 }
-            });
 
-            return t('tools.loan.approved_terms_prompt', {
-                amount: formatRupiah(loanAmount),
-                interestRate: `${(assessment.interestRate * 100).toFixed(1)}%`,
-                interestAmount: formatRupiah(interestAmount),
-                totalAmount: formatRupiah(totalRepayment),
-                days: assessment.termDays,
-                dueDate: formattedDueDate,
-                collateral: collateralName || 'None',
-                reasoning: assessment.reasoning
-            });
+                const interestAmount = Math.round(loanAmount * assessment.interestRate);
+                const totalRepayment = loanAmount + interestAmount;
+                const dueDate = new Date(Date.now() + assessment.termDays * 24 * 60 * 60 * 1000);
+                const formattedDueDate = dueDate.toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                });
+
+                // Save pending loan application
+                const pending: PendingLoanApplication = {
+                    userId,
+                    chatJid: ctx.jid,
+                    amount: loanAmount,
+                    interestRate: assessment.interestRate,
+                    interestAmount,
+                    totalAmount: totalRepayment,
+                    termDays: assessment.termDays,
+                    collateralItemName: collateralName,
+                    reasoning: assessment.reasoning,
+                    createdAt: Date.now()
+                };
+                pendingLoans.set(cleanedSender, pending);
+
+                // Register with global cancellation system (.cancel)
+                registerCancellableSession({
+                    sessionId: `loan_app_${cleanedSender}`,
+                    feature: 'loan',
+                    userJid: cleanedSender,
+                    chatJid: ctx.jid,
+                    description: 'loan application',
+                    onCancel: async () => {
+                        pendingLoans.delete(cleanedSender);
+                        return t('tools.loan.cancelled');
+                    }
+                });
+
+                return t('tools.loan.approved_terms_prompt', {
+                    amount: formatRupiah(loanAmount),
+                    interestRate: `${(assessment.interestRate * 100).toFixed(1)}%`,
+                    interestAmount: formatRupiah(interestAmount),
+                    totalAmount: formatRupiah(totalRepayment),
+                    days: assessment.termDays,
+                    dueDate: formattedDueDate,
+                    collateral: collateralName || 'None',
+                    reasoning: assessment.reasoning
+                });
+            } finally {
+                activeAssessments.delete(cleanedSender);
+            }
         }
 
         case 'pay':

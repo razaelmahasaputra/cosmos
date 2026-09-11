@@ -323,6 +323,7 @@
         "invalid_amount": "Invalid loan amount. Please specify a valid amount greater than 0.",
         "active_loan_exists": "You already have an active loan with an outstanding balance of {{balance}} due on {{dueDate}}. Please repay your existing loan before applying for a new one.",
         "pending_session_exists": "You already have an active loan application in progress. Please reply to the prompt or type *.cancel* to abort.",
+        "assessment_in_progress": "A loan assessment is already in progress for your account. Please wait a moment.",
         "credit_score_too_low": "Your loan application has been declined due to an insufficient financial profile or poor credit score ({{score}}/1000). Minimum required score is {{minScore}}.",
         "amount_exceeds_limit": "Your requested loan amount of {{amount}} exceeds your maximum borrowing limit of {{limit}} based on your credit score ({{score}}/1000).",
         "collateral_not_found": "Pledged collateral \"{{item}}\" was not found in your owned inventory.",

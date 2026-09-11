@@ -323,6 +323,7 @@
         "invalid_amount": "Jumlah pinjaman tidak valid. Harap masukkan nominal yang valid lebih besar dari 0.",
         "active_loan_exists": "Anda masih memiliki pinjaman aktif dengan sisa tagihan {{balance}} yang jatuh tempo pada {{dueDate}}. Harap lunasi pinjaman aktif Anda sebelum mengajukan pinjaman baru.",
         "pending_session_exists": "Anda sudah memiliki sesi pengajuan pinjaman yang sedang berlangsung. Silakan balas konfirmasi atau ketik *.cancel* untuk membatalkan.",
+        "assessment_in_progress": "Penilaian pinjaman sedang berlangsung untuk akun Anda. Harap tunggu sebentar.",
         "credit_score_too_low": "Pengajuan pinjaman Anda ditolak karena profil keuangan atau skor kredit yang kurang memadai ({{score}}/1000). Skor minimum yang dibutuhkan adalah {{minScore}}.",
         "amount_exceeds_limit": "Jumlah pinjaman yang diminta ({{amount}}) melebihi batas maksimal pinjaman Anda sebesar {{limit}} berdasarkan skor kredit Anda ({{score}}/1000).",
         "collateral_not_found": "Aset agunan \"{{item}}\" tidak ditemukan di dalam inventaris milik Anda.",

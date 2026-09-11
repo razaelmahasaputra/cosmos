@@ -7,7 +7,9 @@ import {
     calculateLoanPayable,
     calculateUserNetWorth,
     processOverdueLoans,
-    processLoanReminders
+    processLoanReminders,
+    disburseLoan,
+    repayLoan
 } from '../src/services/loanService.js';
 import loanTool, { processLoanConfirmation, getPendingLoan } from '../src/tools/loan.js';
 import { cancelActiveSession } from '../src/utils/cancellationManager.js';
@@ -382,6 +384,41 @@ async function runLoanTests() {
     assert.strictEqual(defaultedLoan?.status, 'DEFAULTED');
 
     console.log('✓ Asset seizure algorithm and overdue penalty workflow verified.');
+
+    // [Test 10] Testing Race Condition Prevention (Concurrent Loan Disbursements)
+    console.log('[Test 10] Testing Race Condition Prevention (Concurrent Loan Disbursements & Repayments)...');
+
+    // Clean up any remaining active loans for userA
+    await prisma.loan.updateMany({
+        where: { userId: userA_Jid, status: 'ACTIVE' },
+        data: { status: 'PAID' }
+    });
+
+    // Execute two concurrent loan disbursements simultaneously
+    const [loanDisburse1, loanDisburse2] = await Promise.all([
+        disburseLoan(userA_Jid, 2000000, 0.05, 14),
+        disburseLoan(userA_Jid, 2000000, 0.05, 14)
+    ]);
+
+    const successes = [loanDisburse1, loanDisburse2].filter((r) => r.success);
+    const failures = [loanDisburse1, loanDisburse2].filter((r) => !r.success);
+
+    assert.strictEqual(successes.length, 1, 'Exactly one concurrent loan disbursement must succeed');
+    assert.strictEqual(failures.length, 1, 'Exactly one concurrent loan disbursement must be safely rejected');
+
+    // Verify database only has 1 active loan
+    const activeLoansCount = await prisma.loan.count({
+        where: { userId: userA_Jid, status: 'ACTIVE' }
+    });
+    assert.strictEqual(activeLoansCount, 1, 'User must possess exactly one active loan in the database');
+
+    // Test concurrent repayments
+    const [repay1, repay2] = await Promise.all([repayLoan(userA_Jid), repayLoan(userA_Jid)]);
+
+    const repaySuccesses = [repay1, repay2].filter((r) => r.success);
+    assert.strictEqual(repaySuccesses.length, 1, 'Exactly one concurrent repayment must succeed');
+
+    console.log('✓ Concurrency and race condition prevention verified.');
     console.log('--- ALL BANK LOAN SYSTEM TESTS PASSED SUCCESSFULLY! ---');
 }
 

@@ -354,8 +354,12 @@ Determine whether to approve or reject this loan and establish interest rate and
     };
 }
 
+const activeDisbursements = new Set<string>();
+const activeRepayments = new Set<string>();
+
 /**
  * Atomically disburses an approved loan into the user's BankAccount.
+ * Protected against race conditions via in-flight memory locks and serializable checks inside prisma.$transaction.
  */
 export async function disburseLoan(
     userId: string,
@@ -370,32 +374,44 @@ export async function disburseLoan(
     newBankBalance?: bigint;
     dueDate?: Date;
 }> {
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { bankAccount: true }
-    });
-
-    if (!user || !user.bankAccount) {
-        return { success: false, error: 'User does not possess an active bank account.' };
+    if (activeDisbursements.has(userId)) {
+        return { success: false, error: 'A loan disbursement is already being processed for this user.' };
     }
-
-    if (user.bankAccount.status !== 'ACTIVE') {
-        return { success: false, error: `Bank account is currently ${user.bankAccount.status}.` };
-    }
-
-    // Ensure no active loan exists
-    const existingLoan = await prisma.loan.findFirst({
-        where: { userId, status: 'ACTIVE' }
-    });
-    if (existingLoan) {
-        return { success: false, error: 'User already has an active loan in progress.' };
-    }
-
-    const dueDate = new Date(Date.now() + termDays * 24 * 60 * 60 * 1000);
-    const remindAt = new Date(dueDate.getTime() - 5 * 24 * 60 * 60 * 1000);
+    activeDisbursements.add(userId);
 
     try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { bankAccount: true }
+        });
+
+        if (!user || !user.bankAccount) {
+            return { success: false, error: 'User does not possess an active bank account.' };
+        }
+
+        if (user.bankAccount.status !== 'ACTIVE') {
+            return { success: false, error: `Bank account is currently ${user.bankAccount.status}.` };
+        }
+
+        const dueDate = new Date(Date.now() + termDays * 24 * 60 * 60 * 1000);
+        const remindAt = new Date(dueDate.getTime() - 5 * 24 * 60 * 60 * 1000);
+
         const result = await prisma.$transaction(async (tx) => {
+            // Strict ACID check inside transaction to prevent duplicate active loans
+            const existingActiveLoan = await tx.loan.findFirst({
+                where: { userId, status: 'ACTIVE' }
+            });
+            if (existingActiveLoan) {
+                throw new Error('User already has an active loan in progress.');
+            }
+
+            const currentAccount = await tx.bankAccount.findUnique({
+                where: { accountNumber: user.bankAccount!.accountNumber }
+            });
+            if (!currentAccount || currentAccount.status !== 'ACTIVE') {
+                throw new Error(`Bank account is currently ${currentAccount?.status || 'UNAVAILABLE'}.`);
+            }
+
             // 1. Create the Loan record
             const loan = await tx.loan.create({
                 data: {
@@ -458,6 +474,8 @@ export async function disburseLoan(
     } catch (err: any) {
         console.error('[LoanService] Failed to disburse loan:', err);
         return { success: false, error: err.message };
+    } finally {
+        activeDisbursements.delete(userId);
     }
 }
 
@@ -477,6 +495,7 @@ export function calculateLoanPayable(loan: { principalAmount: bigint; interestRa
 
 /**
  * Repays an active loan either in part or in full from the user's BankAccount balance.
+ * Protected against race conditions via in-flight memory locks and atomic balances inside transaction.
  */
 export async function repayLoan(
     userId: string,
@@ -489,37 +508,48 @@ export async function repayLoan(
     isFullyPaid?: boolean;
     currentBankBalance?: bigint;
 }> {
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { bankAccount: true }
-    });
-
-    if (!user || !user.bankAccount) {
-        return { success: false, error: 'User does not possess an active bank account.' };
+    if (activeRepayments.has(userId)) {
+        return { success: false, error: 'A loan repayment is already being processed for this user.' };
     }
-
-    const activeLoan = await prisma.loan.findFirst({
-        where: { userId, status: 'ACTIVE' }
-    });
-
-    if (!activeLoan) {
-        return { success: false, error: 'No active loan found.' };
-    }
-
-    const { totalDue } = calculateLoanPayable(activeLoan);
-    const amountToPay = repaymentAmount && repaymentAmount > 0 ? Math.min(repaymentAmount, totalDue) : totalDue;
-
-    if (Number(user.bankAccount.balance) < amountToPay) {
-        return {
-            success: false,
-            error: 'INSUFFICIENT_FUNDS',
-            outstandingBalance: totalDue,
-            currentBankBalance: user.bankAccount.balance
-        };
-    }
+    activeRepayments.add(userId);
 
     try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { bankAccount: true }
+        });
+
+        if (!user || !user.bankAccount) {
+            return { success: false, error: 'User does not possess an active bank account.' };
+        }
+
         const updated = await prisma.$transaction(async (tx) => {
+            const activeLoan = await tx.loan.findFirst({
+                where: { userId, status: 'ACTIVE' }
+            });
+
+            if (!activeLoan) {
+                throw new Error('NO_ACTIVE_LOAN');
+            }
+
+            const currentAccount = await tx.bankAccount.findUnique({
+                where: { accountNumber: user.bankAccount!.accountNumber }
+            });
+
+            if (!currentAccount) {
+                throw new Error('ACCOUNT_NOT_FOUND');
+            }
+
+            const { totalDue } = calculateLoanPayable(activeLoan);
+            const amountToPay = repaymentAmount && repaymentAmount > 0 ? Math.min(repaymentAmount, totalDue) : totalDue;
+
+            if (Number(currentAccount.balance) < amountToPay) {
+                const err: any = new Error('INSUFFICIENT_FUNDS');
+                err.totalDue = totalDue;
+                err.currentBalance = currentAccount.balance;
+                throw err;
+            }
+
             // Deduct from bank account
             const updatedAccount = await tx.bankAccount.update({
                 where: { accountNumber: user.bankAccount!.accountNumber },
@@ -555,7 +585,7 @@ export async function repayLoan(
                 });
 
                 // Unblock bank account if frozen due to overdue loan
-                if (user.bankAccount!.status === 'FROZEN') {
+                if (currentAccount.status === 'FROZEN') {
                     await tx.bankAccount.update({
                         where: { accountNumber: user.bankAccount!.accountNumber },
                         data: { status: 'ACTIVE' }
@@ -581,7 +611,8 @@ export async function repayLoan(
             return {
                 updatedAccount,
                 isFullyPaid,
-                remainingPrincipal
+                remainingPrincipal,
+                amountToPay
             };
         });
 
@@ -590,14 +621,27 @@ export async function repayLoan(
 
         return {
             success: true,
-            paidAmount: amountToPay,
+            paidAmount: updated.amountToPay,
             outstandingBalance: updated.remainingPrincipal,
             isFullyPaid: updated.isFullyPaid,
             currentBankBalance: updated.updatedAccount.balance
         };
     } catch (err: any) {
+        if (err.message === 'NO_ACTIVE_LOAN') {
+            return { success: false, error: 'No active loan found.' };
+        }
+        if (err.message === 'INSUFFICIENT_FUNDS') {
+            return {
+                success: false,
+                error: 'INSUFFICIENT_FUNDS',
+                outstandingBalance: err.totalDue,
+                currentBankBalance: err.currentBalance
+            };
+        }
         console.error('[LoanService] Repayment failed:', err);
         return { success: false, error: err.message };
+    } finally {
+        activeRepayments.delete(userId);
     }
 }
 
