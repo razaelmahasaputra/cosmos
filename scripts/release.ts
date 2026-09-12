@@ -39,9 +39,9 @@ async function main() {
         console.log(`[Release] Updated package.json version to ${version}`);
     }
 
-    // 3. Switch to target branch: feature/job-and-salary-system
-    const targetBranch = 'feature/job-and-salary-system';
+    // 3. Determine target branch (defaults to current active branch)
     const currentBranch = run('git rev-parse --abbrev-ref HEAD');
+    const targetBranch = process.env.RELEASE_BRANCH || currentBranch;
     if (currentBranch !== targetBranch) {
         console.log(`[Release] Switching from branch '${currentBranch}' to '${targetBranch}'...`);
         run(`git checkout -B ${targetBranch}`);

@@ -25,6 +25,14 @@ and this project adheres to the `RF-YYMM-BUILD` version formatting.
     - Multi-mode navigation supporting Category Overview (`.menu`), Category Command List (`.menu <category>`), All-In-One Catalog (`.menu all`), and Single Command Inspector (`.help <command>`).
     - Dedicated standalone `.menu` command entrypoint (`src/tools/menu.ts`).
     - 100% symmetric bilingual localization (`en` and `id`) validated via `validate:i18n`.
+    - Comprehensive test suite covering banner fallback, category consolidation, command lookup, inspectors, and Baileys payload dispatch (`tests/menu.test.ts`).
+
+### Changed
+
+- **Refactored Help & Guide Entrypoint (`src/tools/help.ts`):**
+    - Transitioned from monolithic category-only listing to multi-intent controller delegating to `MenuService` and `MenuFormatter`.
+    - Supports dual inspection: inspecting specific command syntax when a command is queried (`.help <command>`) and category listing when a category is queried (`.help <category>`).
+    - Direct socket dispatch with `contextInfo.externalAdReply` returning `undefined` to eliminate command echo in handler pipelines.
 
 ---
 
