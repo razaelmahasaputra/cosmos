@@ -1,109 +1,137 @@
 import { ToolDefinition, ToolContext } from './types.js';
-import { getTranslator } from '#utils/i18n.js';
+import { getTranslator } from '../utils/i18n.js';
+import { getMenuBannerBuffer } from '../utils/menuAssets.js';
+import menuService from '../services/menuService.js';
+import {
+    formatDashboardHeader,
+    formatCategoryOverview,
+    formatCategoryCommands,
+    formatAllCommands,
+    formatCommandDetail,
+    formatNotFound
+} from '../utils/menuFormatter.js';
+import { cleanId, formatMentions } from '../utils/casino.js';
 
 export const definition: ToolDefinition = {
     name: 'help',
-    title: 'Command Help Menu',
+    title: 'Command Help & Guide',
     category: 'System & Help',
     aliases: ['.help', '.menu', '.bantuan'],
     description:
-        'Displays the list of all available bot commands dynamically grouped by category with titles, descriptions, and aliases.',
+        'Displays the bot navigation menu, category command lists, full command catalog, or detailed command guide.',
     parameters: {
         type: 'object',
         properties: {
-            category: {
+            query: {
                 type: 'string',
-                description: 'The specific category to show the menu for'
+                description: 'The command name or category to view help for, or "all" for the full catalog'
             }
         },
         required: []
     }
 };
 
-export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string> {
+export async function execute(args: Record<string, any>, ctx: ToolContext): Promise<string | undefined> {
     const t = ctx?.t || getTranslator('en');
     const toolsHandler = (await import('./handler.js')).default;
-    const tools = toolsHandler.getAllTools();
+    await toolsHandler.loadTools();
 
-    const textMessage = ctx.msg.message?.conversation || ctx.msg.message?.extendedTextMessage?.text || '';
-    const commandUsed = textMessage.trim().split(/\s+/)[0].toLowerCase();
-    const cmdPrefix = commandUsed === '.menu' || commandUsed === '.bantuan' ? commandUsed : '.help';
+    const textMessage = ctx?.msg?.message?.conversation || ctx?.msg?.message?.extendedTextMessage?.text || '';
+    const words = textMessage.trim().split(/\s+/);
+    const firstWord = words[0]?.toLowerCase() || '';
 
-    interface ProcessedTool {
-        name: string;
-        title: string;
-        description: string;
-        aliases: string[];
-        owner?: boolean;
+    let rawQuery =
+        typeof args.query === 'string'
+            ? args.query.trim()
+            : typeof args.category === 'string'
+              ? args.category.trim()
+              : typeof args.command === 'string'
+                ? args.command.trim()
+                : '';
+
+    if (!rawQuery && words.length > 1) {
+        rawQuery = words.slice(1).join(' ').trim();
     }
 
-    const categorizedTools: Record<string, ProcessedTool[]> = {};
-    const seenNames = new Set<string>();
-
-    for (const tool of tools) {
-        const def = tool.definition;
-        if (!def || seenNames.has(def.name)) continue;
-        seenNames.add(def.name);
-
-        const category = def.category || 'General';
-        if (!categorizedTools[category]) {
-            categorizedTools[category] = [];
-        }
-
-        categorizedTools[category].push({
-            name: def.name,
-            title: def.title || def.name,
-            description: def.description || 'No description available.',
-            aliases: def.aliases || [],
-            owner: def.owner
-        });
+    if (firstWord === '.allmenu' && !rawQuery) {
+        rawQuery = 'all';
     }
 
-    const categories = Object.keys(categorizedTools);
-    const requestedCategory = typeof args.category === 'string' ? args.category.trim().toLowerCase() : '';
+    // Determine bot owner identity
+    const ownerNumber = process.env.BOT_PHONE_NUMBER ? cleanId(process.env.BOT_PHONE_NUMBER) : null;
+    const senderRaw = cleanId(ctx?.msg?.key?.participant || ctx?.msg?.key?.remoteJid);
+    const isOwner = Boolean(ctx?.msg?.key?.fromMe) || (ownerNumber !== null && senderRaw === ownerNumber);
 
-    if (requestedCategory) {
-        const matchedCategory = categories.find(
-            (c) => c.toLowerCase() === requestedCategory || c.toLowerCase().includes(requestedCategory)
-        );
+    // Calculate response speed/latency
+    const msgTimestamp = ctx?.msg?.messageTimestamp ? Number(ctx.msg.messageTimestamp) * 1000 : 0;
+    const speedMs = msgTimestamp > 0 ? Math.max(1, Date.now() - msgTimestamp) : 42;
 
-        if (matchedCategory) {
-            let menuText = `${t('tools.help.category_menu_title', { category: matchedCategory.toUpperCase() })}\n\n`;
-            const toolsInCategory = categorizedTools[matchedCategory];
+    const pushName = ctx?.msg?.pushName || 'User';
+    const lang = (ctx as any)?.lang || 'id';
 
-            toolsInCategory.forEach((toolItem, tIndex) => {
-                const primaryCommand = toolItem.aliases.length > 0 ? toolItem.aliases[0] : `.${toolItem.name}`;
-                const ownerBadge = toolItem.owner ? t('tools.help.owner_badge') : '';
-                const aliasStr =
-                    toolItem.aliases.length > 0
-                        ? toolItem.aliases.map((a) => `\`\`\`${a}\`\`\``).join(', ')
-                        : `\`\`\`.${toolItem.name}\`\`\``;
+    const dashboardHeader = formatDashboardHeader(
+        {
+            pushName,
+            isOwner,
+            speedMs,
+            uptimeSeconds: process.uptime(),
+            lang,
+            prefix: '.',
+            totalCommands: menuService.getCatalogStats().totalCommands
+        },
+        t
+    );
 
-                menuText += `\`\`\`${primaryCommand}\`\`\`${ownerBadge}\n`;
-                menuText += `${t('tools.help.alias_label')}${aliasStr}\n`;
-                menuText += `${t('tools.help.desc_label')}${toolItem.description}`;
+    let outputText: string;
 
-                if (tIndex !== toolsInCategory.length - 1) {
-                    menuText += '\n\n';
-                }
-            });
-
-            menuText += `\n\n${t('tools.help.category_tip', { prefix: cmdPrefix })}`;
-            return menuText.trim();
+    if (!rawQuery) {
+        // No argument: Show Category Overview with Dashboard Header
+        outputText = `${dashboardHeader}\n\n${formatCategoryOverview(menuService.getCategoryList(), t, '.')}`;
+    } else if (rawQuery.toLowerCase() === 'all') {
+        // "all": Full command catalog
+        outputText = `${dashboardHeader}\n\n${formatAllCommands(menuService.getCategoryList(), t, '.')}`;
+    } else {
+        // Lookup either command or category
+        const foundCommand = menuService.findCommand(rawQuery);
+        if (foundCommand) {
+            outputText = formatCommandDetail(foundCommand, t, '.');
         } else {
-            return t('tools.help.category_not_found', {
-                category: args.category,
-                available: categories.map((c) => `- ${c}`).join('\n')
-            });
+            const foundCategory = menuService.findCategory(rawQuery);
+            if (foundCategory) {
+                outputText = formatCategoryCommands(foundCategory, t, '.');
+            } else {
+                outputText = formatNotFound('command', rawQuery, menuService.getCategoryList(), t, '.');
+            }
         }
     }
 
-    let menuText = `${t('tools.help.categories_title')}\n\n`;
-    categories.forEach((cat) => {
-        menuText += `\`\`\`${cmdPrefix} ${cat}\`\`\`\n`;
-    });
+    // Send via Baileys with larger hero banner if socket is available
+    if (ctx?.sock && typeof ctx.sock.sendMessage === 'function') {
+        const bannerBuffer = getMenuBannerBuffer();
+        const matches = outputText.match(/@(\d+)/g);
+        const mentions = matches ? formatMentions(matches.map((m) => m.substring(1))) : [];
 
-    menuText += `\n${t('tools.help.categories_tip', { prefix: cmdPrefix })}`;
+        await ctx.sock.sendMessage(
+            ctx.jid,
+            {
+                text: outputText,
+                contextInfo: {
+                    externalAdReply: {
+                        title: t('tools.menu.banner_title'),
+                        body: t('tools.menu.banner_body'),
+                        mediaType: 1, // IMAGE
+                        thumbnail: bannerBuffer,
+                        renderLargerThumbnail: true, // Baileys hero banner attribute
+                        sourceUrl: 'https://github.com/razaelmahasaputra/cosmos',
+                        mediaUrl: 'https://files.catbox.moe/hygluw.png'
+                    },
+                    mentionedJid: mentions
+                }
+            },
+            { quoted: ctx.msg }
+        );
+        return undefined; // Prevents message handler echo
+    }
 
-    return menuText.trim();
+    return outputText;
 }

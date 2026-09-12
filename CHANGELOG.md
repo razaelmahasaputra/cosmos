@@ -11,6 +11,23 @@ and this project adheres to the `RF-YYMM-BUILD` version formatting.
 
 ---
 
+## [RF-2609-04] - 2026-09-12
+
+### Added
+
+- **Modular Menu & Help Architecture (`src/services/menuService.ts`, `src/utils/menuFormatter.ts`, `src/utils/menuAssets.ts`):**
+    - High-performance, memoized command reflection and normalization service (`MenuService`).
+    - Standardized category consolidation mapping micro-categories into 11 canonical categories with dedicated theme icons (`Casino`, `Games`, `Economy & Banking`, `Employment`, `Downloaders`, `Music & Audio`, `Media & Stickers`, `AI & Correction`, `Tools & Utilities`, `Settings`, `System & Help`).
+    - Strict dot prefix normalization (`.`) ensuring all primary commands and aliases render uniformly.
+    - Hero banner media loader (`MenuAssets`) with automated placeholder fallback (`assets/menu_banner.placeholder.png`) protecting against corrupt or empty 0-byte remote files.
+    - Baileys `externalAdReply` rich preview card with `renderLargerThumbnail: true` for full-width hero header delivery.
+    - Standardized user dashboard card displaying pushname, role (Owner/Member), response speed (latency), uptime, date, active language, prefix, and total command count.
+    - Multi-mode navigation supporting Category Overview (`.menu`), Category Command List (`.menu <category>`), All-In-One Catalog (`.menu all`), and Single Command Inspector (`.help <command>`).
+    - Dedicated standalone `.menu` command entrypoint (`src/tools/menu.ts`).
+    - 100% symmetric bilingual localization (`en` and `id`) validated via `validate:i18n`.
+
+---
+
 ## [RF-2609-03] - 2026-09-11
 
 ### Added
@@ -243,7 +260,8 @@ model Loan {
 }
 ```
 
-[Unreleased]: https://github.com/razaelmahasaputra/cosmos/compare/RF-2609-03...HEAD
+[Unreleased]: https://github.com/razaelmahasaputra/cosmos/compare/RF-2609-04...HEAD
+[RF-2609-04]: https://github.com/razaelmahasaputra/cosmos/compare/RF-2609-03...RF-2609-04
 [RF-2609-03]: https://github.com/razaelmahasaputra/cosmos/compare/RF-2609-02...RF-2609-03
 [RF-2609-02]: https://github.com/razaelmahasaputra/cosmos/compare/RF-2609-01...RF-2609-02
 [RF-2609-01]: https://github.com/razaelmahasaputra/cosmos/compare/RF-2608-01...RF-2609-01
