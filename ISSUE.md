@@ -3,6 +3,7 @@
 - **Target Version:** `RF-2609-04`
 - **Component:** Core UX / Tools Subsystem
 - **Status:** Proposed / Planned
+- **Development Branch:** [`feature/refactor-menu`](https://github.com/razaelmahasaputra/cosmos/tree/feature/refactor-menu)
 - **Banner Asset:** `https://files.catbox.moe/hygluw.png` (stored locally in [`assets/menu_banner.png`](file:///home/razael/cosmos/assets/menu_banner.png))
 - **Related Files:**
   - [`assets/menu_banner.png`](file:///home/razael/cosmos/assets/menu_banner.png) (Local media banner)
