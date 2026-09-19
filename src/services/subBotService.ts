@@ -35,6 +35,22 @@ export function isSubBotActive(phoneNumber: string): boolean {
     return activeConnections.has(`sub_${clean}`);
 }
 
+/**
+ * True link state: a socket entry alone is not enough, because
+ * `connectToWhatsApp` registers pairing-mode sockets before the device
+ * authorizes them. Only a registered credential means linked.
+ */
+export function isSubBotLinked(phoneNumber: string): boolean {
+    const clean = getCleanNumber(phoneNumber);
+    const sock = activeConnections.get(`sub_${clean}`);
+    if (!sock) return false;
+    try {
+        return sock.authState.creds.registered === true;
+    } catch {
+        return false;
+    }
+}
+
 export function hasPendingPairing(phoneNumber: string): boolean {
     const clean = getCleanNumber(phoneNumber);
     return pendingPairings.has(clean);
@@ -59,6 +75,17 @@ export function abortPairing(phoneNumber: string): boolean {
     if (session.timeoutTimer) {
         clearTimeout(session.timeoutTimer);
     }
+
+    // Guard: Do not wipe credentials or terminate socket if session is already linked or registered!
+    if (isSubBotLinked(clean) || isSubBotRegistered(clean)) {
+        console.log(
+            `[SubBot] Pairing session for +${clean} has already linked/registered. Clearing pairing state without deleting auth.`
+        );
+        pendingPairings.delete(clean);
+        unregisterCancellableSession(`subbot_pair_${clean}`);
+        return false;
+    }
+
     const sock = session.tempSock || activeConnections.get(`sub_${clean}`);
     if (sock) {
         try {
@@ -112,6 +139,25 @@ export async function requestPairing(
         return t('tools.subbot.max_slots_reached', { current: activeConnections.size, max: MAX_SUB_BOTS });
     }
 
+    try {
+        const { QuotaService, executeWithUserLock } = await import('#services/quotaService.js');
+        const { isOwnerId } = await import('#utils/owner.js');
+        const privileged = isOwnerId(userJid);
+        const check = await executeWithUserLock(userJid, () => QuotaService.canPairSubBot(userJid, privileged));
+        if (!check.allowed) {
+            return (
+                `⚠️ *Sub-Bot Quota Reached!*\n\n` +
+                `Tier: ${check.tier} Plan\n` +
+                `Active Sub-Bots: ${check.current} / ${check.max} instances\n\n` +
+                `To pair a new sub-bot:\n` +
+                `1. Disconnect an existing sub-bot using: .subbot stop <phone>\n` +
+                `2. Upgrade to the Partner Tier (up to 12 sub-bots): https://razael-fox.my.id/pricing`
+            );
+        }
+    } catch (err) {
+        console.error('[SubBot] Quota check failed, allowing pairing to proceed:', err);
+    }
+
     const botDir = path.resolve(process.cwd(), 'database', cleanNumber);
     if (!fs.existsSync(botDir)) {
         fs.mkdirSync(botDir, { recursive: true });
@@ -149,6 +195,14 @@ export async function requestPairing(
     const ttlSeconds = method === 'code' ? 120 : 60;
     pairingSession.timeoutTimer = setTimeout(async () => {
         if (pendingPairings.has(cleanNumber)) {
+            if (isSubBotLinked(cleanNumber) || isSubBotRegistered(cleanNumber)) {
+                console.log(
+                    `[SubBot] Pairing for +${cleanNumber} already linked/registered. Clearing pairing registry.`
+                );
+                pendingPairings.delete(cleanNumber);
+                unregisterCancellableSession(`subbot_pair_${cleanNumber}`);
+                return;
+            }
             abortPairing(cleanNumber);
             try {
                 await parentSock.sendMessage(
@@ -169,7 +223,12 @@ export async function requestPairing(
         phoneNumber: cleanNumber,
         pairingMethod: method,
         isPairingMode: true,
-        isAborted: () => !pendingPairings.has(cleanNumber),
+        isAborted: () => {
+            if (isSubBotLinked(cleanNumber) || isSubBotRegistered(cleanNumber)) {
+                return false;
+            }
+            return !pendingPairings.has(cleanNumber);
+        },
         onPairingCode: async (formattedCode: string) => {
             if (method !== 'code' || pairingCardSent) return;
             pairingCardSent = true;
@@ -240,6 +299,22 @@ export async function requestPairing(
             unregisterCancellableSession(`subbot_pair_${cleanNumber}`);
             subBotStartTimes.set(cleanNumber, Date.now());
 
+            try {
+                await subPrisma.$executeRawUnsafe(`SELECT 1`);
+            } catch {
+                /* ignore */
+            }
+            try {
+                const defaultPrisma = getPrismaClient('default');
+                await defaultPrisma.subBotInstance.upsert({
+                    where: { id: cleanNumber },
+                    update: { ownerJid: userJid, status: 'ACTIVE' },
+                    create: { id: cleanNumber, ownerJid: userJid, status: 'ACTIVE' }
+                });
+            } catch (err) {
+                console.error('[SubBot] Failed to track SubBotInstance ownership:', err);
+            }
+
             loadConfig(cleanNumber);
 
             const successCard = renderCard({
@@ -260,6 +335,205 @@ export async function requestPairing(
             subBotStartTimes.delete(cleanNumber);
         }
     });
+}
+
+export interface HeadlessPairingResult {
+    ok: boolean;
+    code?: string;
+    qr?: string;
+    error?: string;
+}
+
+/**
+ * Headless sub-bot pairing for web/API clients (no WhatsApp command context).
+ *
+ * Starts a real Baileys pairing session via `connectToWhatsApp` and resolves
+ * with the genuine pairing code (or QR payload) issued by WhatsApp. The
+ * session remains pending afterwards so the user can enter the code on the
+ * target device; pairing completion is reported through the normal
+ * `onConnected` bookkeeping and can be polled via `getSubBotPairingState`.
+ */
+export async function requestPairingHeadless(
+    targetNumber: string,
+    method: 'code' | 'qr',
+    requesterJid: string
+): Promise<HeadlessPairingResult> {
+    const cleanNumber = getCleanNumber(targetNumber);
+    if (!cleanNumber || cleanNumber.length < 8) {
+        return { ok: false, error: 'INVALID_PHONE' };
+    }
+
+    const primaryNumber = getPrimaryOwnerNumber() || '';
+    if (primaryNumber && cleanNumber === primaryNumber) {
+        return { ok: false, error: 'CANNOT_PAIR_SELF' };
+    }
+
+    if (isSubBotActive(cleanNumber)) {
+        return { ok: false, error: 'ALREADY_ACTIVE' };
+    }
+
+    if (hasPendingPairing(cleanNumber) || hasPendingPairingByUser(requesterJid)) {
+        return { ok: false, error: 'ALREADY_PAIRING' };
+    }
+
+    if (activeConnections.size >= MAX_SUB_BOTS) {
+        return { ok: false, error: 'MAX_SLOTS_REACHED' };
+    }
+
+    try {
+        const { QuotaService, executeWithUserLock } = await import('#services/quotaService.js');
+        const { isOwnerId } = await import('#utils/owner.js');
+        const privileged = isOwnerId(requesterJid);
+        const check = await executeWithUserLock(requesterJid, () =>
+            QuotaService.canPairSubBot(requesterJid, privileged)
+        );
+        if (!check.allowed) {
+            return { ok: false, error: 'QUOTA_EXCEEDED' };
+        }
+    } catch (err) {
+        console.error('[SubBot] Headless quota check failed, allowing pairing to proceed:', err);
+    }
+
+    const botDir = path.resolve(process.cwd(), 'database', cleanNumber);
+    if (!fs.existsSync(botDir)) {
+        fs.mkdirSync(botDir, { recursive: true });
+    }
+
+    const subPrisma = getPrismaClient(`sub_${cleanNumber}`);
+    try {
+        await subPrisma.whatsAppAuth.deleteMany();
+    } catch {
+        /* ignore */
+    }
+
+    const pairingSession: PairingSession = {
+        phoneNumber: cleanNumber,
+        method,
+        userJid: requesterJid,
+        chatJid: requesterJid,
+        startTime: Date.now()
+    };
+    pendingPairings.set(cleanNumber, pairingSession);
+
+    registerCancellableSession({
+        sessionId: `subbot_pair_${cleanNumber}`,
+        feature: 'subbot',
+        userJid: requesterJid,
+        chatJid: requesterJid,
+        description: `Sub-bot pairing for +${cleanNumber}`,
+        onCancel: async () => {
+            abortPairing(cleanNumber);
+            return 'Sub-bot pairing cancelled.';
+        }
+    });
+
+    const ttlSeconds = method === 'code' ? 120 : 60;
+    pairingSession.timeoutTimer = setTimeout(() => {
+        if (pendingPairings.has(cleanNumber)) {
+            if (isSubBotLinked(cleanNumber) || isSubBotRegistered(cleanNumber)) {
+                console.log(
+                    `[SubBot] Headless pairing for +${cleanNumber} already linked/registered. Clearing pairing registry.`
+                );
+                pendingPairings.delete(cleanNumber);
+                unregisterCancellableSession(`subbot_pair_${cleanNumber}`);
+                return;
+            }
+            console.log(`[SubBot] Headless pairing for +${cleanNumber} timed out, aborting.`);
+            abortPairing(cleanNumber);
+        }
+    }, ttlSeconds * 1000);
+
+    let credentialSent = false;
+    let resolveCredential: (value: string) => void = () => {};
+    const credentialPromise = new Promise<string>((resolve) => {
+        resolveCredential = resolve;
+    });
+
+    connectToWhatsApp({
+        sessionId: `sub_${cleanNumber}`,
+        phoneNumber: cleanNumber,
+        pairingMethod: method,
+        isPairingMode: true,
+        isAborted: () => {
+            if (isSubBotLinked(cleanNumber) || isSubBotRegistered(cleanNumber)) {
+                return false;
+            }
+            return !pendingPairings.has(cleanNumber);
+        },
+        onPairingCode: async (formattedCode: string) => {
+            if (method !== 'code' || credentialSent) return;
+            credentialSent = true;
+            console.log(`[SubBot] Headless pairing code issued for +${cleanNumber}.`);
+            resolveCredential(formattedCode);
+        },
+        onQRCode: async (qrString: string) => {
+            if (method !== 'qr' || credentialSent) return;
+            credentialSent = true;
+            console.log(`[SubBot] Headless pairing QR issued for +${cleanNumber}.`);
+            resolveCredential(qrString);
+        },
+        onConnected: async () => {
+            if (pairingSession.timeoutTimer) {
+                clearTimeout(pairingSession.timeoutTimer);
+            }
+            pendingPairings.delete(cleanNumber);
+            unregisterCancellableSession(`subbot_pair_${cleanNumber}`);
+            subBotStartTimes.set(cleanNumber, Date.now());
+
+            try {
+                const defaultPrisma = getPrismaClient('default');
+                await defaultPrisma.subBotInstance.upsert({
+                    where: { id: cleanNumber },
+                    update: { ownerJid: requesterJid, status: 'ACTIVE' },
+                    create: { id: cleanNumber, ownerJid: requesterJid, status: 'ACTIVE' }
+                });
+            } catch (err) {
+                console.error('[SubBot] Failed to track headless SubBotInstance ownership:', err);
+            }
+
+            loadConfig(cleanNumber);
+
+            try {
+                const defaultSock = activeConnections.get('default');
+                if (defaultSock && requesterJid) {
+                    await defaultSock.sendMessage(requesterJid, {
+                        text:
+                            `✅ *Sub-Bot Linked Successfully*\n\n` +
+                            `Number: +${cleanNumber}\n` +
+                            `Status: ONLINE\n\n` +
+                            `Manage it anytime from your web dashboard or with .subbot commands.`
+                    });
+                }
+            } catch (err) {
+                console.error('[SubBot] Failed to send headless pairing success notice:', err);
+            }
+        },
+        onClosed: () => {
+            subBotStartTimes.delete(cleanNumber);
+        }
+    });
+
+    const credential = await Promise.race([
+        credentialPromise,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 60000))
+    ]);
+
+    if (credential === null) {
+        abortPairing(cleanNumber);
+        return { ok: false, error: method === 'code' ? 'CODE_TIMEOUT' : 'QR_TIMEOUT' };
+    }
+
+    return method === 'code' ? { ok: true, code: credential } : { ok: true, qr: credential };
+}
+
+/**
+ * Pairing state for web/API polling: ACTIVE (linked), PAIRING (awaiting
+ * device authorization), or IDLE (no session).
+ */
+export function getSubBotPairingState(phoneNumber: string): 'ACTIVE' | 'PAIRING' | 'IDLE' {
+    if (isSubBotLinked(phoneNumber) || isSubBotRegistered(phoneNumber)) return 'ACTIVE';
+    if (hasPendingPairing(phoneNumber)) return 'PAIRING';
+    return 'IDLE';
 }
 
 export async function stopSubBot(phoneNumber: string): Promise<boolean> {
@@ -329,6 +603,12 @@ export async function startSubBot(phoneNumber: string): Promise<boolean> {
 export async function deleteSubBot(phoneNumber: string): Promise<boolean> {
     const clean = getCleanNumber(phoneNumber);
     await stopSubBot(clean);
+    try {
+        const defaultPrisma = getPrismaClient('default');
+        await defaultPrisma.subBotInstance.delete({ where: { id: clean } }).catch(() => {});
+    } catch {
+        /* ignore */
+    }
     clearConfigCache(clean);
 
     const botDir = path.resolve(process.cwd(), 'database', clean);

@@ -5,6 +5,8 @@
     "error_database": "Terjadi kesalahan pada database. Silakan coba lagi nanti.",
     "group_add_success": "Grup berhasil ditambahkan ke whitelist!",
     "group_add_failed": "Gagal menambahkan grup ke database.",
+    "group_not_whitelisted": "Grup ini saat ini tidak ada dalam whitelist.",
+    "group_remove_success": "Grup telah dihapus dari whitelist, membebaskan satu slot kuota.",
     "unauthorized": "Anda tidak memiliki izin untuk menggunakan perintah ini.",
     "unknown_error": "Terjadi kesalahan yang tidak terduga.",
     "command_disabled": "Perintah ini sedang dinonaktifkan.",
@@ -14,5 +16,6 @@
     "owner_only_private": "Perintah ini hanya dapat digunakan oleh pemilik bot di obrolan pribadi.",
     "not_in_group": "Perintah ini hanya dapat digunakan di dalam grup chat.",
     "sender_identity_error": "Tidak dapat menentukan identitas pengirim Anda.",
-    "tool_execution_error": "Maaf, terjadi kesalahan saat menjalankan {{tool}}."
+    "tool_execution_error": "Maaf, terjadi kesalahan saat menjalankan {{tool}}.",
+    "group_already_whitelisted": "Grup ini sudah ada dalam whitelist."
 }

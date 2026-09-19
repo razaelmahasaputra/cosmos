@@ -109,29 +109,43 @@ export async function execute(args: Record<string, any>, ctx: ToolContext): Prom
 
     // Send via Baileys with larger hero banner if socket is available
     if (ctx?.sock && typeof ctx.sock.sendMessage === 'function') {
-        const bannerBuffer = getMenuBannerBuffer();
         const matches = outputText.match(/@(\d+)/g);
         const mentions = matches ? formatMentions(matches.map((m) => m.substring(1))) : [];
 
         try {
-            await ctx.sock.sendMessage(
-                ctx.jid,
-                {
+            // Hero banner as a real photo attachment (not an externalAdReply thumbnail:
+            // some clients silently drop cards, while image messages render everywhere).
+            // WhatsApp caps image captions at 1024 chars: short menus ride as the photo
+            // caption in a single message, longer ones fall back to photo + text.
+            const bannerBuffer = getMenuBannerBuffer();
+            if (outputText.length <= 1024) {
+                await ctx.sock.sendMessage(
+                    ctx.jid,
+                    {
+                        image: bannerBuffer,
+                        caption: outputText,
+                        contextInfo: {
+                            mentionedJid: mentions
+                        }
+                    },
+                    { quoted: ctx.msg }
+                );
+            } else {
+                await ctx.sock.sendMessage(
+                    ctx.jid,
+                    {
+                        image: bannerBuffer,
+                        caption: `${t('tools.menu.banner_title')}\n${t('tools.menu.banner_body')}`
+                    },
+                    { quoted: ctx.msg }
+                );
+                await ctx.sock.sendMessage(ctx.jid, {
                     text: outputText,
                     contextInfo: {
-                        externalAdReply: {
-                            title: t('tools.menu.banner_title'),
-                            body: t('tools.menu.banner_body'),
-                            mediaType: 1, // IMAGE
-                            thumbnail: bannerBuffer,
-                            renderLargerThumbnail: true, // Baileys hero banner attribute
-                            sourceUrl: 'https://github.com/razaelmahasaputra/cosmos'
-                        },
                         mentionedJid: mentions
                     }
-                },
-                { quoted: ctx.msg }
-            );
+                });
+            }
         } catch (error) {
             console.error('[HelpTool] Failed to send menu with externalAdReply, falling back to plain text:', error);
             await ctx.sock.sendMessage(

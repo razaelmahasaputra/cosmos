@@ -108,3 +108,9 @@ REVIEW.md
 
 # Website (standalone Next.js project with its own git repo + Vercel deployment)
 website/
+.worktrees/
+
+# SQLite WAL and SHM temporary files
+*.sqlite-wal
+*.sqlite-shm
+

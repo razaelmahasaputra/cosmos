@@ -109,6 +109,7 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
     console.log('[DEBUG] Message received:', {
         fromMe: msg.key.fromMe,
         remoteJid: msg.key.remoteJid,
+        pushName: msg.pushName,
         text: msg.message.conversation || msg.message.extendedTextMessage?.text || ''
     });
 
@@ -134,9 +135,11 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
 
     const getJidAndLid = () => {
         if (msg.key.fromMe) {
+            const rawBotJid = sock.user?.id ? cleanId(sock.user.id) : null;
+            const rawBotLid = (sock.user as any)?.lid ? cleanId((sock.user as any).lid) : null;
             return {
-                jidDb: cleanId(sock.user?.id),
-                lidDb: cleanId((sock.user as any)?.lid)
+                jidDb: rawBotJid ? `${rawBotJid}@s.whatsapp.net` : null,
+                lidDb: rawBotLid
             };
         }
         const p = msg.key.participant || msg.key.remoteJid;
@@ -148,9 +151,10 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         const out = { jidDb: null as string | null, lidDb: null as string | null };
         if (p && p.endsWith('@lid')) {
             out.lidDb = cleanId(p);
-            out.jidDb = pAlt ? cleanId(pAlt) : null;
-        } else {
-            out.jidDb = cleanId(p);
+            out.jidDb = pAlt ? `${cleanId(pAlt)}@s.whatsapp.net` : null;
+        } else if (p) {
+            const clean = cleanId(p);
+            out.jidDb = clean ? `${clean}@s.whatsapp.net` : null;
             out.lidDb = pAlt ? cleanId(pAlt) : null;
         }
         return out;
@@ -170,26 +174,60 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
     }
 
     if (senderJidDb) {
-        // Fire and forget db upsert to ensure JID/LID mapping is saved
-        prisma.user
-            .upsert({
-                where: { id: senderJidDb },
-                update: {
-                    ...(senderLidDb ? { lid: senderLidDb } : {}),
-                    ...(msg.pushName ? { pushName: msg.pushName } : {})
-                },
-                create: {
-                    id: senderJidDb,
-                    lid: senderLidDb || null,
-                    pushName: msg.pushName || null
+        const canonicalJid = senderJidDb.includes('@')
+            ? senderJidDb
+            : `${senderJidDb.replace(/\D/g, '')}@s.whatsapp.net`;
+        const cleanDigits = canonicalJid.split('@')[0].replace(/\D/g, '');
+        const newWaName = msg.pushName?.trim() || null;
+
+        (async () => {
+            try {
+                // Delete legacy duplicate record if any exists to avoid UNIQUE constraint conflicts
+                if (cleanDigits && cleanDigits !== canonicalJid) {
+                    await prisma.user.delete({ where: { id: cleanDigits } }).catch(() => {});
                 }
-            })
-            .catch(() => {
-                /* ignore */
-            });
+
+                const user = await prisma.user.findUnique({ where: { id: canonicalJid } });
+
+                if (user) {
+                    let updatedUsername: string | undefined = undefined;
+                    // If user has no username, or their username was tracking their previous WhatsApp name
+                    if (newWaName && (!user.username || user.username === user.pushName)) {
+                        const collision = await prisma.user.findFirst({
+                            where: { username: newWaName, NOT: { id: user.id } }
+                        });
+                        updatedUsername = collision
+                            ? cleanDigits
+                                ? `${newWaName}_${cleanDigits.slice(-4)}`
+                                : undefined
+                            : newWaName;
+                    }
+
+                    await prisma.user.update({
+                        where: { id: canonicalJid },
+                        data: {
+                            ...(newWaName ? { pushName: newWaName } : {}),
+                            ...(updatedUsername ? { username: updatedUsername } : {}),
+                            ...(senderLidDb ? { lid: senderLidDb } : {})
+                        }
+                    });
+                } else {
+                    await prisma.user.create({
+                        data: {
+                            id: canonicalJid,
+                            lid: senderLidDb || null,
+                            pushName: newWaName,
+                            username: newWaName
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('[Message Handler] Error synchronizing user profile:', err);
+            }
+        })();
     }
 
-    const senderRaw = senderJidDb || senderLidDb || '';
+    const senderRaw = senderJidDb ? cleanId(senderJidDb) || '' : senderLidDb || '';
 
     const sessionStore = dbContext.getStore();
     const currentSessionId = sessionStore?.sessionId || 'default';
@@ -341,20 +379,95 @@ export async function handleMessage(sock: WASocket, msg: WAMessage): Promise<voi
         }
 
         if (commandName === '.addgroup' || commandName === '.addwhitelist') {
-            if (!isOwner) {
-                await sock.sendMessage(jid, { text: t('core.owner_only') }, { quoted: msg });
-                return;
-            }
             console.log('Command executed', { command: '.addgroup', jid });
             if (!jid.endsWith('@g.us')) {
                 await sock.sendMessage(jid, { text: t('core.group_only') });
                 return;
             }
-            const success = await addGroup(jid);
-            if (success) {
+            const { QuotaService, executeWithUserLock } = await import('#services/quotaService.js');
+            const senderIdentity = senderJidDb || senderLidDb || '';
+            // Re-adding must never transfer ownership: whoever whitelisted first keeps it,
+            // whether that was the bot owner (global entry) or another user.
+            const alreadyWhitelisted = await prisma.whitelistedGroup.findUnique({ where: { jid } });
+            if (alreadyWhitelisted) {
+                await sock.sendMessage(jid, { text: t('core.group_already_whitelisted') }, { quoted: msg });
+                return;
+            }
+            if (isOwner) {
+                const success = await addGroup(jid, null);
+                if (success) {
+                    await sock.sendMessage(jid, { text: t('core.group_add_success') });
+                } else {
+                    await sock.sendMessage(jid, { text: t('core.group_add_failed') });
+                }
+                return;
+            }
+            try {
+                const result = await executeWithUserLock(senderIdentity, async () => {
+                    const check = await QuotaService.canAddGroup(senderIdentity, false);
+                    if (!check.allowed) return check;
+                    const ok = await addGroup(jid, senderIdentity);
+                    if (!ok) return null;
+                    // Close the race: a concurrent adder may have won the row first.
+                    const row = await prisma.whitelistedGroup.findUnique({ where: { jid } });
+                    if ((row as { ownerJid?: string | null } | null)?.ownerJid !== senderIdentity) {
+                        return { already: true as const };
+                    }
+                    return check;
+                });
+                if (result && 'already' in result) {
+                    await sock.sendMessage(jid, { text: t('core.group_already_whitelisted') }, { quoted: msg });
+                    return;
+                }
+                if (!result || !result.allowed) {
+                    const reason = result?.reason ?? '';
+                    const tierLabel = result?.tier ?? 'FREE';
+                    await sock.sendMessage(
+                        jid,
+                        {
+                            text:
+                                `⚠️ *Whitelist Limit Reached!*\n\n` +
+                                `Tier: ${tierLabel} Plan\n` +
+                                `${reason}\n\n` +
+                                `To add more groups:\n` +
+                                `1. Remove an inactive group using: .delgroup\n` +
+                                `2. Upgrade to the Partner Tier (up to 25 groups): https://razael-fox.my.id/pricing`
+                        },
+                        { quoted: msg }
+                    );
+                    return;
+                }
                 await sock.sendMessage(jid, { text: t('core.group_add_success') });
-            } else {
-                await sock.sendMessage(jid, { text: t('core.group_add_failed') });
+            } catch (err) {
+                console.error('[Quota] .addgroup failed:', err);
+                await sock.sendMessage(jid, { text: t('core.group_add_failed') }, { quoted: msg });
+            }
+            return;
+        }
+
+        if (commandName === '.delgroup' || commandName === '.removewhitelist') {
+            console.log('Command executed', { command: '.delgroup', jid });
+            if (!jid.endsWith('@g.us')) {
+                await sock.sendMessage(jid, { text: t('core.group_only') });
+                return;
+            }
+            const senderIdentity = senderJidDb || senderLidDb || '';
+            try {
+                const group = await prisma.whitelistedGroup.findUnique({ where: { jid } });
+                if (!group) {
+                    await sock.sendMessage(jid, { text: t('core.group_not_whitelisted') }, { quoted: msg });
+                    return;
+                }
+                const groupOwner = (group as { ownerJid?: string | null }).ownerJid ?? null;
+                if (!isOwner && groupOwner !== senderIdentity) {
+                    await sock.sendMessage(jid, { text: t('core.owner_only') }, { quoted: msg });
+                    return;
+                }
+                await prisma.whitelistedGroup.delete({ where: { jid } });
+                await sock.sendMessage(jid, { text: t('core.group_remove_success') }, { quoted: msg });
+            } catch (err) {
+                console.error('[Quota] .delgroup failed:', err);
+                await sock.sendMessage(jid, { text: t('core.group_add_failed') }, { quoted: msg });
             }
             return;
         }

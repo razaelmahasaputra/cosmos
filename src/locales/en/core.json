@@ -5,6 +5,8 @@
     "error_database": "Database error occurred. Please try again.",
     "group_add_success": "Group successfully whitelisted!",
     "group_add_failed": "Failed to add group to the database.",
+    "group_not_whitelisted": "This group is not currently whitelisted.",
+    "group_remove_success": "Group has been removed from the whitelist, freeing one quota slot.",
     "unauthorized": "You are not authorized to use this command.",
     "unknown_error": "An unexpected error occurred.",
     "command_disabled": "This command is currently disabled.",
@@ -14,5 +16,6 @@
     "owner_only_private": "This command can only be used by the bot owner in private chats.",
     "not_in_group": "This command can only be used in a group chat.",
     "sender_identity_error": "Could not determine your sender identity.",
-    "tool_execution_error": "Sorry, there was an error executing {{tool}}."
+    "tool_execution_error": "Sorry, there was an error executing {{tool}}.",
+    "group_already_whitelisted": "This group is already whitelisted."
 }
